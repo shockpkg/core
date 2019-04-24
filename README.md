@@ -2,6 +2,15 @@
 
 The core shockpkg library.
 
+[![npm](https://img.shields.io/npm/v/@shockpkg/core.svg)](https://npmjs.com/package/@shockpkg/core)
+[![node](https://img.shields.io/node/v/@shockpkg/core.svg)](https://nodejs.org)
+
+[![dependencies](https://david-dm.org/shockpkg/core.svg)](https://david-dm.org/shockpkg/core)
+[![size](https://packagephobia.now.sh/badge?p=@shockpkg/core)](https://packagephobia.now.sh/result?p=@shockpkg/core)
+[![downloads](https://img.shields.io/npm/dm/@shockpkg/core.svg)](https://npmcharts.com/compare/@shockpkg/core?minimal=true)
+
+[![travis-ci](https://travis-ci.org/shockpkg/core.svg?branch=master)](https://travis-ci.org/shockpkg/core)
+
 
 # Overview
 
