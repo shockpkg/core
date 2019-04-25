@@ -166,7 +166,7 @@ export class Manager extends Object {
 	protected readonly _pathEnv: string = PATH_ENV;
 
 	/**
-	 * Pacakges URL environment variable name.
+	 * Packages URL environment variable name.
 	 */
 	@property(false)
 	protected readonly _packagesUrlEnv: string = PACKAGES_URL_ENV;
@@ -536,7 +536,7 @@ export class Manager extends Object {
 
 	/**
 	 * Install package, with parents.
-	 * Returns the list of pacakges installed to install.
+	 * Returns the list of packages installed to install.
 	 * Returns empty array if current version is already installed.
 	 *
 	 * @param pkg The package.
@@ -558,7 +558,7 @@ export class Manager extends Object {
 
 	/**
 	 * Install package, without parents.
-	 * Returns the list of pacakges downloaded or extracted to install.
+	 * Returns the list of packages downloaded or extracted to install.
 	 * Returns empty array if current version is already installed.
 	 *
 	 * @param pkg The package.
@@ -1311,7 +1311,7 @@ export class Manager extends Object {
 
 	/**
 	 * Install package, with parents.
-	 * Returns the list of pacakges installed to install.
+	 * Returns the list of packages installed to install.
 	 * Returns empty array if current version is already installed.
 	 *
 	 * @param pkg The package.
@@ -1393,7 +1393,7 @@ export class Manager extends Object {
 
 	/**
 	 * Install package, without parents.
-	 * Returns the list of pacakges downloaded or extracted to install.
+	 * Returns the list of packages downloaded or extracted to install.
 	 * Returns empty array if current version is already installed.
 	 *
 	 * @param pkg The package.
@@ -1908,10 +1908,10 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * Create the pacakges URL.
+	 * Create the packages URL.
 	 *
 	 * @param defaultUrl The default URL if the environment variable not set.
-	 * @return Pacakges URL.
+	 * @return Packages URL.
 	 */
 	protected _createPackagesUrl(defaultUrl: string) {
 		return process.env[this._packagesUrlEnv] || defaultUrl;
