@@ -15,6 +15,7 @@ import {
 	PACKAGE_FILE,
 	PACKAGES_FILE,
 	PACKAGES_URL,
+	PACKAGES_URL_ENV,
 	PATH_ENV,
 	TEMP_DIR
 } from './constants';
@@ -165,6 +166,12 @@ export class Manager extends Object {
 	protected _pathEnv = PATH_ENV;
 
 	/**
+	 * Pacakges URL environment variable name.
+	 */
+	@property(false)
+	protected _packagesUrlEnv = PACKAGES_URL_ENV;
+
+	/**
 	 * Inited flag.
 	 */
 	@property(false)
@@ -215,6 +222,7 @@ export class Manager extends Object {
 			// Do nothing, instead fail on next assert call.
 		});
 		this._lock = lock;
+		this._packagesUrl = this._createPackagesUrl(this._packagesUrl);
 		this._packages = this._createPackages();
 		this._request = this._createRequest();
 	}
@@ -1897,6 +1905,16 @@ export class Manager extends Object {
 	protected _createPath(path: string | null) {
 		// Use specified, or environment variable, or relative default.
 		return path || process.env[this._pathEnv] || this._mainDir;
+	}
+
+	/**
+	 * Create the pacakges URL.
+	 *
+	 * @param defaultUrl The default URL if the environment variable not set.
+	 * @return Pacakges URL.
+	 */
+	protected _createPackagesUrl(defaultUrl: string) {
+		return process.env[this._packagesUrlEnv] || defaultUrl;
 	}
 
 	/**
