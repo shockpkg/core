@@ -127,49 +127,49 @@ export class Manager extends Object {
 	 * Packages URL.
 	 */
 	@property(false)
-	protected _packagesUrl = PACKAGES_URL;
+	protected readonly _packagesUrl: string = PACKAGES_URL;
 
 	/**
 	 * Packages file.
 	 */
 	@property(false)
-	protected _packagesFile = PACKAGES_FILE;
+	protected readonly _packagesFile: string = PACKAGES_FILE;
 
 	/**
 	 * Package file.
 	 */
 	@property(false)
-	protected _packageFile = PACKAGE_FILE;
+	protected readonly _packageFile: string = PACKAGE_FILE;
 
 	/**
 	 * Main directory.
 	 */
 	@property(false)
-	protected _mainDir = MAIN_DIR;
+	protected readonly _mainDir: string = MAIN_DIR;
 
 	/**
 	 * Meta directory.
 	 */
 	@property(false)
-	protected _metaDir = META_DIR;
+	protected readonly _metaDir: string = META_DIR;
 
 	/**
 	 * Temp directory.
 	 */
 	@property(false)
-	protected _tempDir = TEMP_DIR;
+	protected readonly _tempDir: string = TEMP_DIR;
 
 	/**
 	 * Path environment variable name.
 	 */
 	@property(false)
-	protected _pathEnv = PATH_ENV;
+	protected readonly _pathEnv: string = PATH_ENV;
 
 	/**
 	 * Pacakges URL environment variable name.
 	 */
 	@property(false)
-	protected _packagesUrlEnv = PACKAGES_URL_ENV;
+	protected readonly _packagesUrlEnv: string = PACKAGES_URL_ENV;
 
 	/**
 	 * Inited flag.
