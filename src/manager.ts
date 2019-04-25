@@ -1706,7 +1706,8 @@ export class Manager extends Object {
 		const {size, sha256} = pkg;
 
 		this.eventPackageDownloadBefore.triggerSync({
-			package: pkgO
+			package: pkgO,
+			kind: 'stream'
 		});
 
 		let read = 0;
@@ -1731,6 +1732,7 @@ export class Manager extends Object {
 
 				this.eventPackageDownloadProgress.triggerSync({
 					package: pkgO,
+					kind: 'stream',
 					total: size,
 					amount: 0
 				});
@@ -1739,6 +1741,7 @@ export class Manager extends Object {
 				read += data.length;
 				this.eventPackageDownloadProgress.triggerSync({
 					package: pkgO,
+					kind: 'stream',
 					total: size,
 					amount: read
 				});
@@ -1746,7 +1749,8 @@ export class Manager extends Object {
 		);
 
 		this.eventPackageDownloadAfter.triggerSync({
-			package: pkgO
+			package: pkgO,
+			kind: 'stream'
 		});
 	}
 
@@ -1788,7 +1792,8 @@ export class Manager extends Object {
 			const size = end - start;
 
 			this.eventPackageDownloadBefore.triggerSync({
-				package: pkgO
+				package: pkgO,
+				kind: 'stream'
 			});
 
 			let read = 0;
@@ -1813,7 +1818,8 @@ export class Manager extends Object {
 					this.eventPackageDownloadProgress.triggerSync({
 						package: pkgO,
 						total: size,
-						amount: 0
+						amount: 0,
+						kind: 'stream'
 					});
 				},
 				data => {
@@ -1821,13 +1827,15 @@ export class Manager extends Object {
 					this.eventPackageDownloadProgress.triggerSync({
 						package: pkgO,
 						total: size,
-						amount: read
+						amount: read,
+						kind: 'stream'
 					});
 				}
 			)
 				.then(() => {
 					this.eventPackageDownloadAfter.triggerSync({
-						package: pkgO
+						package: pkgO,
+						kind: 'stream'
 					});
 				})
 				.catch(() => {

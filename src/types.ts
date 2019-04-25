@@ -37,18 +37,33 @@ export interface IPackageDownloadBefore {
 	 * Package instance.
 	 */
 	package: Package;
+
+	/**
+	 * Download kind.
+	 */
+	kind: string;
 }
 export interface IPackageDownloadAfter {
 	/**
 	 * Package instance.
 	 */
 	package: Package;
+
+	/**
+	 * Download kind.
+	 */
+	kind: string;
 }
 export interface IPackageDownloadProgress {
 	/**
 	 * Package instance.
 	 */
 	package: Package;
+
+	/**
+	 * Download kind.
+	 */
+	kind: string;
 
 	/**
 	 * Progress total.
