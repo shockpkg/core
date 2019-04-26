@@ -1859,8 +1859,14 @@ export class Manager extends Object {
 	protected async _requestPackages() {
 		this._assertActive();
 
+		// Headers and gzip to avoid compression and reduce transfer size.
 		const {response, body} = await this._request.promise({
-			url: this.packagesUrl
+			url: this.packagesUrl,
+			headers: {
+				'Cache-Control': 'max-age=0',
+				Pragma: 'no-cache'
+			},
+			gzip: true
 		});
 		const {statusCode} = response;
 		this._assertStatusCode(200, statusCode);
