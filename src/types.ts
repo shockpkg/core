@@ -153,7 +153,7 @@ export interface IPackageRemovedObsolete {
 	package: string;
 
 	/**
-	 * Revmoed or already removed.
+	 * Removed or already removed.
 	 */
 	removed: boolean;
 }
@@ -165,7 +165,7 @@ export interface IPackageRemovedOutdated {
 	package: Package;
 
 	/**
-	 * Revmoed or already removed.
+	 * Removed or already removed.
 	 */
 	removed: boolean;
 }
