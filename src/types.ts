@@ -31,6 +31,17 @@ export interface IPackageInstallAfter {
 	 */
 	method: string;
 }
+export interface IPackageInstallCurrent {
+	/**
+	 * Package instance.
+	 */
+	package: Package;
+
+	/**
+	 * Install method.
+	 */
+	method: string;
+}
 
 export interface IPackageDownloadBefore {
 	/**

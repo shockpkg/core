@@ -647,6 +647,12 @@ function eventsLogger(
 			package: event.package.name
 		});
 	});
+	manager.eventPackageInstallCurrent.on(event => {
+		add({
+			which: 'install-current',
+			package: event.package.name
+		});
+	});
 
 	manager.eventPackageDownloadBefore.on(event => {
 		add({
@@ -1562,7 +1568,12 @@ describe('manager', () => {
 
 						reset();
 						await manager.installFull(packageSingle.name);
-						expect(events).toEqual([]);
+						expect(events).toEqual([
+							{
+								which: 'install-current',
+								package: 'package-single'
+							}
+						]);
 					}
 				));
 			});
@@ -1720,7 +1731,12 @@ describe('manager', () => {
 
 						reset();
 						await manager.installFull(packageNested.name);
-						expect(events).toEqual([]);
+						expect(events).toEqual([
+							{
+								which: 'install-current',
+								package: 'package-nested'
+							}
+						]);
 					}
 				));
 			});
@@ -1808,7 +1824,12 @@ describe('manager', () => {
 
 						reset();
 						await manager.installSlim(packageSingle.name);
-						expect(events).toEqual([]);
+						expect(events).toEqual([
+							{
+								which: 'install-current',
+								package: 'package-single'
+							}
+						]);
 					}
 				));
 			});
@@ -1904,7 +1925,12 @@ describe('manager', () => {
 
 						reset();
 						await manager.installSlim(packageNested1.name);
-						expect(events).toEqual([]);
+						expect(events).toEqual([
+							{
+								which: 'install-current',
+								package: 'package-nested-1'
+							}
+						]);
 					}
 				));
 			});
@@ -2018,7 +2044,12 @@ describe('manager', () => {
 
 						reset();
 						await manager.installSlim(packageNested.name);
-						expect(events).toEqual([]);
+						expect(events).toEqual([
+							{
+								which: 'install-current',
+								package: 'package-nested'
+							}
+						]);
 					}
 				));
 			});

@@ -36,6 +36,7 @@ import {
 	IPackageExtractProgress,
 	IPackageInstallAfter,
 	IPackageInstallBefore,
+	IPackageInstallCurrent,
 	IPackageInstalled,
 	IPackageReceipt,
 	IPackageRemovedObsolete,
@@ -74,6 +75,12 @@ export class Manager extends Object {
 	 */
 	public readonly eventPackageInstallAfter =
 		new Dispatcher<IPackageInstallAfter>(this);
+
+	/**
+	 * Package install current events.
+	 */
+	public readonly eventPackageInstallCurrent =
+		new Dispatcher<IPackageInstallCurrent>(this);
 
 	/**
 	 * Package download before events.
@@ -1328,6 +1335,10 @@ export class Manager extends Object {
 		// If current version is installed, skip.
 		const installed = await this._isCurrent(pkg);
 		if (installed) {
+			this.eventPackageInstallCurrent.triggerSync({
+				package: pkg,
+				method: 'slim'
+			});
 			return [];
 		}
 
@@ -1410,6 +1421,10 @@ export class Manager extends Object {
 		// If current version is installed, skip.
 		const installed = await this._isCurrent(pkg);
 		if (installed) {
+			this.eventPackageInstallCurrent.triggerSync({
+				package: pkg,
+				method: 'slim'
+			});
 			return [];
 		}
 
