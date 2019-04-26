@@ -1600,7 +1600,8 @@ export class Manager extends Object {
 			const removed = await this._remove(pkg);
 
 			this.eventPackageCleanupAfter.triggerSync({
-				package: pkg
+				package: pkg,
+				removed
 			});
 			return {
 				package: pkg,

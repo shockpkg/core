@@ -127,6 +127,11 @@ export interface IPackageCleanupAfter {
 	 * Package name.
 	 */
 	package: string;
+
+	/**
+	 * Package removed.
+	 */
+	removed: boolean;
 }
 
 export interface IPackageInstalled {
