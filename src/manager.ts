@@ -454,9 +454,11 @@ export class Manager extends Object {
 	/**
 	 * Update the package manager installed data.
 	 * Updates the packages list.
+	 *
+	 * @return Update report.
 	 */
 	public async update() {
-		await this._exclusiveAsync(() => this._update());
+		return this._exclusiveAsync(() => this._update());
 	}
 
 	/**
@@ -1181,13 +1183,15 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * Update the pacakge manager.
+	 * Update the package manager.
 	 * Updates the packages list.
+	 *
+	 * @return Update report.
 	 */
 	protected async _update() {
 		this._assertActive();
 
-		await this._updatePackages();
+		return this._updatePackages();
 	}
 
 	/**
@@ -1868,13 +1872,17 @@ export class Manager extends Object {
 
 	/**
 	 * Update the packages list.
+	 *
+	 * @return Update report.
 	 */
 	protected async _updatePackages() {
 		this._assertActive();
 
+		// Read data, update list, write list to file, return report.
 		const data = await this._requestPackages();
-		this._packages.update(data);
+		const report = this._packages.update(data);
 		await this._packages.write();
+		return report;
 	}
 
 	/**

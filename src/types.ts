@@ -154,6 +154,28 @@ export interface IPackageRemovedOutdated {
 	removed: boolean;
 }
 
+export interface IPackageUpdated {
+	/**
+	 * Package name.
+	 */
+	name: string;
+
+	/**
+	 * File name.
+	 */
+	file: string;
+
+	/**
+	 * File size.
+	 */
+	size: number;
+
+	/**
+	 * SHA256 hash of the file contents.
+	 */
+	sha256: string;
+}
+
 export type IRequestOptions =
 	(request.UrlOptions & request.CoreOptions) |
 	(request.UriOptions & request.CoreOptions);

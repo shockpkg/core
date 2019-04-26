@@ -24,8 +24,28 @@ import {streamEndError} from './util';
 const tmpPath = './spec/tmp';
 
 const unknownDirEmpty = 'unknown-dir-empty';
-const packageObsoleteA = 'package-obsolete-a';
-const packageObsoleteB = 'package-obsolete-b';
+
+const packageObsoleteA = {
+	name: 'package-obsolete-a',
+	file: 'package-obsolete-a.bin',
+	size: 42,
+	sha256: '4242424242424242424242424242424242424242424242424242424242424242',
+	source: 'http://example.com/package-obsolete-a.bin'
+};
+const packageObsoleteB = {
+	name: 'package-obsolete-b',
+	file: 'package-obsolete-b.bin',
+	size: 24,
+	sha256: '2424242424242424242424242424242424242424242424242424242424242424',
+	source: 'http://example.com/package-obsolete-b.bin'
+};
+
+// const packageObsoleteA = 'package-obsolete-a';
+// const packageObsoleteB = 'package-obsolete-b';
+// const packageBadHashA =
+// 	'4242424242424242424242424242424242424242424242424242424242424242';
+// const packageBadHashB =
+// 	'2424242424242424242424242424242424242424242424242424242424242424';
 
 const packageSingle = {
 	name: 'package-single',
@@ -861,6 +881,133 @@ describe('manager', () => {
 					});
 				}
 			));
+
+			describe('return', () => {
+				const packagesCopy = () => JSON.parse(JSON.stringify(packages));
+				const writePackage = async (manager: Manager, obj: any) => {
+					const jsonFile = manager.pathToMeta(manager.packagesFile);
+					await fseOutputJson(jsonFile, obj, {spaces: '\t'});
+				};
+
+				it('added', managerTestOne(
+					JSON.stringify(packages),
+					async manager => {
+						const mod = packagesCopy();
+						mod.packages = mod.packages
+							.filter((p: any) => p.name !== packageMulti.name);
+
+						await writePackage(manager, mod);
+
+						const report = await manager
+							.with(manager => manager.update());
+
+						expect(report.updated).toEqual([]);
+						expect(report.added.map(p => p.name)).toEqual([
+							'package-multi',
+							'package-multi-a',
+							'package-multi-b'
+						]);
+						expect(report.removed).toEqual([]);
+					}
+				));
+
+				it('removed', managerTestOne(
+					JSON.stringify(packages),
+					async manager => {
+						const mod = packagesCopy();
+						mod.packages.push(
+							packageObsoleteA,
+							packageObsoleteB
+						);
+
+						await writePackage(manager, mod);
+
+						const report = await manager
+							.with(manager => manager.update());
+
+						expect(report.updated).toEqual([]);
+						expect(report.added).toEqual([]);
+						expect(report.removed.map(p => p.name)).toEqual([
+							packageObsoleteA.name,
+							packageObsoleteB.name
+						]);
+					}
+				));
+
+				it('updated: file', managerTestOne(
+					JSON.stringify(packages),
+					async manager => {
+						const mod = packagesCopy();
+						const pkg = mod.packages[0];
+						pkg.file += '.old';
+						await writePackage(manager, mod);
+
+						const report = await manager
+							.with(manager => manager.update());
+
+						expect(report.updated.map(p => p.name)).toEqual([
+							pkg.name
+						]);
+						expect(report.added).toEqual([]);
+						expect(report.removed).toEqual([]);
+					}
+				));
+
+				it('updated: size', managerTestOne(
+					JSON.stringify(packages),
+					async manager => {
+						const mod = packagesCopy();
+						const pkg = mod.packages[0];
+						pkg.size++;
+						await writePackage(manager, mod);
+
+						const report = await manager
+							.with(manager => manager.update());
+
+						expect(report.updated.map(p => p.name)).toEqual([
+							pkg.name
+						]);
+						expect(report.added).toEqual([]);
+						expect(report.removed).toEqual([]);
+					}
+				));
+
+				it('updated: sha256', managerTestOne(
+					JSON.stringify(packages),
+					async manager => {
+						const mod = packagesCopy();
+						const pkg = mod.packages[0];
+						pkg.sha256 = pkg.sha256.split('').reverse().join();
+						await writePackage(manager, mod);
+
+						const report = await manager
+							.with(manager => manager.update());
+
+						expect(report.updated.map(p => p.name)).toEqual([
+							pkg.name
+						]);
+						expect(report.added).toEqual([]);
+						expect(report.removed).toEqual([]);
+					}
+				));
+
+				it('ignored: source', managerTestOne(
+					JSON.stringify(packages),
+					async manager => {
+						const mod = packagesCopy();
+						const pkg = mod.packages[0];
+						pkg.source += '.old';
+						await writePackage(manager, mod);
+
+						const report = await manager
+							.with(manager => manager.update());
+
+						expect(report.updated).toEqual([]);
+						expect(report.added).toEqual([]);
+						expect(report.removed).toEqual([]);
+					}
+				));
+			});
 		});
 
 		describe('packageItter', () => {
@@ -898,7 +1045,8 @@ describe('manager', () => {
 				async manager => {
 					await manager.update();
 
-					expect(manager.packageByName(packageObsoleteA)).toBeNull();
+					expect(manager.packageByName(packageObsoleteA.name))
+						.toBeNull();
 
 					expect(manager.packageByName(
 						packageSingle.name
@@ -939,7 +1087,7 @@ describe('manager', () => {
 					await manager.update();
 
 					expect(manager.packageByUnique(
-						packageObsoleteA
+						packageObsoleteA.name
 					)).toBeNull();
 					expect(manager.packageByUnique(
 						packageSingleMetaBad.sha256
@@ -995,17 +1143,17 @@ describe('manager', () => {
 					await managerEnsureDirs(manager, [
 						[unknownDirEmpty],
 						[packageSingle.name, manager.metaDir],
-						[packageObsoleteA, manager.metaDir],
-						[packageObsoleteB, manager.metaDir]
+						[packageObsoleteA.name, manager.metaDir],
+						[packageObsoleteB.name, manager.metaDir]
 					]);
 
 					expect(await manager.isObsolete(unknownDirEmpty))
 						.toBe(false);
 					expect(await manager.isObsolete(packageSingle.name))
 						.toBe(false);
-					expect(await manager.isObsolete(packageObsoleteA))
+					expect(await manager.isObsolete(packageObsoleteA.name))
 						.toBe(true);
-					expect(await manager.isObsolete(packageObsoleteB))
+					expect(await manager.isObsolete(packageObsoleteB.name))
 						.toBe(true);
 				}
 			));
@@ -1082,16 +1230,16 @@ describe('manager', () => {
 					await managerEnsureDirs(manager, [
 						[unknownDirEmpty],
 						[packageSingle.name, manager.metaDir],
-						[packageObsoleteA, manager.metaDir],
-						[packageObsoleteB, manager.metaDir]
+						[packageObsoleteA.name, manager.metaDir],
+						[packageObsoleteB.name, manager.metaDir]
 					]);
 
 					const obsolete = await manager.obsolete();
 
 					const obsoleteSorted = [...obsolete].sort();
 					expect(obsoleteSorted).toEqual([
-						packageObsoleteA,
-						packageObsoleteB
+						packageObsoleteA.name,
+						packageObsoleteB.name
 					]);
 				}
 			));
@@ -1109,8 +1257,8 @@ describe('manager', () => {
 
 					await managerEnsureDirs(manager, [
 						[unknownDirEmpty],
-						[packageObsoleteA, manager.metaDir],
-						[packageObsoleteB, manager.metaDir]
+						[packageObsoleteA.name, manager.metaDir],
+						[packageObsoleteB.name, manager.metaDir]
 					]);
 					await managerWritePackageMeta(
 						manager,
@@ -1130,11 +1278,11 @@ describe('manager', () => {
 					)).toBe(true);
 					expect(await managerDirExists(
 						manager,
-						[packageObsoleteA]
+						[packageObsoleteA.name]
 					)).toBe(false);
 					expect(await managerDirExists(
 						manager,
-						[packageObsoleteB]
+						[packageObsoleteB.name]
 					)).toBe(false);
 				}
 			));
@@ -1146,8 +1294,8 @@ describe('manager', () => {
 
 					await managerEnsureDirs(manager, [
 						[unknownDirEmpty],
-						[packageObsoleteA, manager.metaDir],
-						[packageObsoleteB, manager.metaDir]
+						[packageObsoleteA.name, manager.metaDir],
+						[packageObsoleteB.name, manager.metaDir]
 					]);
 					await managerWritePackageMeta(
 						manager,
@@ -1160,11 +1308,11 @@ describe('manager', () => {
 
 					expect(a).toEqual([
 						{
-							package: packageObsoleteA,
+							package: packageObsoleteA.name,
 							removed: true
 						},
 						{
-							package: packageObsoleteB,
+							package: packageObsoleteB.name,
 							removed: true
 						}
 					]);
@@ -1179,8 +1327,8 @@ describe('manager', () => {
 
 					await managerEnsureDirs(manager, [
 						[unknownDirEmpty],
-						[packageObsoleteA, manager.metaDir],
-						[packageObsoleteB, manager.metaDir]
+						[packageObsoleteA.name, manager.metaDir],
+						[packageObsoleteB.name, manager.metaDir]
 					]);
 					await managerWritePackageMeta(
 						manager,
@@ -1195,19 +1343,19 @@ describe('manager', () => {
 					expect(events).toEqual([
 						{
 							which: 'cleanup-before',
-							package: packageObsoleteA
+							package: packageObsoleteA.name
 						},
 						{
 							which: 'cleanup-after',
-							package: packageObsoleteA
+							package: packageObsoleteA.name
 						},
 						{
 							which: 'cleanup-before',
-							package: packageObsoleteB
+							package: packageObsoleteB.name
 						},
 						{
 							which: 'cleanup-after',
-							package: packageObsoleteB
+							package: packageObsoleteB.name
 						}
 					]);
 
@@ -1231,14 +1379,14 @@ describe('manager', () => {
 					await managerEnsureDirs(manager, [
 						[unknownDirEmpty],
 						[packageSingle.name, manager.metaDir],
-						[packageObsoleteA, manager.metaDir],
-						[packageObsoleteB, manager.metaDir]
+						[packageObsoleteA.name, manager.metaDir],
+						[packageObsoleteB.name, manager.metaDir]
 					]);
 
 					await manager.remove(unknownDirEmpty);
 					await manager.remove(packageSingle.name);
-					await manager.remove(packageObsoleteA);
-					await manager.remove(packageObsoleteB);
+					await manager.remove(packageObsoleteA.name);
+					await manager.remove(packageObsoleteB.name);
 
 					expect(await managerDirExists(
 						manager,
@@ -1250,11 +1398,11 @@ describe('manager', () => {
 					)).toBe(false);
 					expect(await managerDirExists(
 						manager,
-						[packageObsoleteA]
+						[packageObsoleteA.name]
 					)).toBe(false);
 					expect(await managerDirExists(
 						manager,
-						[packageObsoleteB]
+						[packageObsoleteB.name]
 					)).toBe(false);
 				}
 			));
@@ -1267,15 +1415,15 @@ describe('manager', () => {
 					await managerEnsureDirs(manager, [
 						[unknownDirEmpty],
 						[packageSingle.name, manager.metaDir],
-						[packageObsoleteA, manager.metaDir]
+						[packageObsoleteA.name, manager.metaDir]
 					]);
 
 					const a1 = await manager.remove(unknownDirEmpty);
 					const a2 = await manager.remove(unknownDirEmpty);
 					const b1 = await manager.remove(packageSingle.name);
 					const b2 = await manager.remove(packageSingle.name);
-					const c1 = await manager.remove(packageObsoleteA);
-					const c2 = await manager.remove(packageObsoleteA);
+					const c1 = await manager.remove(packageObsoleteA.name);
+					const c2 = await manager.remove(packageObsoleteA.name);
 
 					expect(a1).toBe(true);
 					expect(a2).toBe(false);

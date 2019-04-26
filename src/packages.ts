@@ -8,7 +8,8 @@ import {property} from './decorators';
 import {Package} from './package';
 import {
 	IPackagesList,
-	IPackagesListPackage
+	IPackagesListPackage,
+	IPackageUpdated
 } from './types';
 
 /**
@@ -83,9 +84,62 @@ export class Packages extends Object {
 	 * Update packages.
 	 *
 	 * @param data Encoded data.
+	 * @return Update report.
 	 */
 	public update(data: string) {
+		// Map out current list if any.
+		const map = new Map<string, IPackageUpdated>();
+		for (const pkg of this.itter()) {
+			const {name, file, size, sha256} = pkg;
+			map.set(name, {
+				name,
+				file,
+				size,
+				sha256
+			});
+		}
+
+		// Actually set the data.
 		this._setPackagesList(this._parseData(data));
+
+		// List out the changes of significance.
+		const updated: IPackageUpdated[] = [];
+		const added: IPackageUpdated[] = [];
+		const removed: IPackageUpdated[] = [];
+		for (const pkg of this.itter()) {
+			const {name, file, size, sha256} = pkg;
+			const obj: IPackageUpdated = {
+				name,
+				file,
+				size,
+				sha256
+			};
+
+			const before = map.get(name) || null;
+			map.delete(name);
+
+			if (!before) {
+				added.push(obj);
+				continue;
+			}
+
+			if (
+				before.sha256 !== sha256 ||
+				before.size !== size ||
+				before.file !== file
+			) {
+				updated.push(obj);
+			}
+		}
+		for (const [, obj] of map) {
+			removed.push(obj);
+		}
+
+		return {
+			updated,
+			added,
+			removed
+		};
 	}
 
 	/**
