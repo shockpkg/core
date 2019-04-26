@@ -40,6 +40,9 @@ import {
 	IPackageInstalled,
 	IPackageReceipt,
 	IPackageRemovedObsolete,
+	IPackageStreamAfter,
+	IPackageStreamBefore,
+	IPackageStreamProgress,
 	PackageLike
 } from './types';
 import {
@@ -99,6 +102,24 @@ export class Manager extends Object {
 	 */
 	public readonly eventPackageDownloadProgress =
 		new Dispatcher<IPackageDownloadProgress>(this);
+
+	/**
+	 * Package stream before events.
+	 */
+	public readonly eventPackageStreamBefore =
+		new Dispatcher<IPackageStreamBefore>(this);
+
+	/**
+	 * Package stream after events.
+	 */
+	public readonly eventPackageStreamAfter =
+		new Dispatcher<IPackageStreamAfter>(this);
+
+	/**
+	 * Package stream progress events.
+	 */
+	public readonly eventPackageStreamProgress =
+		new Dispatcher<IPackageStreamProgress>(this);
 
 	/**
 	 * Package extract before events.
@@ -1726,8 +1747,7 @@ export class Manager extends Object {
 		const {size, sha256} = pkg;
 
 		this.eventPackageDownloadBefore.triggerSync({
-			package: pkgO,
-			kind: 'stream'
+			package: pkgO
 		});
 
 		let read = 0;
@@ -1752,7 +1772,6 @@ export class Manager extends Object {
 
 				this.eventPackageDownloadProgress.triggerSync({
 					package: pkgO,
-					kind: 'stream',
 					total: size,
 					amount: 0
 				});
@@ -1761,7 +1780,6 @@ export class Manager extends Object {
 				read += data.length;
 				this.eventPackageDownloadProgress.triggerSync({
 					package: pkgO,
-					kind: 'stream',
 					total: size,
 					amount: read
 				});
@@ -1769,8 +1787,7 @@ export class Manager extends Object {
 		);
 
 		this.eventPackageDownloadAfter.triggerSync({
-			package: pkgO,
-			kind: 'stream'
+			package: pkgO
 		});
 	}
 
@@ -1811,9 +1828,8 @@ export class Manager extends Object {
 		return (start: number, end: number) => {
 			const size = end - start;
 
-			this.eventPackageDownloadBefore.triggerSync({
-				package: pkgO,
-				kind: 'stream'
+			this.eventPackageStreamBefore.triggerSync({
+				package: pkgO
 			});
 
 			let read = 0;
@@ -1835,27 +1851,24 @@ export class Manager extends Object {
 						this._assertContentLength(size, contentLength);
 					}
 
-					this.eventPackageDownloadProgress.triggerSync({
+					this.eventPackageStreamProgress.triggerSync({
 						package: pkgO,
 						total: size,
-						amount: 0,
-						kind: 'stream'
+						amount: 0
 					});
 				},
 				data => {
 					read += data.length;
-					this.eventPackageDownloadProgress.triggerSync({
+					this.eventPackageStreamProgress.triggerSync({
 						package: pkgO,
 						total: size,
-						amount: read,
-						kind: 'stream'
+						amount: read
 					});
 				}
 			)
 				.then(() => {
-					this.eventPackageDownloadAfter.triggerSync({
-						package: pkgO,
-						kind: 'stream'
+					this.eventPackageStreamAfter.triggerSync({
+						package: pkgO
 					});
 				})
 				.catch(() => {

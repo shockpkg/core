@@ -48,22 +48,12 @@ export interface IPackageDownloadBefore {
 	 * Package instance.
 	 */
 	package: Package;
-
-	/**
-	 * Download kind.
-	 */
-	kind: string;
 }
 export interface IPackageDownloadAfter {
 	/**
 	 * Package instance.
 	 */
 	package: Package;
-
-	/**
-	 * Download kind.
-	 */
-	kind: string;
 }
 export interface IPackageDownloadProgress {
 	/**
@@ -72,9 +62,33 @@ export interface IPackageDownloadProgress {
 	package: Package;
 
 	/**
-	 * Download kind.
+	 * Progress total.
 	 */
-	kind: string;
+	total: number;
+
+	/**
+	 * Progress amount.
+	 */
+	amount: number;
+}
+
+export interface IPackageStreamBefore {
+	/**
+	 * Package instance.
+	 */
+	package: Package;
+}
+export interface IPackageStreamAfter {
+	/**
+	 * Package instance.
+	 */
+	package: Package;
+}
+export interface IPackageStreamProgress {
+	/**
+	 * Package instance.
+	 */
+	package: Package;
 
 	/**
 	 * Progress total.

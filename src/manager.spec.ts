@@ -17,7 +17,8 @@ import {Manager} from './manager';
 import {Package} from './package';
 import {
 	IPackageDownloadProgress,
-	IPackageExtractProgress
+	IPackageExtractProgress,
+	IPackageStreamProgress
 } from './types';
 import {streamEndError} from './util';
 
@@ -39,13 +40,6 @@ const packageObsoleteB = {
 	sha256: '2424242424242424242424242424242424242424242424242424242424242424',
 	source: 'http://example.com/package-obsolete-b.bin'
 };
-
-// const packageObsoleteA = 'package-obsolete-a';
-// const packageObsoleteB = 'package-obsolete-b';
-// const packageBadHashA =
-// 	'4242424242424242424242424242424242424242424242424242424242424242';
-// const packageBadHashB =
-// 	'2424242424242424242424242424242424242424242424242424242424242424';
 
 const packageSingle = {
 	name: 'package-single',
@@ -599,26 +593,22 @@ function testMethodSync(
  *
  * @param manager Manager instance.
  * @param events Events ordered.
- * @param eventsNoDownload Events ordered, excluding download events.
- * @param eventsNoExtract Events ordered, excluding extract events.
+ * @param eventsNoStream Events ordered, excluding stream events.
  * @return Reset function to reset the lists.
  */
 function eventsLogger(
 	manager: ManagerTest,
 	events: IPackageEventLog[] = [],
-	eventsNoDownload: IPackageEventLog[] = [],
-	eventsNoExtract: IPackageEventLog[] = []
+	eventsNoStream: IPackageEventLog[] = []
 ) {
 	let prevDownloadProgress: IPackageDownloadProgress | null = null;
+	let prevStreamProgress: IPackageStreamProgress | null = null;
 	let prevExtractProgress: IPackageExtractProgress | null = null;
 
 	const add = (o: IPackageEventLog) => {
 		events.push(o);
-		if (!o.which.startsWith('extract-')) {
-			eventsNoExtract.push(o);
-		}
-		if (!o.which.startsWith('download-')) {
-			eventsNoDownload.push(o);
+		if (!o.which.startsWith('stream-')) {
+			eventsNoStream.push(o);
 		}
 	};
 
@@ -692,6 +682,44 @@ function eventsLogger(
 		});
 	});
 
+	manager.eventPackageStreamBefore.on(event => {
+		add({
+			which: 'stream-before',
+			package: event.package.name
+		});
+	});
+	manager.eventPackageStreamProgress.on(event => {
+		const start = event.amount === 0;
+		const end = event.amount === event.total;
+
+		if (event.amount > event.total) {
+			throw new Error('Stream progress: Over amount');
+		}
+		if (prevStreamProgress && !start) {
+			if (event.total !== prevStreamProgress.total) {
+				throw new Error('Stream progress: Total changed');
+			}
+			if (event.amount <= prevStreamProgress.amount) {
+				throw new Error('Stream progress: No progress');
+			}
+		}
+
+		// Only add first and last progress.
+		if (start || end) {
+			add({
+				which: 'stream-progress',
+				package: event.package.name
+			});
+		}
+		prevStreamProgress = event;
+	});
+	manager.eventPackageStreamAfter.on(event => {
+		add({
+			which: 'stream-after',
+			package: event.package.name
+		});
+	});
+
 	manager.eventPackageExtractBefore.on(event => {
 		add({
 			which: 'extract-before',
@@ -732,10 +760,10 @@ function eventsLogger(
 
 	return () => {
 		prevDownloadProgress = null;
+		prevStreamProgress = null;
 		prevExtractProgress = null;
 		events.splice(0, events.length);
-		eventsNoDownload.splice(0, eventsNoDownload.length);
-		eventsNoExtract.splice(0, eventsNoExtract.length);
+		eventsNoStream.splice(0, eventsNoStream.length);
 	};
 }
 
@@ -1888,15 +1916,15 @@ describe('manager', () => {
 						await manager.update();
 
 						const events: IPackageEventLog[] = [];
-						const eventsNoDownload: IPackageEventLog[] = [];
+						const eventsNoStream: IPackageEventLog[] = [];
 						const reset = eventsLogger(
 							manager,
 							events,
-							eventsNoDownload
+							eventsNoStream
 						);
 
 						await manager.installSlim(packageNested1.name);
-						expect(eventsNoDownload).toEqual([
+						expect(eventsNoStream).toEqual([
 							{
 								which: 'install-before',
 								package: 'package-nested-1'
@@ -1991,15 +2019,15 @@ describe('manager', () => {
 						await manager.update();
 
 						const events: IPackageEventLog[] = [];
-						const eventsNoDownload: IPackageEventLog[] = [];
+						const eventsNoStream: IPackageEventLog[] = [];
 						const reset = eventsLogger(
 							manager,
 							events,
-							eventsNoDownload
+							eventsNoStream
 						);
 
 						await manager.installSlim(packageNested.name);
-						expect(eventsNoDownload).toEqual([
+						expect(eventsNoStream).toEqual([
 							{
 								which: 'install-before',
 								package: 'package-nested'
@@ -2283,15 +2311,15 @@ describe('manager', () => {
 					);
 
 					const events: IPackageEventLog[] = [];
-					const eventsNoDownload: IPackageEventLog[] = [];
+					const eventsNoStream: IPackageEventLog[] = [];
 					const reset = eventsLogger(
 						manager,
 						events,
-						eventsNoDownload
+						eventsNoStream
 					);
 
 					await manager.upgradeSlim();
-					expect(eventsNoDownload).toEqual([
+					expect(eventsNoStream).toEqual([
 						{
 							which: 'install-before',
 							package: 'package-nested-1'
