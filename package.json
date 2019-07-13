@@ -1,7 +1,7 @@
 {
 	"name": "@shockpkg/core",
 	"description": "shockpkg core",
-	"version": "1.6.3",
+	"version": "1.6.4",
 	"keywords": [
 		"shockpkg",
 		"package",
