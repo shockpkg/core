@@ -2,8 +2,8 @@ language: node_js
 
 node_js:
   - 'v10.0.0'
-  - 'v10.15.3'
-  - 'v12.0.0'
+  - 'v10.16.0'
+  - 'v12.6.0'
 
 cache:
   directories:
