@@ -1,8 +1,4 @@
-import {
-	pathExists as fsePathExists,
-	readJson as fseReadJson,
-	writeJson as fseWriteJson
-} from 'fs-extra';
+import fse from 'fs-extra';
 
 import {property} from './decorators';
 import {Package} from './package';
@@ -155,14 +151,14 @@ export class Packages extends Object {
 	 * Check if the file path exists.
 	 */
 	public async exists() {
-		return fsePathExists(this.path);
+		return fse.pathExists(this.path);
 	}
 
 	/**
 	 * Read the file path.
 	 */
 	public async read() {
-		const data = await fseReadJson(this.path);
+		const data = await fse.readJson(this.path);
 		this._setPackagesList(this._castData(data));
 	}
 
@@ -173,7 +169,7 @@ export class Packages extends Object {
 		if (!this._packagesList) {
 			throw new Error('Cannot write unloaded list');
 		}
-		await fseWriteJson(this.path, this._packagesList, {
+		await fse.writeJson(this.path, this._packagesList, {
 			spaces: '\t'
 		});
 	}

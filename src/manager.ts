@@ -1,11 +1,4 @@
-import {
-	ensureDir as fseEnsureDir,
-	move as fseMove,
-	outputJson as fseOutputJson,
-	pathExists as fsePathExists,
-	readJson as fseReadJson,
-	remove as fseRemove
-} from 'fs-extra';
+import fse from 'fs-extra';
 import {join as pathJoin} from 'path';
 import {Readable} from 'stream';
 
@@ -997,7 +990,7 @@ export class Manager extends Object {
 		const pkgf = this._pathToPackageMeta(name, this.packageFile);
 
 		const r: IPackageReceipt | null = await promiseCatch(
-			fseReadJson(pkgf),
+			fse.readJson(pkgf),
 			null
 		);
 		if (!r) {
@@ -1019,7 +1012,7 @@ export class Manager extends Object {
 		const pkgf = this._pathToPackageMeta(name, this.packageFile);
 
 		const receipt = await this._packageMetaReceiptFromPackage(pkg);
-		await fseOutputJson(pkgf, receipt, {
+		await fse.outputJson(pkgf, receipt, {
 			spaces: '\t'
 		});
 	}
@@ -1054,7 +1047,7 @@ export class Manager extends Object {
 		this._assertLoaded();
 
 		const dir = this._pathToPackageMeta(pkg);
-		return await fsePathExists(dir);
+		return await fse.pathExists(dir);
 	}
 
 	/**
@@ -1068,8 +1061,8 @@ export class Manager extends Object {
 
 		const dir = this._pathToPackage(pkg);
 		const dirMeta = this._pathToPackageMeta(pkg);
-		await fseEnsureDir(dir);
-		await fseEnsureDir(dirMeta);
+		await fse.ensureDir(dir);
+		await fse.ensureDir(dirMeta);
 	}
 
 	/**
@@ -1392,9 +1385,9 @@ export class Manager extends Object {
 
 				await this._packageDirsEnsure(p);
 				if (oldFile) {
-					await fseRemove(oldFile);
+					await fse.remove(oldFile);
 				}
-				await fseMove(tmpFile, outFile);
+				await fse.move(tmpFile, outFile);
 				await this._packageMetaReceiptWrite(p);
 			}
 			finally {
@@ -1505,7 +1498,7 @@ export class Manager extends Object {
 
 				// Remove previous temporary file if present.
 				if (tmpFileP) {
-					await fseRemove(tmpFileP);
+					await fse.remove(tmpFileP);
 				}
 				tmpFileP = tmpFile;
 
@@ -1516,9 +1509,9 @@ export class Manager extends Object {
 			// Write the package file last, means successful install.
 			await this._packageDirsEnsure(pkg);
 			if (oldFile) {
-				await fseRemove(oldFile);
+				await fse.remove(oldFile);
 			}
-			await fseMove(tmpFile, outFile);
+			await fse.move(tmpFile, outFile);
 			await this._packageMetaReceiptWrite(pkg);
 		}
 		finally {
@@ -1566,8 +1559,8 @@ export class Manager extends Object {
 		const dirMeta = this._pathToPackageMeta(pkg);
 
 		// Remove meta directory first, avoid partial installed state.
-		await fseRemove(dirMeta);
-		await fseRemove(dir);
+		await fse.remove(dirMeta);
+		await fse.remove(dir);
 		return true;
 	}
 
@@ -1924,8 +1917,8 @@ export class Manager extends Object {
 	 * Ensure base directories exists.
 	 */
 	protected async _ensureDirs() {
-		await fseEnsureDir(this.path);
-		await fseEnsureDir(this.pathMeta);
+		await fse.ensureDir(this.path);
+		await fse.ensureDir(this.pathMeta);
 	}
 
 	/**
@@ -1937,14 +1930,14 @@ export class Manager extends Object {
 		if (clean) {
 			await this._tempDirRemove();
 		}
-		await fseEnsureDir(this.pathToTemp());
+		await fse.ensureDir(this.pathToTemp());
 	}
 
 	/**
 	 * Ensure temp directory removed.
 	 */
 	protected async _tempDirRemove() {
-		await fseRemove(this.pathToTemp());
+		await fse.remove(this.pathToTemp());
 	}
 
 	/**

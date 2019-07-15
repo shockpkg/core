@@ -2,14 +2,7 @@
 
 import {createHash as cryptoCreateHash} from 'crypto';
 import express from 'express';
-import {
-	createReadStream as fseCreateReadStream,
-	ensureDir as fseEnsureDir,
-	lstat as fseLstat,
-	outputFile as fseOutputFile,
-	outputJson as fseOutputJson,
-	remove as fseRemove
-} from 'fs-extra';
+import fse from 'fs-extra';
 import {Server} from 'http';
 import {parse as urlParse} from 'url';
 
@@ -301,7 +294,7 @@ function sha256Buffer(buffer: Buffer) {
  * @param dirs Directory paths.
  */
 async function managerEnsureDirs(manager: ManagerTest, dirs: string[][]) {
-	await Promise.all(dirs.map(a => fseEnsureDir(manager.pathTo(...a))));
+	await Promise.all(dirs.map(a => fse.ensureDir(manager.pathTo(...a))));
 }
 
 /**
@@ -317,7 +310,7 @@ async function managerWritePackageMeta(
 	info: any
 ) {
 	const f = manager.pathTo(pkg, manager.metaDir, manager.packageFile);
-	await fseOutputJson(f, info, {spaces: '\t'});
+	await fse.outputJson(f, info, {spaces: '\t'});
 }
 
 /**
@@ -330,7 +323,7 @@ async function managerWritePackageMeta(
 async function managerFileExists(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
 	try {
-		const stat = await fseLstat(fp);
+		const stat = await fse.lstat(fp);
 		return stat.isFile();
 	}
 	catch (err) {
@@ -348,7 +341,7 @@ async function managerFileExists(manager: ManagerTest, path: string[]) {
 async function managerDirExists(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
 	try {
-		const stat = await fseLstat(fp);
+		const stat = await fse.lstat(fp);
 		return stat.isDirectory();
 	}
 	catch (err) {
@@ -366,7 +359,7 @@ async function managerDirExists(manager: ManagerTest, path: string[]) {
 async function managerFileSha256(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
 	const hasher = cryptoCreateHash('sha256');
-	const f = fseCreateReadStream(fp);
+	const f = fse.createReadStream(fp);
 	f.on('data', hasher.update.bind(hasher));
 	await streamEndError(f, 'close');
 	return hasher.digest('hex').toLowerCase();
@@ -770,11 +763,11 @@ function eventsLogger(
 describe('manager', () => {
 	describe('Manager', () => {
 		beforeEach(async () => {
-			await fseRemove(tmpPath);
+			await fse.remove(tmpPath);
 		});
 
 		afterEach(async () => {
-			await fseRemove(tmpPath);
+			await fse.remove(tmpPath);
 		});
 
 		describe('init + destroy', () => {
@@ -866,19 +859,19 @@ describe('manager', () => {
 				await manager.with(async manager => {
 					expect(manager.active).toBe(true);
 
-					const statTmpPath = await fseLstat(tmpPath);
+					const statTmpPath = await fse.lstat(tmpPath);
 					expect(statTmpPath.isDirectory()).toBe(true);
 
-					const statMetaDir = await fseLstat(
+					const statMetaDir = await fse.lstat(
 						manager.pathMeta
 					);
 					expect(statMetaDir.isDirectory()).toBe(true);
 				});
 
-				const statTmpPath = await fseLstat(tmpPath);
+				const statTmpPath = await fse.lstat(tmpPath);
 				expect(statTmpPath.isDirectory()).toBe(true);
 
-				const statMetaDir = await fseLstat(manager.pathMeta);
+				const statMetaDir = await fse.lstat(manager.pathMeta);
 				expect(statMetaDir.isDirectory()).toBe(true);
 			}));
 		});
@@ -920,7 +913,7 @@ describe('manager', () => {
 				const packagesCopy = () => JSON.parse(JSON.stringify(packages));
 				const writePackage = async (manager: Manager, obj: any) => {
 					const jsonFile = manager.pathToMeta(manager.packagesFile);
-					await fseOutputJson(jsonFile, obj, {spaces: '\t'});
+					await fse.outputJson(jsonFile, obj, {spaces: '\t'});
 				};
 
 				it('added', managerTestOne(
@@ -2507,7 +2500,7 @@ describe('manager', () => {
 					);
 					const {size} = packageSingle;
 					const fd = Buffer.alloc(size + 1);
-					await fseOutputFile(fp, fd);
+					await fse.outputFile(fp, fd);
 
 					const error = await promiseError(
 						manager.packageInstallVerify(packageSingle.name)
@@ -2532,7 +2525,7 @@ describe('manager', () => {
 					const {size, sha256} = packageSingle;
 					const fd = Buffer.alloc(size);
 					const fdSha256 = sha256Buffer(fd);
-					await fseOutputFile(fp, fd);
+					await fse.outputFile(fp, fd);
 
 					const error = await promiseError(
 						manager.packageInstallVerify(packageSingle.name)

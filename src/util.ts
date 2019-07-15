@@ -1,11 +1,6 @@
 import {createHash as cryptoCreateHash} from 'crypto';
 import {EventEmitter} from 'events';
-import {
-	createReadStream as fseCreateReadStream,
-	createWriteStream as fseCreateWriteStream,
-	lstat as fseLstat,
-	readdir as fseReaddir
-} from 'fs-extra';
+import fse from 'fs-extra';
 import {Readable} from 'stream';
 
 import {
@@ -104,7 +99,7 @@ export async function promiseCatch<T, U>(p: Promise<T>, d: U) {
  * @return Stat object or null.
  */
 export async function lstatExists(path: string) {
-	return promiseCatch(fseLstat(path), null);
+	return promiseCatch(fse.lstat(path), null);
 }
 
 /**
@@ -115,7 +110,7 @@ export async function lstatExists(path: string) {
  * @return Directory list, sorted order.
  */
 export async function readDir(path: string, dotfile = true) {
-	const list = await fseReaddir(path);
+	const list = await fse.readdir(path);
 	const r: string[] = [];
 	for (const entry of list) {
 		// Skip any dot files.
@@ -142,7 +137,7 @@ export async function hashFile(
 	encoding: HashEncoding
 ) {
 	const hasher = cryptoCreateHash(algorithm);
-	const reader = fseCreateReadStream(path);
+	const reader = fse.createReadStream(path);
 	reader.on('data', data => {
 		hasher.update(data);
 	});
@@ -174,7 +169,7 @@ export async function fileHash(path: string, hashes: IHash[]) {
 		hasher: cryptoCreateHash(hash.algorithm)
 	}));
 
-	const reader = fseCreateReadStream(path);
+	const reader = fse.createReadStream(path);
 	reader.on('data', data => {
 		// Update hashers.
 		hashers.forEach(entry => entry.hasher.update(data));
@@ -231,7 +226,7 @@ export async function fileHashVerify(path: string, hashes: IHash[]) {
  * @param size Expected size.
  */
 export async function fileSizeVerify(path: string, size: number) {
-	const stat = await fseLstat(path);
+	const stat = await fse.lstat(path);
 	const fSize = stat.size;
 	if (fSize !== size) {
 		throw new Error(`Invalid file size: ${fSize} expected: ${size}`);
@@ -389,7 +384,7 @@ export async function streamRequestDownload(
 	onResponse: OnResponse | null = null,
 	onData: OnData | null = null
 ) {
-	const write = fseCreateWriteStream(path, {
+	const write = fse.createWriteStream(path, {
 		encoding: 'binary'
 	});
 	const written = streamEndError(write, 'close');
@@ -424,7 +419,7 @@ export async function zipEntryExtract(
 	}
 
 	const source = await entry.stream();
-	const write = fseCreateWriteStream(path, {
+	const write = fse.createWriteStream(path, {
 		encoding: 'binary'
 	});
 	const written = streamEndError(write, 'close');

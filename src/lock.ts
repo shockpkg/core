@@ -1,7 +1,4 @@
-import {
-	check as properCheck,
-	lock as properLock
-} from 'proper-lockfile';
+import properLockfile from 'proper-lockfile';
 
 import {property} from './decorators';
 import {Dispatcher} from './dispatcher';
@@ -96,7 +93,7 @@ export class Lock extends Object {
 		// Will throw if not exist when using realpath, so catch.
 		let r: boolean;
 		try {
-			r = await properCheck(this.path);
+			r = await properLockfile.check(this.path);
 		}
 		catch (err) {
 			if (err.code === 'ENOENT') {
@@ -122,7 +119,7 @@ export class Lock extends Object {
 
 		this._compromised = false;
 
-		this._release = await properLock(this.path, {
+		this._release = await properLockfile.lock(this.path, {
 			stale: this.stale,
 			update: this.update,
 			retries: this.retries,

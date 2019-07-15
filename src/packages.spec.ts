@@ -1,9 +1,4 @@
-import {
-	ensureDir as fseEnsureDir,
-	pathExists as fsePathExists,
-	remove as fseRemove,
-	writeJson as fseWriteJson
-} from 'fs-extra';
+import fse from 'fs-extra';
 
 import {Packages} from './packages';
 
@@ -170,12 +165,12 @@ async function getPromiseError(p: Promise<any>) {
 describe('packages', () => {
 	describe('Packages', () => {
 		beforeEach(async () => {
-			await fseRemove(tmpPath);
-			await fseEnsureDir(tmpPath);
+			await fse.remove(tmpPath);
+			await fse.ensureDir(tmpPath);
 		});
 
 		afterEach(async () => {
-			await fseRemove(tmpPath);
+			await fse.remove(tmpPath);
 		});
 
 		describe('update', () => {
@@ -259,12 +254,12 @@ describe('packages', () => {
 		it('write', async () => {
 			const packages = new Packages(tmpPathPackages);
 
-			expect(await fsePathExists(tmpPathPackages)).toBe(false);
+			expect(await fse.pathExists(tmpPathPackages)).toBe(false);
 
 			packages.update(JSON.stringify(dummyPackages));
 			await packages.write();
 
-			expect(await fsePathExists(tmpPathPackages)).toBe(true);
+			expect(await fse.pathExists(tmpPathPackages)).toBe(true);
 		});
 
 		it('read', async () => {
@@ -276,7 +271,7 @@ describe('packages', () => {
 
 			expect(packages.loaded).toBe(false);
 
-			await fseWriteJson(tmpPathPackages, dummyPackages, {
+			await fse.writeJson(tmpPathPackages, dummyPackages, {
 				spaces: '\t'
 			});
 
@@ -290,7 +285,7 @@ describe('packages', () => {
 
 			expect(await packages.exists()).toBe(false);
 
-			await fseWriteJson(tmpPathPackages, dummyPackages, {
+			await fse.writeJson(tmpPathPackages, dummyPackages, {
 				spaces: '\t'
 			});
 
@@ -306,7 +301,7 @@ describe('packages', () => {
 
 			expect(packages.loaded).toBe(false);
 
-			await fseWriteJson(tmpPathPackages, dummyPackages, {
+			await fse.writeJson(tmpPathPackages, dummyPackages, {
 				spaces: '\t'
 			});
 
