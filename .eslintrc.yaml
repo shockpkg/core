@@ -443,8 +443,8 @@ rules:
   - groups:
     - builtin
     - external
-    - sibling
     - parent
+    - sibling
     - index
     newlines-between: always
 
