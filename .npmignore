@@ -18,6 +18,7 @@ report.*.json
 yarn.lock
 
 /package-lock.json
+/.gitattributes
 /.gitignore
 /.babelrc
 /.editorconfig
