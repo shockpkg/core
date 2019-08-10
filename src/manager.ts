@@ -411,14 +411,14 @@ export class Manager extends Object {
 	 * Initialize instance.
 	 */
 	public async init() {
-		await this._exclusiveAsync(() => this._init());
+		await this._exclusiveAsync(async () => this._init());
 	}
 
 	/**
 	 * Destroy instance.
 	 */
 	public async destroy() {
-		await this._exclusiveAsync(() => this._destroy());
+		await this._exclusiveAsync(async () => this._destroy());
 	}
 
 	/**
@@ -500,7 +500,9 @@ export class Manager extends Object {
 	 * @returns Install receipt.
 	 */
 	public async packageInstallReceipt(pkg: PackageLike) {
-		return this._exclusiveAsync(() => this._packageMetaReceiptRead(pkg));
+		return this._exclusiveAsync(
+			async () => this._packageMetaReceiptRead(pkg)
+		);
 	}
 
 	/**
@@ -510,7 +512,7 @@ export class Manager extends Object {
 	 * @returns Path to install file.
 	 */
 	public async packageInstallFile(pkg: PackageLike) {
-		return this._exclusiveAsync(() => this._packageInstallFile(pkg));
+		return this._exclusiveAsync(async () => this._packageInstallFile(pkg));
 	}
 
 	/**
@@ -519,7 +521,7 @@ export class Manager extends Object {
 	 * @param pkg The package.
 	 */
 	public async packageInstallVerify(pkg: PackageLike) {
-		await this._exclusiveAsync(() => this._packageInstallVerify(pkg));
+		await this._exclusiveAsync(async () => this._packageInstallVerify(pkg));
 	}
 
 	/**
@@ -540,7 +542,7 @@ export class Manager extends Object {
 	 * @returns Update report.
 	 */
 	public async update() {
-		return this._exclusiveAsync(() => this._update());
+		return this._exclusiveAsync(async () => this._update());
 	}
 
 	/**
@@ -550,7 +552,7 @@ export class Manager extends Object {
 	 * @returns True if already installed, else false.
 	 */
 	public async isInstalled(pkg: PackageLike) {
-		return this._exclusiveAsync(() => this._isInstalled(pkg));
+		return this._exclusiveAsync(async () => this._isInstalled(pkg));
 	}
 
 	/**
@@ -560,7 +562,7 @@ export class Manager extends Object {
 	 * @returns True if already up-to-date, else false.
 	 */
 	public async isCurrent(pkg: PackageLike) {
-		return this._exclusiveAsync(() => this._isCurrent(pkg));
+		return this._exclusiveAsync(async () => this._isCurrent(pkg));
 	}
 
 	/**
@@ -569,7 +571,7 @@ export class Manager extends Object {
 	 * @returns A list of installed package objects.
 	 */
 	public async installed() {
-		return this._exclusiveAsync(() => this._installed());
+		return this._exclusiveAsync(async () => this._installed());
 	}
 
 	/**
@@ -578,7 +580,7 @@ export class Manager extends Object {
 	 * @returns The list of outdated package objects.
 	 */
 	public async outdated() {
-		return this._exclusiveAsync(() => this._outdated());
+		return this._exclusiveAsync(async () => this._outdated());
 	}
 
 	/**
@@ -587,7 +589,7 @@ export class Manager extends Object {
 	 * @returns List of packages upgraded.
 	 */
 	public async upgrade() {
-		return this._exclusiveAsync(() => this._upgrade());
+		return this._exclusiveAsync(async () => this._upgrade());
 	}
 
 	/**
@@ -596,7 +598,7 @@ export class Manager extends Object {
 	 * @returns List of packages upgraded.
 	 */
 	public async upgradeFull() {
-		return this._exclusiveAsync(() => this._upgradeFull());
+		return this._exclusiveAsync(async () => this._upgradeFull());
 	}
 
 	/**
@@ -605,7 +607,7 @@ export class Manager extends Object {
 	 * @returns List of packages upgraded.
 	 */
 	public async upgradeSlim() {
-		return this._exclusiveAsync(() => this._upgradeSlim());
+		return this._exclusiveAsync(async () => this._upgradeSlim());
 	}
 
 	/**
@@ -615,7 +617,7 @@ export class Manager extends Object {
 	 * @returns True if was installed, false if already installed.
 	 */
 	public async install(pkg: PackageLike) {
-		return this._exclusiveAsync(() => this._install(pkg));
+		return this._exclusiveAsync(async () => this._install(pkg));
 	}
 
 	/**
@@ -627,7 +629,7 @@ export class Manager extends Object {
 	 * @returns List of packages processed.
 	 */
 	public async installFull(pkg: PackageLike) {
-		return this._exclusiveAsync(() => this._installFull(pkg));
+		return this._exclusiveAsync(async () => this._installFull(pkg));
 	}
 
 	/**
@@ -637,7 +639,7 @@ export class Manager extends Object {
 	 * @returns Installed list.
 	 */
 	public async installFullMulti(pkgs: PackageLike[]) {
-		return this._exclusiveAsync(() => this._installFullMulti(pkgs));
+		return this._exclusiveAsync(async () => this._installFullMulti(pkgs));
 	}
 
 	/**
@@ -649,7 +651,7 @@ export class Manager extends Object {
 	 * @returns List of packages processed.
 	 */
 	public async installSlim(pkg: PackageLike) {
-		return this._exclusiveAsync(() => this._installSlim(pkg));
+		return this._exclusiveAsync(async () => this._installSlim(pkg));
 	}
 
 	/**
@@ -659,7 +661,7 @@ export class Manager extends Object {
 	 * @returns Installed list.
 	 */
 	public async installSlimMulti(pkgs: PackageLike[]) {
-		return this._exclusiveAsync(() => this._installSlimMulti(pkgs));
+		return this._exclusiveAsync(async () => this._installSlimMulti(pkgs));
 	}
 
 	/**
@@ -669,7 +671,7 @@ export class Manager extends Object {
 	 * @returns True if removed, false if nothing to remove.
 	 */
 	public async remove(pkg: PackageLike) {
-		return this._exclusiveAsync(() => this._remove(pkg));
+		return this._exclusiveAsync(async () => this._remove(pkg));
 	}
 
 	/**
@@ -679,7 +681,7 @@ export class Manager extends Object {
 	 * @returns True if package obslete, else false.
 	 */
 	public async isObsolete(pkg: string) {
-		return this._exclusiveAsync(() => this._isObsolete(pkg));
+		return this._exclusiveAsync(async () => this._isObsolete(pkg));
 	}
 
 	/**
@@ -688,7 +690,7 @@ export class Manager extends Object {
 	 * @returns A list of obsolete package names.
 	 */
 	public async obsolete() {
-		return this._exclusiveAsync(() => this._obsolete());
+		return this._exclusiveAsync(async () => this._obsolete());
 	}
 
 	/**
@@ -697,7 +699,7 @@ export class Manager extends Object {
 	 * @returns Lists of removed packages.
 	 */
 	public async cleanup() {
-		return this._exclusiveAsync(() => this._cleanup());
+		return this._exclusiveAsync(async () => this._cleanup());
 	}
 
 	/**
@@ -1677,7 +1679,7 @@ export class Manager extends Object {
 		const dirList = await this._packagesDirList();
 		return arrayFilterAsync(
 			dirList,
-			entry => this._isObsolete(entry)
+			async entry => this._isObsolete(entry)
 		);
 	}
 
@@ -1727,7 +1729,7 @@ export class Manager extends Object {
 		const dirList = await readDir(this.path, false);
 		return arrayFilterAsync(
 			dirList,
-			entry => this._packageMetaDirExists(entry)
+			async entry => this._packageMetaDirExists(entry)
 		);
 	}
 
