@@ -1,3 +1,5 @@
+/* eslint-env jasmine */
+
 import {
 	ensureDir as fseEnsureDir,
 	remove as fseRemove
@@ -21,7 +23,7 @@ async function sleep(ms: number) {
  * Get the error from a promise.
  *
  * @param p Promise object.
- * @return The error or undefined.
+ * @returns The error or undefined.
  */
 async function getPromiseError(p: Promise<any>) {
 	try {
@@ -30,6 +32,7 @@ async function getPromiseError(p: Promise<any>) {
 	catch (err) {
 		return err;
 	}
+	// eslint-disable-next-line no-undefined
 	return undefined;
 }
 
@@ -113,7 +116,9 @@ describe('lock', () => {
 
 			// Wait until lock fails or timeout.
 			const timeout = Date.now() + lock.stale;
+			// eslint-disable-next-line no-unmodified-loop-condition
 			while (!error && Date.now() < timeout) {
+				// eslint-disable-next-line no-await-in-loop
 				await sleep(0);
 			}
 

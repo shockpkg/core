@@ -14,7 +14,6 @@ import {
  * @param path The path to the packages file.
  */
 export class Packages extends Object {
-
 	/**
 	 * Packages data.
 	 */
@@ -64,6 +63,8 @@ export class Packages extends Object {
 
 	/**
 	 * Get path of the packages file.
+	 *
+	 * @returns The path.
 	 */
 	public get path() {
 		return this._path;
@@ -71,6 +72,8 @@ export class Packages extends Object {
 
 	/**
 	 * Get if packages loaded.
+	 *
+	 * @returns Is loaded.
 	 */
 	public get loaded() {
 		return !!this._packagesList;
@@ -80,7 +83,7 @@ export class Packages extends Object {
 	 * Update packages.
 	 *
 	 * @param data Encoded data.
-	 * @return Update report.
+	 * @returns Update report.
 	 */
 	public update(data: string) {
 		// Map out current list if any.
@@ -149,6 +152,8 @@ export class Packages extends Object {
 
 	/**
 	 * Check if the file path exists.
+	 *
+	 * @returns Does exist.
 	 */
 	public async exists() {
 		return fse.pathExists(this.path);
@@ -176,6 +181,8 @@ export class Packages extends Object {
 
 	/**
 	 * Read the file path if the file exists.
+	 *
+	 * @returns Did exist.
 	 */
 	public async readIfExists() {
 		if (await this.exists()) {
@@ -203,7 +210,7 @@ export class Packages extends Object {
 	 * Check if package is in this collection.
 	 *
 	 * @param pkg Package instance.
-	 * @return If the package instance is present.
+	 * @returns If the package instance is present.
 	 */
 	public has(pkg: Package) {
 		return this._packages.has(pkg);
@@ -224,7 +231,7 @@ export class Packages extends Object {
 	 * Get package by the unique name.
 	 *
 	 * @param name Package name.
-	 * @return The package or null.
+	 * @returns The package or null.
 	 */
 	public byName(name: string) {
 		return this._packagesByName.get(name) || null;
@@ -233,8 +240,8 @@ export class Packages extends Object {
 	/**
 	 * Get package by the sha256 hash.
 	 *
-	 * @param name Package sha256.
-	 * @return The package or null.
+	 * @param sha256 Package sha256.
+	 * @returns The package or null.
 	 */
 	public bySha256(sha256: string) {
 		return this._packagesBySha256.get(sha256) || null;
@@ -243,8 +250,8 @@ export class Packages extends Object {
 	/**
 	 * Get package by the unique value.
 	 *
-	 * @param name Package unique.
-	 * @return The package or null.
+	 * @param unique Package unique.
+	 * @returns The package or null.
 	 */
 	public byUnique(unique: string) {
 		return this._packagesByUnique.get(unique) || null;
@@ -254,7 +261,7 @@ export class Packages extends Object {
 	 * Create a package instance.
 	 *
 	 * @param info Package info.
-	 * @return Package instance.
+	 * @returns Package instance.
 	 */
 	protected _createPackage(info: IPackagesListPackage) {
 		return new Package(info);
@@ -263,7 +270,7 @@ export class Packages extends Object {
 	/**
 	 * Set the packages list.
 	 *
-	 * @param packages Parsed list.
+	 * @param packagesList Parsed list.
 	 */
 	protected _setPackagesList(packagesList: IPackagesList) {
 		this._validateFormat(packagesList.format);
@@ -311,7 +318,7 @@ export class Packages extends Object {
 	 * Parse the packages list.
 	 *
 	 * @param packages Packages list.
-	 * @return Parsed list.
+	 * @returns Parsed list.
 	 */
 	protected _parsePackages(packages: IPackagesListPackage[]) {
 		return packages.map(info => this._createPackage(info));
@@ -320,14 +327,15 @@ export class Packages extends Object {
 	/**
 	 * List all packages deep.
 	 *
-	 * @param packages A list of packages
-	 * @return A set of all packages and their children.
+	 * @param packages A list of packages.
+	 * @returns A set of all packages and their children.
 	 */
 	protected _listPackages(packages: Package[]) {
 		const r = new Set<Package>();
 		const itter = [...packages];
 
 		// tslint:disable-next-line: no-constant-condition
+		// eslint-disable-next-line no-constant-condition
 		while (true) {
 			const entry = itter.shift();
 			if (!entry) {
@@ -347,13 +355,13 @@ export class Packages extends Object {
 	 * Throws on any duplicates.
 	 *
 	 * @param packages Packages list.
-	 * @return Map from package name to package.
+	 * @returns Map from package name to package.
 	 */
 	protected _packagesMapName(packages: Set<Package>) {
 		const r = new Map<string, Package>();
 
 		for (const entry of packages) {
-			const name = entry.name;
+			const {name} = entry;
 			if (r.has(name)) {
 				throw new Error(`Duplicate package name: ${name}`);
 			}
@@ -368,13 +376,13 @@ export class Packages extends Object {
 	 * Throws on any duplicates.
 	 *
 	 * @param packages Packages list.
-	 * @return Map from package sha256 to package.
+	 * @returns Map from package sha256 to package.
 	 */
 	protected _packagesMapSha256(packages: Set<Package>) {
 		const r = new Map<string, Package>();
 
 		for (const entry of packages) {
-			const sha256 = entry.sha256;
+			const {sha256} = entry;
 			if (r.has(sha256)) {
 				throw new Error(`Duplicate package sha256: ${sha256}`);
 			}
@@ -389,7 +397,7 @@ export class Packages extends Object {
 	 * Throws on any duplicates.
 	 *
 	 * @param packages Packages list.
-	 * @return Map from package unique to package.
+	 * @returns Map from package unique to package.
 	 */
 	protected _packagesMapUnique(packages: Set<Package>) {
 		const r = new Map<string, Package>();
@@ -413,7 +421,7 @@ export class Packages extends Object {
 	 * Parse and cast the encoded data.
 	 *
 	 * @param data Encoded data.
-	 * @return Parsed and cast data.
+	 * @returns Parsed and cast data.
 	 */
 	protected _parseData(data: string) {
 		const parsed = JSON.parse(data);
@@ -424,7 +432,7 @@ export class Packages extends Object {
 	 * Cast the parsed data.
 	 *
 	 * @param packages Parsed data.
-	 * @return Cast data.
+	 * @returns Cast data.
 	 */
 	protected _castData(packages: any) {
 		if (

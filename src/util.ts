@@ -1,7 +1,8 @@
 import {createHash as cryptoCreateHash} from 'crypto';
 import {EventEmitter} from 'events';
-import fse from 'fs-extra';
 import {Readable} from 'stream';
+
+import fse from 'fs-extra';
 
 import {
 	HashEncoding,
@@ -17,7 +18,7 @@ import {
  *
  * @param list The array to filter.
  * @param filter Filter function.
- * @return Filtered array.
+ * @returns Filtered array.
  */
 export async function arrayFilterAsync<T>(
 	list: T[],
@@ -25,6 +26,7 @@ export async function arrayFilterAsync<T>(
 ) {
 	const r: T[] = [];
 	for (const entry of list) {
+		// eslint-disable-next-line no-await-in-loop
 		if (await filter(entry)) {
 			r.push(entry);
 		}
@@ -36,8 +38,8 @@ export async function arrayFilterAsync<T>(
  * Like array map method, but with asyncronous callback.
  *
  * @param list The array to map.
- * @param filter Map function.
- * @return Mapped array.
+ * @param map Map function.
+ * @returns Mapped array.
  */
 export async function arrayMapAsync<T, U>(
 	list: T[],
@@ -45,6 +47,7 @@ export async function arrayMapAsync<T, U>(
 ) {
 	const r: U[] = [];
 	for (const entry of list) {
+		// eslint-disable-next-line no-await-in-loop
 		r.push(await map(entry));
 	}
 	return r;
@@ -79,7 +82,7 @@ export async function streamEndError(obj: EventEmitter, end: string) {
  *
  * @param p Promise object.
  * @param d Default value.
- * @return Resulting value.
+ * @returns Resulting value.
  */
 export async function promiseCatch<T, U>(p: Promise<T>, d: U) {
 	let r: T | U = d;
@@ -96,7 +99,7 @@ export async function promiseCatch<T, U>(p: Promise<T>, d: U) {
  * Promise for lstating a path, null on error.
  *
  * @param path File path.
- * @return Stat object or null.
+ * @returns Stat object or null.
  */
 export async function lstatExists(path: string) {
 	return promiseCatch(fse.lstat(path), null);
@@ -107,13 +110,14 @@ export async function lstatExists(path: string) {
  *
  * @param path Path to the directory to list.
  * @param dotfile Include dot files in the list or not.
- * @return Directory list, sorted order.
+ * @returns Directory list, sorted order.
  */
 export async function readDir(path: string, dotfile = true) {
 	const list = await fse.readdir(path);
 	const r: string[] = [];
 	for (const entry of list) {
 		// Skip any dot files.
+		// eslint-disable-next-line @typescript-eslint/prefer-string-starts-ends-with
 		if (!dotfile && entry.charAt(0) === '.') {
 			continue;
 		}
@@ -128,8 +132,8 @@ export async function readDir(path: string, dotfile = true) {
  *
  * @param path File path.
  * @param algorithm Hash algorithm.
- * @param digest Digest encoding.
- * @return Hash digest.
+ * @param encoding Digest encoding.
+ * @returns Hash digest.
  */
 export async function hashFile(
 	path: string,
@@ -151,7 +155,7 @@ export async function hashFile(
  *
  * @param hash Hash value.
  * @param encoding Hash encoding.
- * @return Normalized hash.
+ * @returns Normalized hash.
  */
 export function hashNormalize(hash: string, encoding: HashEncoding) {
 	return encoding === 'hex' ? hash.toLowerCase() : hash;
@@ -239,7 +243,7 @@ export async function fileSizeVerify(path: string, size: number) {
  *
  * @param list The array to sort.
  * @param deps Get the list of dependencies for each entry.
- * @return Sorted array.
+ * @returns Sorted array.
  */
 export function dependSort<T>(list: T[], deps: (entry: T) => T[]) {
 	const m = new Map<T, Set<T>>();

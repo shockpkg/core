@@ -1,6 +1,8 @@
+/* eslint-disable max-classes-per-file */
 // tslint:disable max-classes-per-file
 
 import {promisify as utilPromisify} from 'util';
+
 import yauzl from 'yauzl';
 
 import {property} from './decorators';
@@ -21,15 +23,14 @@ const openOpts = {lazyEntries: true};
  * @param streamer ZipStreamer function.
  */
 class StreamerRAR extends yauzl.RandomAccessReader {
-
 	/**
 	 * Streamer instance.
 	 */
-	private readonly _streamer: ZipStreamer;
+	private readonly __streamer: ZipStreamer;
 
 	constructor(streamer: ZipStreamer) {
 		super();
-		this._streamer = streamer;
+		this.__streamer = streamer;
 	}
 
 	/**
@@ -37,10 +38,11 @@ class StreamerRAR extends yauzl.RandomAccessReader {
 	 *
 	 * @param start Range start.
 	 * @param end Range end.
-	 * @return Readable stream.
+	 * @returns Readable stream.
 	 */
+	// eslint-disable-next-line @typescript-eslint/member-naming
 	public _readStreamForRange(start: number, end: number) {
-		return this._streamer(start, end);
+		return this.__streamer(start, end);
 	}
 }
 
@@ -105,7 +107,7 @@ export class Zip extends Object {
 			zipfile.on('entry', async entry => {
 				const path = entry.fileName.replace(/\\/g, '/');
 				const dir = path.endsWith('/');
-				const crc32 = entry.crc32;
+				const {crc32} = entry;
 				const sizeC = entry.compressedSize;
 				const sizeD = entry.uncompressedSize;
 				const stream = async () => {
@@ -136,6 +138,7 @@ export class Zip extends Object {
 				}
 				else {
 					next(null);
+					return;
 				}
 			});
 			zipfile.on('close', () => {

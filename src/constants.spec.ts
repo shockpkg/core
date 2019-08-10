@@ -1,3 +1,5 @@
+/* eslint-env jasmine */
+
 import {
 	parse as urlParse
 } from 'url';

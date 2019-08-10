@@ -1,10 +1,17 @@
+/* eslint-env jasmine */
+/* eslint-disable max-nested-callbacks */
+/* eslint-disable max-classes-per-file */
+/* eslint-disable jsdoc/require-jsdoc */
+/* eslint-disable import/no-extraneous-dependencies */
+
 // tslint:disable:max-classes-per-file
 
 import {createHash as cryptoCreateHash} from 'crypto';
-import express from 'express';
-import fse from 'fs-extra';
 import {Server} from 'http';
 import {parse as urlParse} from 'url';
+
+import express from 'express';
+import fse from 'fs-extra';
 
 import {Manager} from './manager';
 import {Package} from './package';
@@ -14,6 +21,10 @@ import {
 	IPackageStreamProgress
 } from './types';
 import {streamEndError} from './util';
+
+const strReverse = (s: string) => s.split('')
+	.reverse()
+	.join('');
 
 const tmpPath = './spec/tmp';
 
@@ -115,7 +126,7 @@ const packageSingleMetaBad = {
 	name: packageSingle.name,
 	file: packageSingle.file,
 	size: packageSingle.size + 1,
-	sha256: packageSingle.sha256.split('').reverse().join(''),
+	sha256: strReverse(packageSingle.sha256),
 	source: `https://example.com${packageSingle.source}`
 };
 
@@ -123,11 +134,16 @@ const packageNested1MetaBad = {
 	name: packageNested1.name,
 	file: packageNested1.file,
 	size: packageNested1.size + 1,
-	sha256: packageNested1.sha256.split('').reverse().join(''),
+	sha256: strReverse(packageNested1.sha256),
 	source: packageNested1.source
 };
 
+function packagesCopy() {
+	return JSON.parse(JSON.stringify(packages)) as typeof packages;
+}
+
 interface IPackageEventLog {
+
 	/**
 	 * Which event.
 	 */
@@ -143,13 +159,12 @@ interface IPackageEventLog {
  * Manager subclass with some extra methods for testing.
  */
 class ManagerTest extends Manager {
-
 	/**
 	 * Test that code throws during _exclusiveAsync.
 	 *
 	 * @param func Test function.
 	 */
-	public async ___testExclusiveAsync(func: (self: this) => Promise<any>) {
+	public async $testExclusiveAsync(func: (self: this) => Promise<any>) {
 		const err = await this._exclusiveAsync(async () => {
 			try {
 				await func.call(this, this);
@@ -168,7 +183,10 @@ class ManagerTest extends Manager {
 	 *
 	 * @param func Test function.
 	 */
-	public ___testExclusiveSync(func: (self: this) => any) {
+	public $testExclusiveSync(func: (self: this) => any) {
+		// Some bug in the linter needs this here:
+		/* eslint-disable @typescript-eslint/promise-function-async */
+		// eslint-disable-next-line no-sync
 		const err = this._exclusiveSync(() => {
 			try {
 				func.call(this, this);
@@ -187,7 +205,7 @@ class ManagerTest extends Manager {
  * Get the error from a promise.
  *
  * @param p Promise object.
- * @return The error or undefined.
+ * @returns The error or undefined.
  */
 async function promiseError(p: Promise<any>) {
 	try {
@@ -203,7 +221,7 @@ async function promiseError(p: Promise<any>) {
  * Create an HTTP server on a random port for testing.
  *
  * @param packages Packages list to use.
- * @return Server details.
+ * @returns Server details.
  */
 async function createServer(packages: string) {
 	const protocol = 'http:';
@@ -211,6 +229,7 @@ async function createServer(packages: string) {
 	let errors = false;
 
 	const app = express();
+	let host = '';
 
 	const server = await new Promise<Server>((resolve, reject) => {
 		let inited = false;
@@ -218,13 +237,15 @@ async function createServer(packages: string) {
 			errors = true;
 			if (inited) {
 				// tslint:disable-next-line: no-console
+				// eslint-disable-next-line no-console
 				console.error(err);
 				return;
 			}
 			inited = true;
 			reject(err);
 		});
-		app.get('/packages.json', async (req, res) => {
+		app.get('/packages.json', (req, res) => {
+			// eslint-disable-next-line no-use-before-define
 			const reqHost = req.headers.host || host;
 			const data = JSON.parse(packages);
 			for (const pkg of (data.packages || [])) {
@@ -243,13 +264,14 @@ async function createServer(packages: string) {
 	});
 
 	const address = server.address();
+	// eslint-disable-next-line no-nested-ternary
 	const port = typeof address === 'string' ?
 		Number(urlParse(address).port) :
 		(address ? address.port : null);
 	if (!port) {
 		throw new Error(`Failed to get port from ${address}`);
 	}
-	const host = `${hostname}:${port}`;
+	host = `${hostname}:${port}`;
 	const url = `${protocol}//${host}`;
 
 	const close = async () => {
@@ -279,7 +301,7 @@ async function createServer(packages: string) {
  * SHA256 hash a buffer.
  *
  * @param buffer The buffer.
- * @return SHA256 hash.
+ * @returns SHA256 hash.
  */
 function sha256Buffer(buffer: Buffer) {
 	const hasher = cryptoCreateHash('sha256');
@@ -318,7 +340,7 @@ async function managerWritePackageMeta(
  *
  * @param manager Manager instance.
  * @param path File path.
- * @return True if file, false if anything else or not exist.
+ * @returns True if file, false if anything else or not exist.
  */
 async function managerFileExists(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
@@ -336,7 +358,7 @@ async function managerFileExists(manager: ManagerTest, path: string[]) {
  *
  * @param manager Manager instance.
  * @param path File path.
- * @return True if diectory, false if anything else or not exist.
+ * @returns True if diectory, false if anything else or not exist.
  */
 async function managerDirExists(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
@@ -354,7 +376,7 @@ async function managerDirExists(manager: ManagerTest, path: string[]) {
  *
  * @param manager Manager instance.
  * @param path File path.
- * @return SHA256 hash, hex encoded, lower case.
+ * @returns SHA256 hash, hex encoded, lower case.
  */
 async function managerFileSha256(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
@@ -370,7 +392,7 @@ async function managerFileSha256(manager: ManagerTest, path: string[]) {
  *
  * @param packages Packages data or null.
  * @param func Test function.
- * @return Spec handler.
+ * @returns Spec handler.
  */
 function managerTest(
 	packages: string | null,
@@ -387,7 +409,6 @@ function managerTest(
 		 * Manager subclass for testing against local test server.
 		 */
 		class ManagerTestLocal extends ManagerTest {
-
 			/**
 			 * Overridden package URL for local server.
 			 */
@@ -410,7 +431,7 @@ function managerTest(
  *
  * @param packages Packages data or null.
  * @param func Test function.
- * @return Spec handler.
+ * @returns Spec handler.
  */
 function managerTestOne(
 	packages: string | null,
@@ -426,7 +447,7 @@ function managerTestOne(
  *
  * @param packages Packages data or null.
  * @param func Test function.
- * @return Spec handler.
+ * @returns Spec handler.
  */
 function managerTestOneWith(
 	packages: string | null,
@@ -443,7 +464,7 @@ function managerTestOneWith(
  * Run not active test, async.
  *
  * @param func Test function.
- * @return Spec handler.
+ * @returns Spec handler.
  */
 function managerTestNotActiveAsync(
 	func: (manager: ManagerTest) => Promise<any>
@@ -459,11 +480,12 @@ function managerTestNotActiveAsync(
  * Run not active test, sync.
  *
  * @param func Test function.
- * @return Spec handler.
+ * @returns Spec handler.
  */
 function managerTestNotActiveSync(
 	func: (manager: ManagerTest) => any
 ) {
+	// eslint-disable-next-line @typescript-eslint/require-await
 	return managerTestOne(null, async manager => {
 		let err: any = null;
 		try {
@@ -481,7 +503,7 @@ function managerTestNotActiveSync(
  * Run not loaded test, async.
  *
  * @param func Test function.
- * @return Spec handler.
+ * @returns Spec handler.
  */
 function managerTestNotLoadedAsync(
 	func: (manager: ManagerTest) => Promise<any>
@@ -497,11 +519,12 @@ function managerTestNotLoadedAsync(
  * Run not loaded test, sync.
  *
  * @param func Test function.
- * @return Spec handler.
+ * @returns Spec handler.
  */
 function managerTestNotLoadedSync(
 	func: (manager: ManagerTest) => any
 ) {
+	// eslint-disable-next-line @typescript-eslint/require-await
 	return managerTestOneWith(null, async manager => {
 		let err: any = null;
 		try {
@@ -519,13 +542,13 @@ function managerTestNotLoadedSync(
  * Run exclusive async test.
  *
  * @param func Test function.
- * @return Spec handler.
+ * @returns Spec handler.
  */
 function managerTestExclusiveAsync(
 	func: (manager: ManagerTest) => Promise<any>
 ) {
 	return managerTestOneWith(null, async manager => {
-		await manager.___testExclusiveAsync(func);
+		await manager.$testExclusiveAsync(func);
 	});
 }
 
@@ -533,13 +556,15 @@ function managerTestExclusiveAsync(
  * Run exclusive sync test.
  *
  * @param func Test function.
- * @return Spec handler.
+ * @returns Spec handler.
  */
 function managerTestExclusiveSync(
 	func: (manager: ManagerTest) => any
 ) {
+	// eslint-disable-next-line @typescript-eslint/require-await
 	return managerTestOneWith(null, async manager => {
-		manager.___testExclusiveSync(func);
+		// eslint-disable-next-line no-sync
+		manager.$testExclusiveSync(func);
 	});
 }
 
@@ -572,11 +597,14 @@ function testMethodSync(
 	func: (manager: ManagerTest) => any,
 	loaded = true
 ) {
+	// eslint-disable-next-line no-sync
 	it('exclusive', managerTestExclusiveSync(func));
 
+	// eslint-disable-next-line no-sync
 	it('not active', managerTestNotActiveSync(func));
 
 	if (loaded) {
+		// eslint-disable-next-line no-sync
 		it('not loaded', managerTestNotLoadedSync(func));
 	}
 }
@@ -587,7 +615,7 @@ function testMethodSync(
  * @param manager Manager instance.
  * @param events Events ordered.
  * @param eventsNoStream Events ordered, excluding stream events.
- * @return Reset function to reset the lists.
+ * @returns Reset function to reset the lists.
  */
 function eventsLogger(
 	manager: ManagerTest,
@@ -795,7 +823,7 @@ describe('manager', () => {
 			it('init exclusive', managerTestOne(
 				JSON.stringify(packages),
 				async manager => {
-					await manager.___testExclusiveAsync(async () => {
+					await manager.$testExclusiveAsync(async () => {
 						await manager.init();
 					});
 				}
@@ -805,7 +833,7 @@ describe('manager', () => {
 				JSON.stringify(packages),
 				async manager => {
 					await manager.init();
-					await manager.___testExclusiveAsync(async () => {
+					await manager.$testExclusiveAsync(async () => {
 						await manager.destroy();
 					});
 					await manager.destroy();
@@ -836,6 +864,7 @@ describe('manager', () => {
 		describe('with', () => {
 			it('active', managerTestOne(null, async manager => {
 				expect(manager.active).toBe(false);
+				// eslint-disable-next-line @typescript-eslint/require-await
 				await manager.with(async manager => {
 					expect(manager.active).toBe(true);
 				});
@@ -846,7 +875,7 @@ describe('manager', () => {
 				expect(manager.active).toBe(false);
 				const thrown = new Error('With throws');
 				const err = await promiseError(manager.with(
-					async manager => {
+					manager => {
 						expect(manager.active).toBe(true);
 						throw thrown;
 					}
@@ -903,6 +932,7 @@ describe('manager', () => {
 					});
 
 					const manager2 = new ManagerTest(tmpPath);
+					// eslint-disable-next-line @typescript-eslint/require-await
 					await manager2.with(async manager => {
 						expect(manager.loaded).toBe(true);
 					});
@@ -910,7 +940,6 @@ describe('manager', () => {
 			));
 
 			describe('return', () => {
-				const packagesCopy = () => JSON.parse(JSON.stringify(packages));
 				const writePackage = async (manager: Manager, obj: any) => {
 					const jsonFile = manager.pathToMeta(manager.packagesFile);
 					await fse.outputJson(jsonFile, obj, {spaces: '\t'});
@@ -965,7 +994,7 @@ describe('manager', () => {
 					JSON.stringify(packages),
 					async manager => {
 						const mod = packagesCopy();
-						const pkg = mod.packages[0];
+						const [pkg] = mod.packages;
 						pkg.file += '.old';
 						await writePackage(manager, mod);
 
@@ -984,7 +1013,7 @@ describe('manager', () => {
 					JSON.stringify(packages),
 					async manager => {
 						const mod = packagesCopy();
-						const pkg = mod.packages[0];
+						const [pkg] = mod.packages;
 						pkg.size++;
 						await writePackage(manager, mod);
 
@@ -1003,8 +1032,8 @@ describe('manager', () => {
 					JSON.stringify(packages),
 					async manager => {
 						const mod = packagesCopy();
-						const pkg = mod.packages[0];
-						pkg.sha256 = pkg.sha256.split('').reverse().join();
+						const [pkg] = mod.packages;
+						pkg.sha256 = strReverse(pkg.sha256);
 						await writePackage(manager, mod);
 
 						const report = await manager
@@ -1022,7 +1051,7 @@ describe('manager', () => {
 					JSON.stringify(packages),
 					async manager => {
 						const mod = packagesCopy();
-						const pkg = mod.packages[0];
+						const [pkg] = mod.packages;
 						pkg.source += '.old';
 						await writePackage(manager, mod);
 
@@ -1063,6 +1092,7 @@ describe('manager', () => {
 		});
 
 		describe('packageByName', () => {
+			// eslint-disable-next-line no-sync
 			testMethodSync(
 				manager => manager.packageByName(packageSingle.name)
 			);
@@ -1083,6 +1113,7 @@ describe('manager', () => {
 		});
 
 		describe('packageBySha256', () => {
+			// eslint-disable-next-line no-sync
 			testMethodSync(
 				manager => manager.packageBySha256(packageSingle.sha256)
 			);
@@ -1104,6 +1135,7 @@ describe('manager', () => {
 		});
 
 		describe('packageByUnique', () => {
+			// eslint-disable-next-line no-sync
 			testMethodSync(
 				manager => manager.packageByUnique(packageSingle.name)
 			);
@@ -1133,6 +1165,7 @@ describe('manager', () => {
 		describe('packageIsMember', () => {
 			const packageSingleFake = new Package(packageSingle);
 
+			// eslint-disable-next-line no-sync
 			testMethodSync(
 				manager => manager.packageIsMember(packageSingleFake)
 			);
@@ -1463,6 +1496,7 @@ describe('manager', () => {
 		});
 
 		describe('packagesDependOrdered', () => {
+			// eslint-disable-next-line no-sync
 			testMethodSync(
 				manager => manager.packagesDependOrdered([])
 			);

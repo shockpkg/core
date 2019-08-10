@@ -16,7 +16,6 @@ import {
  * @param defaults Default options.
  */
 export class Request extends Object {
-
 	/**
 	 * Request instance.
 	 */
@@ -34,18 +33,21 @@ export class Request extends Object {
 	 *
 	 * @param options Request options.
 	 * @param cb An optional callback function.
-	 * @return Stream object.
+	 * @returns Stream object.
 	 */
-	public stream(options: IRequestOptions, cb?: IRequestCallback) {
+	public stream(
+		options: IRequestOptions,
+		cb?: IRequestCallback
+	): IRequestStream {
 		const req = this._request;
-		return (cb ? req(options, cb) : req(options)) as IRequestStream;
+		return cb ? req(options, cb) : req(options);
 	}
 
 	/**
 	 * Make request with promise.
 	 *
 	 * @param options Request options.
-	 * @return Stream response and body.
+	 * @returns Stream response and body.
 	 */
 	public async promise(options: IRequestOptions) {
 		return new Promise<IRequestPromiseValue>((resolve, reject) => {
@@ -67,7 +69,7 @@ export class Request extends Object {
 	 * Make a request object.
 	 *
 	 * @param defaults Request defaults.
-	 * @return Request instance.
+	 * @returns Request instance.
 	 */
 	protected _createRequest(defaults: IRequestDefaults = {}) {
 		return request.defaults(defaults);

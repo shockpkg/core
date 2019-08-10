@@ -7,7 +7,6 @@ import {IPackagesListPackage} from './types';
  * @param parent Package parent.
  */
 export class Package extends Object {
-
 	/**
 	 * Package name.
 	 */
@@ -59,7 +58,7 @@ export class Package extends Object {
 	 * Create child packages list.
 	 *
 	 * @param infos Package infos.
-	 * @return Package instance.
+	 * @returns Package instance.
 	 */
 	protected _createPackages(infos: IPackagesListPackage[] = []) {
 		return infos.map(info => this._createPackage(info));
@@ -69,8 +68,7 @@ export class Package extends Object {
 	 * Create a child package.
 	 *
 	 * @param info Package info.
-	 * @param parent Package parent.
-	 * @return Package instance.
+	 * @returns Package instance.
 	 */
 	protected _createPackage(info: IPackagesListPackage) {
 		const Constructor = this.constructor as typeof Package;

@@ -9,7 +9,6 @@ import {Dispatcher} from './dispatcher';
  * @param path The path to lock.
  */
 export class Lock extends Object {
-
 	/**
 	 * Duration at which the lock is considered stale in milliseconds.
 	 * Minimum value of 2000.
@@ -34,6 +33,7 @@ export class Lock extends Object {
 	/**
 	 * Compromised lock events.
 	 */
+	// eslint-disable-next-line no-invalid-this
 	public readonly eventCompromised = new Dispatcher<Error>(this);
 
 	/**
@@ -62,6 +62,8 @@ export class Lock extends Object {
 
 	/**
 	 * The path to lock.
+	 *
+	 * @returns The path.
 	 */
 	public get path() {
 		return this._path;
@@ -70,6 +72,8 @@ export class Lock extends Object {
 	/**
 	 * Boolean for if lock is held.
 	 * The lock could be compromised and not yet detected however.
+	 *
+	 * @returns Is held.
 	 */
 	public get held() {
 		return !!this._release;
@@ -78,6 +82,8 @@ export class Lock extends Object {
 	/**
 	 * Boolean for if the lock hase been compromised since aquire.
 	 * The lock could be compromised and not yet detected however.
+	 *
+	 * @returns Is compromised.
 	 */
 	public get compromised() {
 		return this._compromised;
@@ -87,7 +93,7 @@ export class Lock extends Object {
 	 * Check if path is already locked by any instance including this one.
 	 * Does not verify the lock file belongs to this instance.
 	 *
-	 * @return True if locked, false if not.
+	 * @returns True if locked, false if not.
 	 */
 	public async check() {
 		// Will throw if not exist when using realpath, so catch.

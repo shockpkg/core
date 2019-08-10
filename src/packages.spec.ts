@@ -1,3 +1,6 @@
+/* eslint-env jasmine */
+/* eslint-disable max-nested-callbacks */
+
 import fse from 'fs-extra';
 
 import {Packages} from './packages';
@@ -7,7 +10,7 @@ import {Packages} from './packages';
  *
  * @param s The string to repeat.
  * @param n Number of repeat times.
- * @return Repeated string.
+ * @returns Repeated string.
  */
 function stringRepeat(s: string, n: number) {
 	return (new Array(n + 1)).join(s);
@@ -17,7 +20,7 @@ function stringRepeat(s: string, n: number) {
  * Create dummy sha256 hash.
  *
  * @param prefix Hash prefix.
- * @return Dummy hash.
+ * @returns Dummy hash.
  */
 function dummySha256(prefix: string) {
 	return prefix + stringRepeat('0', 64 - prefix.length);
@@ -150,7 +153,7 @@ const dummyPackagesFormatMinorOver = {
  * Get the error from a promise.
  *
  * @param p Promise object.
- * @return The error or undefined.
+ * @returns The error or undefined.
  */
 async function getPromiseError(p: Promise<any>) {
 	try {
@@ -159,6 +162,7 @@ async function getPromiseError(p: Promise<any>) {
 	catch (err) {
 		return err;
 	}
+	// eslint-disable-next-line no-undefined
 	return undefined;
 }
 
@@ -174,7 +178,7 @@ describe('packages', () => {
 		});
 
 		describe('update', () => {
-			it('valid', async () => {
+			it('valid', () => {
 				const packages = new Packages(tmpPathPackages);
 
 				expect(packages.loaded).toBe(false);
@@ -184,7 +188,7 @@ describe('packages', () => {
 				expect(packages.loaded).toBe(true);
 			});
 
-			it('duplicate name', async () => {
+			it('duplicate name', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesDuplicateName);
 
@@ -195,7 +199,7 @@ describe('packages', () => {
 				expect(packages.loaded).toBe(false);
 			});
 
-			it('duplicate hash', async () => {
+			it('duplicate hash', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesDuplicateHash);
 
@@ -206,7 +210,7 @@ describe('packages', () => {
 				expect(packages.loaded).toBe(false);
 			});
 
-			it('format major under', async () => {
+			it('format major under', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesFormatMajorUnder);
 
@@ -217,7 +221,7 @@ describe('packages', () => {
 				expect(packages.loaded).toBe(false);
 			});
 
-			it('format major over', async () => {
+			it('format major over', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesFormatMajorOver);
 
@@ -228,7 +232,7 @@ describe('packages', () => {
 				expect(packages.loaded).toBe(false);
 			});
 
-			it('format minor under', async () => {
+			it('format minor under', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesFormatMinorUnder);
 
@@ -239,7 +243,7 @@ describe('packages', () => {
 				expect(packages.loaded).toBe(false);
 			});
 
-			it('format minor over', async () => {
+			it('format minor over', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesFormatMinorOver);
 
@@ -326,7 +330,9 @@ describe('packages', () => {
 					}
 
 					const parentNameExpected = entry.name
-						.split('-').slice(0, -1).join('-');
+						.split('-')
+						.slice(0, -1)
+						.join('-');
 					if (entry.parent) {
 						expect(entry.parent.name).toBe(parentNameExpected);
 					}

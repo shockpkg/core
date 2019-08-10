@@ -6,7 +6,6 @@ import {property} from './decorators';
  * @param context Context object.
  */
 export class Dispatcher<T> extends Object {
-
 	/**
 	 * Event context.
 	 */
@@ -46,8 +45,8 @@ export class Dispatcher<T> extends Object {
 	/**
 	 * Trigger, sync.
 	 *
-	 * @param handler Event data.
-	 * @return Handler count.
+	 * @param event Event data.
+	 * @returns Handler count.
 	 */
 	public triggerSync(event: T) {
 		const self = this._context;
@@ -62,13 +61,14 @@ export class Dispatcher<T> extends Object {
 	/**
 	 * Trigger, async.
 	 *
-	 * @param handler Event data.
-	 * @return Handler count.
+	 * @param event Event data.
+	 * @returns Handler count.
 	 */
 	public async triggerAsync(event: T) {
 		const self = this._context;
 		let i = 0;
 		for (const cb of this._handlers) {
+			// eslint-disable-next-line no-await-in-loop
 			await cb.call(self, event);
 			i++;
 		}
@@ -78,10 +78,10 @@ export class Dispatcher<T> extends Object {
 	/**
 	 * Trigger or throw, sync.
 	 *
-	 * @param handler Event data.
-	 * @return Handler count.
+	 * @param event Event data.
 	 */
 	public triggerOrThrowSync(event: T) {
+		// eslint-disable-next-line no-sync
 		if (!this.triggerSync(event)) {
 			throw event;
 		}
@@ -90,8 +90,8 @@ export class Dispatcher<T> extends Object {
 	/**
 	 * Trigger or throw, sync.
 	 *
-	 * @param handler Event data.
-	 * @return Handler count.
+	 * @param event Event data.
+	 * @returns Handler count.
 	 */
 	public async triggerOrThrowAsync(event: T) {
 		if (!await this.triggerAsync(event)) {

@@ -1,5 +1,6 @@
-import request from 'request';
 import {Readable} from 'stream';
+
+import request from 'request';
 
 import {Package} from './package';
 
@@ -10,6 +11,7 @@ export type OnData = (data: string | Buffer) => any;
 export type OnResponse = (response: request.Response) => any;
 
 export interface IPackageInstallBefore {
+
 	/**
 	 * Package instance.
 	 */
@@ -21,6 +23,7 @@ export interface IPackageInstallBefore {
 	method: string;
 }
 export interface IPackageInstallAfter {
+
 	/**
 	 * Package instance.
 	 */
@@ -32,6 +35,7 @@ export interface IPackageInstallAfter {
 	method: string;
 }
 export interface IPackageInstallCurrent {
+
 	/**
 	 * Package instance.
 	 */
@@ -44,18 +48,21 @@ export interface IPackageInstallCurrent {
 }
 
 export interface IPackageDownloadBefore {
+
 	/**
 	 * Package instance.
 	 */
 	package: Package;
 }
 export interface IPackageDownloadAfter {
+
 	/**
 	 * Package instance.
 	 */
 	package: Package;
 }
 export interface IPackageDownloadProgress {
+
 	/**
 	 * Package instance.
 	 */
@@ -73,18 +80,21 @@ export interface IPackageDownloadProgress {
 }
 
 export interface IPackageStreamBefore {
+
 	/**
 	 * Package instance.
 	 */
 	package: Package;
 }
 export interface IPackageStreamAfter {
+
 	/**
 	 * Package instance.
 	 */
 	package: Package;
 }
 export interface IPackageStreamProgress {
+
 	/**
 	 * Package instance.
 	 */
@@ -102,18 +112,21 @@ export interface IPackageStreamProgress {
 }
 
 export interface IPackageExtractBefore {
+
 	/**
 	 * Package instance.
 	 */
 	package: Package;
 }
 export interface IPackageExtractAfter {
+
 	/**
 	 * Package instance.
 	 */
 	package: Package;
 }
 export interface IPackageExtractProgress {
+
 	/**
 	 * Package instance.
 	 */
@@ -131,12 +144,14 @@ export interface IPackageExtractProgress {
 }
 
 export interface IPackageCleanupBefore {
+
 	/**
 	 * Package name.
 	 */
 	package: string;
 }
 export interface IPackageCleanupAfter {
+
 	/**
 	 * Package name.
 	 */
@@ -149,6 +164,7 @@ export interface IPackageCleanupAfter {
 }
 
 export interface IPackageInstalled {
+
 	/**
 	 * Package installed.
 	 */
@@ -161,6 +177,7 @@ export interface IPackageInstalled {
 }
 
 export interface IPackageRemovedObsolete {
+
 	/**
 	 * Package removed.
 	 */
@@ -173,6 +190,7 @@ export interface IPackageRemovedObsolete {
 }
 
 export interface IPackageRemovedOutdated {
+
 	/**
 	 * Package removed.
 	 */
@@ -185,6 +203,7 @@ export interface IPackageRemovedOutdated {
 }
 
 export interface IPackageUpdated {
+
 	/**
 	 * Package name.
 	 */
@@ -210,11 +229,13 @@ export type IRequestOptions =
 	(request.UrlOptions & request.CoreOptions) |
 	(request.UriOptions & request.CoreOptions);
 
+/* eslint-disable @typescript-eslint/indent */
 export type IRequestInstance = request.RequestAPI<
 	request.Request,
 	request.CoreOptions,
 	request.RequiredUriUrl
 >;
+/* eslint-enable @typescript-eslint/indent */
 
 export type IRequestDefaults = request.CoreOptions;
 
@@ -225,6 +246,7 @@ export type IRequestStream = request.Request;
 export type IRequestResponse = request.Response;
 
 export interface IRequestPromiseValue {
+
 	/**
 	 * Request stream.
 	 */
@@ -242,6 +264,7 @@ export interface IRequestPromiseValue {
 }
 
 export interface IZipItterEntry {
+
 	/**
 	 * Path.
 	 */
@@ -278,6 +301,7 @@ export type ZipItter = (info: IZipItterEntry) => Promise<boolean>;
 export type ZipStreamer = (start: number, end: number) => Readable;
 
 export interface IPackageReceipt {
+
 	/**
 	 * Package name.
 	 */
@@ -305,6 +329,7 @@ export interface IPackageReceipt {
 }
 
 export interface IPackagesListPackage {
+
 	/**
 	 * Package name.
 	 */
@@ -337,6 +362,7 @@ export interface IPackagesListPackage {
 }
 
 export interface IPackagesList {
+
 	/**
 	 * Format version.
 	 */
@@ -351,6 +377,7 @@ export interface IPackagesList {
 export type HashEncoding = 'hex' | 'base64';
 
 export interface IHash {
+
 	/**
 	 * Hash algorithm.
 	 */
