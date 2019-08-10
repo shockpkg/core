@@ -50,13 +50,17 @@ async function babelTarget(src, srcOpts, dest, modules) {
 	if (!modules) {
 		babelOptions.plugins.push([
 			'esm-resolver', {
-				extensions: [
-					[
-						['.js', '.mjs', '.jsx', '.mjsx', '.ts', '.tsx'],
-						'.mjs'
+				source: {
+					extensions: [
+						[
+							['.js', '.mjs', '.jsx', '.mjsx', '.ts', '.tsx'],
+							'.mjs'
+						]
 					]
-				],
-				extensionsSubmodule: ['.mjs', '.js']
+				},
+				submodule: {
+					extensions: ['.mjs', '.js']
+				}
 			}
 		]);
 	}
