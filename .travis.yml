@@ -1,16 +1,20 @@
 language: node_js
 
 node_js:
-  - 'v10.0.0'
-  - 'v10.16.2'
-  - 'v12.8.0'
+- 'v10.0.0'
+- 'v10.16.2'
+- 'v12.8.0'
 
 cache:
   directories:
-    - 'node_modules'
+  - 'node_modules'
 
 script:
-  - npm run clean
-  - npm run lint
-  - npm run build
-  - npm run test
+- npm run clean
+- npm run lint
+- npm run build
+- npm run test
+
+test:
+- aaaa
+- bbbb

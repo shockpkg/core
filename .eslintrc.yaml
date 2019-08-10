@@ -1,9 +1,9 @@
 parser: '@typescript-eslint/parser'
 
 plugins:
-  - 'import'
-  - 'eslint-plugin-jsdoc'
-  - '@typescript-eslint'
+- import
+- eslint-plugin-jsdoc
+- '@typescript-eslint'
 
 parserOptions:
   ecmaVersion: 9
@@ -266,13 +266,7 @@ rules:
   max-params:
   - error
   - 8
-  new-cap:
-  - error
-  - newIsCap: true
-    capIsNew: true
-    newIsCapExceptions: []
-    capIsNewExceptions: []
-    properties: true
+  new-cap: error
   new-parens: error
   newline-per-chained-call:
   - error
@@ -318,10 +312,10 @@ rules:
   - error
   - never
   padding-line-between-statements:
-    - error
-    - blankLine: "always"
-      prev: "directive"
-      next: "*"
+  - error
+  - blankLine: "always"
+    prev: "directive"
+    next: "*"
   quote-props:
   - error
   - as-needed
@@ -362,13 +356,6 @@ rules:
   spaced-comment:
   - error
   - always
-  - line:
-      exceptions: []
-      markers: []
-    block:
-      exceptions: []
-      markers:
-      - "!"
   switch-colon-spacing:
   - error
   - after: true
