@@ -15,8 +15,6 @@ yarn-debug.log*
 yarn-error.log*
 *.tgz
 
-yarn.lock
-
 /package-lock.json
 /.gitignore
 /.babelrc
@@ -25,9 +23,7 @@ yarn.lock
 /.eslintrc.yaml
 /.tern-project
 /.travis.yml
-/package-scripts.yml
 /tsconfig.json
-/tslint.yaml
 /gulpfile.babel.js
 /nodemon.json
 /spec
