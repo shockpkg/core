@@ -334,7 +334,6 @@ export class Packages extends Object {
 		const r = new Set<Package>();
 		const itter = [...packages];
 
-		// tslint:disable-next-line: no-constant-condition
 		// eslint-disable-next-line no-constant-condition
 		while (true) {
 			const entry = itter.shift();

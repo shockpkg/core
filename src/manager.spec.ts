@@ -4,8 +4,6 @@
 /* eslint-disable jsdoc/require-jsdoc */
 /* eslint-disable import/no-extraneous-dependencies */
 
-// tslint:disable:max-classes-per-file
-
 import {createHash as cryptoCreateHash} from 'crypto';
 import {Server} from 'http';
 import {parse as urlParse} from 'url';
@@ -236,7 +234,6 @@ async function createServer(packages: string) {
 		app.on('error', err => {
 			errors = true;
 			if (inited) {
-				// tslint:disable-next-line: no-console
 				// eslint-disable-next-line no-console
 				console.error(err);
 				return;

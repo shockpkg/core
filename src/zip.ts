@@ -1,5 +1,4 @@
 /* eslint-disable max-classes-per-file */
-// tslint:disable max-classes-per-file
 
 import {promisify as utilPromisify} from 'util';
 
