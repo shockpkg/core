@@ -182,8 +182,6 @@ class ManagerTest extends Manager {
 	 * @param func Test function.
 	 */
 	public $testExclusiveSync(func: (self: this) => any) {
-		// Some bug in the linter needs this here:
-		/* eslint-disable @typescript-eslint/promise-function-async */
 		// eslint-disable-next-line no-sync
 		const err = this._exclusiveSync(() => {
 			try {
@@ -313,7 +311,7 @@ function sha256Buffer(buffer: Buffer) {
  * @param dirs Directory paths.
  */
 async function managerEnsureDirs(manager: ManagerTest, dirs: string[][]) {
-	await Promise.all(dirs.map(a => fse.ensureDir(manager.pathTo(...a))));
+	await Promise.all(dirs.map(async a => fse.ensureDir(manager.pathTo(...a))));
 }
 
 /**
@@ -904,7 +902,7 @@ describe('manager', () => {
 
 		describe('update', () => {
 			testMethodAsync(
-				manager => manager.update(),
+				async manager => manager.update(),
 				false
 			);
 
@@ -952,7 +950,7 @@ describe('manager', () => {
 						await writePackage(manager, mod);
 
 						const report = await manager
-							.with(manager => manager.update());
+							.with(async manager => manager.update());
 
 						expect(report.updated).toEqual([]);
 						expect(report.added.map(p => p.name)).toEqual([
@@ -976,7 +974,7 @@ describe('manager', () => {
 						await writePackage(manager, mod);
 
 						const report = await manager
-							.with(manager => manager.update());
+							.with(async manager => manager.update());
 
 						expect(report.updated).toEqual([]);
 						expect(report.added).toEqual([]);
@@ -996,7 +994,7 @@ describe('manager', () => {
 						await writePackage(manager, mod);
 
 						const report = await manager
-							.with(manager => manager.update());
+							.with(async manager => manager.update());
 
 						expect(report.updated.map(p => p.name)).toEqual([
 							pkg.name
@@ -1015,7 +1013,7 @@ describe('manager', () => {
 						await writePackage(manager, mod);
 
 						const report = await manager
-							.with(manager => manager.update());
+							.with(async manager => manager.update());
 
 						expect(report.updated.map(p => p.name)).toEqual([
 							pkg.name
@@ -1034,7 +1032,7 @@ describe('manager', () => {
 						await writePackage(manager, mod);
 
 						const report = await manager
-							.with(manager => manager.update());
+							.with(async manager => manager.update());
 
 						expect(report.updated.map(p => p.name)).toEqual([
 							pkg.name
@@ -1053,7 +1051,7 @@ describe('manager', () => {
 						await writePackage(manager, mod);
 
 						const report = await manager
-							.with(manager => manager.update());
+							.with(async manager => manager.update());
 
 						expect(report.updated).toEqual([]);
 						expect(report.added).toEqual([]);
@@ -1189,7 +1187,7 @@ describe('manager', () => {
 
 		describe('isObsolete', () => {
 			testMethodAsync(
-				manager => manager.isObsolete(packageSingle.name)
+				async manager => manager.isObsolete(packageSingle.name)
 			);
 
 			it('return', managerTestOneWith(
@@ -1218,7 +1216,7 @@ describe('manager', () => {
 
 		describe('isInstalled', () => {
 			testMethodAsync(
-				manager => manager.isInstalled(packageSingle.name)
+				async manager => manager.isInstalled(packageSingle.name)
 			);
 
 			it('return', managerTestOneWith(
@@ -1247,7 +1245,7 @@ describe('manager', () => {
 
 		describe('isCurrent', () => {
 			testMethodAsync(
-				manager => manager.isCurrent(packageSingle.name)
+				async manager => manager.isCurrent(packageSingle.name)
 			);
 
 			it('return', managerTestOneWith(
@@ -1276,7 +1274,7 @@ describe('manager', () => {
 
 		describe('obsolete', () => {
 			testMethodAsync(
-				manager => manager.obsolete()
+				async manager => manager.obsolete()
 			);
 
 			it('return', managerTestOneWith(
@@ -1304,7 +1302,7 @@ describe('manager', () => {
 
 		describe('cleanup', () => {
 			testMethodAsync(
-				manager => manager.cleanup()
+				async manager => manager.cleanup()
 			);
 
 			it('files', managerTestOneWith(
@@ -1425,7 +1423,7 @@ describe('manager', () => {
 
 		describe('remove', () => {
 			testMethodAsync(
-				manager => manager.remove(packageSingle.name)
+				async manager => manager.remove(packageSingle.name)
 			);
 
 			it('files', managerTestOneWith(
@@ -1540,7 +1538,7 @@ describe('manager', () => {
 
 		describe('installFull', () => {
 			testMethodAsync(
-				manager => manager.installFull(packageSingle.name)
+				async manager => manager.installFull(packageSingle.name)
 			);
 
 			describe('single', () => {
@@ -1796,7 +1794,7 @@ describe('manager', () => {
 
 		describe('installSlim', () => {
 			testMethodAsync(
-				manager => manager.installSlim(packageSingle.name)
+				async manager => manager.installSlim(packageSingle.name)
 			);
 
 			describe('nested level: 0', () => {
@@ -2109,7 +2107,7 @@ describe('manager', () => {
 
 		describe('outdated', () => {
 			testMethodAsync(
-				manager => manager.outdated()
+				async manager => manager.outdated()
 			);
 
 			it('return', managerTestOneWith(
@@ -2135,7 +2133,7 @@ describe('manager', () => {
 
 		describe('upgradeFull', () => {
 			testMethodAsync(
-				manager => manager.upgradeFull()
+				async manager => manager.upgradeFull()
 			);
 
 			it('files', managerTestOneWith(
@@ -2268,7 +2266,7 @@ describe('manager', () => {
 
 		describe('upgradeSlim', () => {
 			testMethodAsync(
-				manager => manager.upgradeSlim()
+				async manager => manager.upgradeSlim()
 			);
 
 			it('files', managerTestOneWith(
@@ -2379,7 +2377,7 @@ describe('manager', () => {
 
 		describe('installed', () => {
 			testMethodAsync(
-				manager => manager.installed()
+				async manager => manager.installed()
 			);
 
 			it('return', managerTestOneWith(
@@ -2408,9 +2406,9 @@ describe('manager', () => {
 		});
 
 		describe('packageInstallReceipt', () => {
-			testMethodAsync(
-				manager => manager.packageInstallReceipt(packageSingle.name)
-			);
+			testMethodAsync(async manager => manager.packageInstallReceipt(
+				packageSingle.name
+			));
 
 			it('return', managerTestOneWith(
 				JSON.stringify(packages),
@@ -2449,7 +2447,7 @@ describe('manager', () => {
 
 		describe('packageInstallFile', () => {
 			testMethodAsync(
-				manager => manager.packageInstallFile(packageSingle.name)
+				async manager => manager.packageInstallFile(packageSingle.name)
 			);
 
 			it('return', managerTestOneWith(
@@ -2489,9 +2487,9 @@ describe('manager', () => {
 		});
 
 		describe('packageInstallFile', () => {
-			testMethodAsync(
-				manager => manager.packageInstallVerify(packageSingle.name)
-			);
+			testMethodAsync(async manager => manager.packageInstallVerify(
+				packageSingle.name
+			));
 
 			it('installed', managerTestOneWith(
 				JSON.stringify(packages),

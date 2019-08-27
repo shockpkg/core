@@ -564,9 +564,7 @@ rules:
   '@typescript-eslint/prefer-includes': error
   '@typescript-eslint/prefer-readonly': error
   '@typescript-eslint/prefer-string-starts-ends-with': error
-  '@typescript-eslint/promise-function-async':
-  - error
-  - allowAny: true
+  '@typescript-eslint/promise-function-async': error
   # '@typescript-eslint/require-await': error
   '@typescript-eslint/restrict-plus-operands': error
   '@typescript-eslint/unbound-method': error
