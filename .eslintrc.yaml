@@ -1,14 +1,14 @@
 parser: '@typescript-eslint/parser'
 
 plugins:
-- import
+- eslint-plugin-import
 - eslint-plugin-jsdoc
 - '@typescript-eslint'
 
 parserOptions:
   ecmaVersion: 9
   sourceType: module
-  project: ./tsconfig.json
+  project: ./tsconfig.eslint.json
 
 env:
   es6: true
@@ -487,7 +487,6 @@ rules:
   '@typescript-eslint/adjacent-overload-signatures': error
   '@typescript-eslint/array-type':
   - error
-  - array
   '@typescript-eslint/camelcase': error
   '@typescript-eslint/class-name-casing': error
   # '@typescript-eslint/consistent-type-assertions': error
@@ -565,7 +564,9 @@ rules:
   '@typescript-eslint/prefer-includes': error
   '@typescript-eslint/prefer-readonly': error
   '@typescript-eslint/prefer-string-starts-ends-with': error
-  '@typescript-eslint/promise-function-async': error
+  '@typescript-eslint/promise-function-async':
+  - error
+  - allowAny: true
   # '@typescript-eslint/require-await': error
   '@typescript-eslint/restrict-plus-operands': error
   '@typescript-eslint/unbound-method': error
