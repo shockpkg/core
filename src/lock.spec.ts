@@ -1,9 +1,4 @@
-/* eslint-env jasmine */
-
-import {
-	ensureDir as fseEnsureDir,
-	remove as fseRemove
-} from 'fs-extra';
+import fse from 'fs-extra';
 
 import {Lock} from './lock';
 
@@ -39,12 +34,12 @@ async function getPromiseError(p: Promise<any>) {
 describe('lock', () => {
 	describe('Lock', () => {
 		beforeEach(async () => {
-			await fseRemove(tmpPath);
-			await fseEnsureDir(tmpPathDir);
+			await fse.remove(tmpPath);
+			await fse.ensureDir(tmpPathDir);
 		});
 
 		afterEach(async () => {
-			await fseRemove(tmpPath);
+			await fse.remove(tmpPath);
 		});
 
 		it('normal', async () => {
@@ -112,7 +107,7 @@ describe('lock', () => {
 
 			await lock.aquire();
 
-			await fseRemove(`${tmpPathDir}.lock`);
+			await fse.remove(`${tmpPathDir}.lock`);
 
 			// Wait until lock fails or timeout.
 			const timeout = Date.now() + lock.stale;

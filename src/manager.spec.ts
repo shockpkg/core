@@ -1,9 +1,3 @@
-/* eslint-env jasmine */
-/* eslint-disable max-nested-callbacks */
-/* eslint-disable max-classes-per-file */
-/* eslint-disable jsdoc/require-jsdoc */
-/* eslint-disable import/no-extraneous-dependencies */
-
 import {createHash as cryptoCreateHash} from 'crypto';
 import {Server} from 'http';
 import {parse as urlParse} from 'url';
