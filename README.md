@@ -9,7 +9,7 @@ The core shockpkg library.
 [![size](https://packagephobia.now.sh/badge?p=@shockpkg/core)](https://packagephobia.now.sh/result?p=@shockpkg/core)
 [![downloads](https://img.shields.io/npm/dm/@shockpkg/core.svg)](https://npmcharts.com/compare/@shockpkg/core?minimal=true)
 
-[![travis-ci](https://travis-ci.org/shockpkg/core.svg?branch=master)](https://travis-ci.org/shockpkg/core)
+[![travis-ci](https://travis-ci.com/shockpkg/core.svg?branch=master)](https://travis-ci.com/shockpkg/core)
 
 
 # Overview
