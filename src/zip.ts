@@ -25,11 +25,11 @@ class StreamerRAR extends yauzl.RandomAccessReader {
 	/**
 	 * Streamer instance.
 	 */
-	private readonly __streamer: ZipStreamer;
+	private readonly _streamer_: ZipStreamer;
 
 	constructor(streamer: ZipStreamer) {
 		super();
-		this.__streamer = streamer;
+		this._streamer_ = streamer;
 	}
 
 	/**
@@ -39,9 +39,9 @@ class StreamerRAR extends yauzl.RandomAccessReader {
 	 * @param end Range end.
 	 * @returns Readable stream.
 	 */
-	// eslint-disable-next-line @typescript-eslint/member-naming
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public _readStreamForRange(start: number, end: number) {
-		const streamer = this.__streamer(start, end);
+		const streamer = this._streamer_(start, end);
 
 		// Method needed in Node 14+ but not present on a request stream.
 		const streamerAny = streamer as any;
