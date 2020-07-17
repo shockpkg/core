@@ -1930,7 +1930,6 @@ export class Manager extends Object {
 			const stream = this._request.stream({
 				url: source,
 				headers: {
-					// eslint-disable-next-line @typescript-eslint/naming-convention
 					Range: `bytes=${start}-${end - 1}`
 				}
 			});
@@ -1992,7 +1991,6 @@ export class Manager extends Object {
 			headers: {
 				// eslint-disable-next-line @typescript-eslint/naming-convention
 				'Cache-Control': 'max-age=0',
-				// eslint-disable-next-line @typescript-eslint/naming-convention
 				Pragma: 'no-cache'
 			},
 			gzip: true
