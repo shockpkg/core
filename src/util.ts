@@ -309,7 +309,7 @@ export async function streamVerify(
 		}
 	});
 
-	await streamEndError(source, 'end');
+	await streamEndError(source, endEvent);
 
 	// Verify size is not too small (too large is checked on data).
 	if (size !== null && streamSize < size) {
