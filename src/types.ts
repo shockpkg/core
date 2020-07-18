@@ -1,4 +1,4 @@
-import {Stream, Readable} from 'stream';
+import {Readable} from 'stream';
 
 import {Package} from './package';
 
@@ -239,6 +239,11 @@ export interface IRequestDefaults {
 	 * Gzip compression.
 	 */
 	gzip?: boolean;
+
+	/**
+	 * Body encoding used for callback functions.
+	 */
+	encoding?: string | null;
 }
 
 export interface IRequestOptions extends IRequestDefaults {
@@ -249,11 +254,13 @@ export interface IRequestOptions extends IRequestDefaults {
 	url: string;
 }
 
-export interface IRequestStream extends Stream {
+export interface IRequestStream extends Readable {
 	on(event: 'error', listener: (e: Error) => void): this;
 	on(event: 'response', listener: (resp: IRequestResponse) => void): this;
 	on(event: 'data', listener: (data: Buffer | string) => void): this;
-	on(event: 'complete', listener: () => void): this;
+	// eslint-disable-next-line @typescript-eslint/unified-signatures
+	on(event: 'complete', listener: (resp: IRequestResponse) => void): this;
+	on(event: string | symbol, listener: (...args: any[]) => void): this;
 	abort(): void;
 }
 

@@ -1,5 +1,4 @@
 import {join as pathJoin} from 'path';
-import {Readable} from 'stream';
 
 import fse from 'fs-extra';
 
@@ -1973,7 +1972,7 @@ export class Manager extends Object {
 				});
 
 			// Workaround for type issue.
-			return (stream as any) as Readable;
+			return stream;
 		};
 	}
 
