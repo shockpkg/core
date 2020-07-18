@@ -1,6 +1,6 @@
 import {createHash as cryptoCreateHash} from 'crypto';
 import {EventEmitter} from 'events';
-import {Readable} from 'stream';
+import {Stream} from 'stream';
 
 import fse from 'fs-extra';
 
@@ -273,7 +273,7 @@ export function dependSort<T>(list: T[], deps: (entry: T) => T[]) {
  * @param onData Data event handler, can throw to cancel download.
  */
 export async function streamVerify(
-	source: Readable,
+	source: Stream,
 	endEvent: string,
 	size: number | null = null,
 	hashes: IHash[] | null = null,
@@ -362,8 +362,8 @@ export async function streamRequest(
 	});
 
 	await streamVerify(
-		(source as any) as Readable,
-		'end',
+		source,
+		'complete',
 		size,
 		hashes,
 		onData

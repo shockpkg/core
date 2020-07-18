@@ -252,6 +252,8 @@ export interface IRequestOptions extends IRequestDefaults {
 export interface IRequestStream extends Stream {
 	on(event: 'error', listener: (e: Error) => void): this;
 	on(event: 'response', listener: (resp: IRequestResponse) => void): this;
+	on(event: 'data', listener: (data: Buffer | string) => void): this;
+	on(event: 'complete', listener: () => void): this;
 	abort(): void;
 }
 
