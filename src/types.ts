@@ -231,7 +231,7 @@ export interface IRequestDefaults {
 	method?: string;
 
 	/**
-	 * HTTP headers.
+	 * Request headers.
 	 */
 	headers?: {[key: string]: string};
 
@@ -263,7 +263,7 @@ export interface IRequestResponse {
 	statusCode: number;
 
 	/**
-	 * HTTP headers.
+	 * Response headers, all lowercase.
 	 */
 	headers: {[key: string]: string};
 }
