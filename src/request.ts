@@ -72,6 +72,6 @@ export class Request extends Object {
 	 * @returns Request instance.
 	 */
 	protected _createRequest(defaults: IRequestDefaults = {}) {
-		return request.defaults(defaults);
+		return request.defaults(defaults) as IRequestInstance;
 	}
 }

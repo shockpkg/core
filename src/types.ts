@@ -1,6 +1,4 @@
-import {Readable} from 'stream';
-
-import request from 'request';
+import {Stream, Readable} from 'stream';
 
 import {Package} from './package';
 
@@ -8,7 +6,7 @@ export type PackageLike = Package | string;
 
 export type OnData = (data: string | Buffer) => any;
 
-export type OnResponse = (response: request.Response) => any;
+export type OnResponse = (response: IRequestResponse) => any;
 
 export interface IPackageInstallBefore {
 
@@ -225,25 +223,61 @@ export interface IPackageUpdated {
 	sha256: string;
 }
 
-export type IRequestOptions =
-	(request.UrlOptions & request.CoreOptions) |
-	(request.UriOptions & request.CoreOptions);
+export interface IRequestDefaults {
 
-/* eslint-disable @typescript-eslint/indent */
-export type IRequestInstance = request.RequestAPI<
-	request.Request,
-	request.CoreOptions,
-	request.RequiredUriUrl
->;
-/* eslint-enable @typescript-eslint/indent */
+	/**
+	 * Request method.
+	 */
+	method?: string;
 
-export type IRequestDefaults = request.CoreOptions;
+	/**
+	 * HTTP headers.
+	 */
+	headers?: {[key: string]: string};
 
-export type IRequestCallback = request.RequestCallback;
+	/**
+	 * Gzip compression.
+	 */
+	gzip?: boolean;
+}
 
-export type IRequestStream = request.Request;
+export interface IRequestOptions extends IRequestDefaults {
 
-export type IRequestResponse = request.Response;
+	/**
+	 * URL string.
+	 */
+	url: string;
+}
+
+export interface IRequestStream extends Stream {
+	on(event: 'error', listener: (e: Error) => void): this;
+	on(event: 'response', listener: (resp: IRequestResponse) => void): this;
+	abort(): void;
+}
+
+export interface IRequestResponse {
+
+	/**
+	 * Status code.
+	 */
+	statusCode: number;
+
+	/**
+	 * HTTP headers.
+	 */
+	headers: {[key: string]: string};
+}
+
+export type IRequestCallback = (
+	error: any,
+	response: IRequestResponse,
+	body: any
+) => void;
+
+export type IRequestInstance = (
+	options: IRequestOptions,
+	cb?: IRequestCallback
+) => IRequestStream;
 
 export interface IRequestPromiseValue {
 
