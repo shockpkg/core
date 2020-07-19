@@ -474,7 +474,6 @@ function managerTestNotActiveAsync(
 function managerTestNotActiveSync(
 	func: (manager: ManagerTest) => any
 ) {
-	// eslint-disable-next-line @typescript-eslint/require-await
 	return managerTestOne(null, async manager => {
 		let err: any = null;
 		try {
@@ -513,7 +512,6 @@ function managerTestNotLoadedAsync(
 function managerTestNotLoadedSync(
 	func: (manager: ManagerTest) => any
 ) {
-	// eslint-disable-next-line @typescript-eslint/require-await
 	return managerTestOneWith(null, async manager => {
 		let err: any = null;
 		try {
@@ -550,7 +548,6 @@ function managerTestExclusiveAsync(
 function managerTestExclusiveSync(
 	func: (manager: ManagerTest) => any
 ) {
-	// eslint-disable-next-line @typescript-eslint/require-await
 	return managerTestOneWith(null, async manager => {
 		// eslint-disable-next-line no-sync
 		manager.$testExclusiveSync(func);
@@ -806,7 +803,7 @@ describe('manager', () => {
 				await manager.destroy();
 				const err = await promiseError(manager.destroy());
 				expect(err).toBeTruthy();
-				expect(err.message).toBe('Instance destroyed');
+				expect(err.message).toBe('Instance uninitialized');
 			}));
 
 			it('init exclusive', managerTestOne(
@@ -848,12 +845,30 @@ describe('manager', () => {
 				expect(err).toBeTruthy();
 				expect(err.message).toBe('Lock file is already being held');
 			}));
+
+			it('init destroy 2x reuse', managerTest(null, async ManagerTest => {
+				const manager = new ManagerTest(tmpPath);
+				await manager.init();
+				await manager.destroy();
+				await manager.init();
+				// await manager.destroy();
+			}));
 		});
 
 		describe('with', () => {
 			it('active', managerTestOne(null, async manager => {
 				expect(manager.active).toBe(false);
-				// eslint-disable-next-line @typescript-eslint/require-await
+				await manager.with(async manager => {
+					expect(manager.active).toBe(true);
+				});
+				expect(manager.active).toBe(false);
+			}));
+
+			it('reuse', managerTestOne(null, async manager => {
+				expect(manager.active).toBe(false);
+				await manager.with(async manager => {
+					expect(manager.active).toBe(true);
+				});
 				await manager.with(async manager => {
 					expect(manager.active).toBe(true);
 				});
@@ -921,7 +936,6 @@ describe('manager', () => {
 					});
 
 					const manager2 = new ManagerTest(tmpPath);
-					// eslint-disable-next-line @typescript-eslint/require-await
 					await manager2.with(async manager => {
 						expect(manager.loaded).toBe(true);
 					});

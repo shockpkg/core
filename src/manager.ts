@@ -1088,7 +1088,6 @@ export class Manager extends Object {
 	 * @param pkg The package.
 	 * @returns Receipt object.
 	 */
-	// eslint-disable-next-line @typescript-eslint/require-await
 	protected async _packageMetaReceiptFromPackage(pkg: PackageLike) {
 		this._assertLoaded();
 		pkg = this._packageToPackage(pkg);
@@ -1251,6 +1250,7 @@ export class Manager extends Object {
 		await this._packages.readIfExists();
 
 		this._inited = true;
+		this._destroyed = false;
 	}
 
 	/**
@@ -1267,6 +1267,7 @@ export class Manager extends Object {
 		}
 
 		this._destroyed = true;
+		this._inited = false;
 	}
 
 	/**
