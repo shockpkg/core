@@ -42,7 +42,10 @@ export class Package extends Object {
 	 */
 	public readonly parent: Package | null;
 
-	constructor(info: IPackagesListPackage, parent: Package | null = null) {
+	constructor(
+		info: Readonly<IPackagesListPackage>,
+		parent: Package | null = null
+	) {
 		super();
 
 		this.name = info.name;
@@ -60,7 +63,9 @@ export class Package extends Object {
 	 * @param infos Package infos.
 	 * @returns Package instance.
 	 */
-	protected _createPackages(infos: IPackagesListPackage[] = []) {
+	protected _createPackages(
+		infos: Readonly<Readonly<IPackagesListPackage>[]> = []
+	) {
 		return infos.map(info => this._createPackage(info));
 	}
 
@@ -70,7 +75,7 @@ export class Package extends Object {
 	 * @param info Package info.
 	 * @returns Package instance.
 	 */
-	protected _createPackage(info: IPackagesListPackage) {
+	protected _createPackage(info: Readonly<IPackagesListPackage>) {
 		const Constructor = this.constructor as typeof Package;
 		return new Constructor(info, this);
 	}

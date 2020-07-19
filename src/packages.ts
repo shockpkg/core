@@ -263,7 +263,7 @@ export class Packages extends Object {
 	 * @param info Package info.
 	 * @returns Package instance.
 	 */
-	protected _createPackage(info: IPackagesListPackage) {
+	protected _createPackage(info: Readonly<IPackagesListPackage>) {
 		return new Package(info);
 	}
 
@@ -272,7 +272,7 @@ export class Packages extends Object {
 	 *
 	 * @param packagesList Parsed list.
 	 */
-	protected _setPackagesList(packagesList: IPackagesList) {
+	protected _setPackagesList(packagesList: Readonly<IPackagesList>) {
 		this._validateFormat(packagesList.format);
 
 		const parsed = this._parsePackages(packagesList.packages);
@@ -320,7 +320,9 @@ export class Packages extends Object {
 	 * @param packages Packages list.
 	 * @returns Parsed list.
 	 */
-	protected _parsePackages(packages: IPackagesListPackage[]) {
+	protected _parsePackages(
+		packages: Readonly<Readonly<IPackagesListPackage>[]>
+	) {
 		return packages.map(info => this._createPackage(info));
 	}
 
@@ -330,7 +332,7 @@ export class Packages extends Object {
 	 * @param packages A list of packages.
 	 * @returns A set of all packages and their children.
 	 */
-	protected _listPackages(packages: Package[]) {
+	protected _listPackages(packages: Readonly<Package[]>) {
 		const r = new Set<Package>();
 		const itter = [...packages];
 
@@ -356,10 +358,10 @@ export class Packages extends Object {
 	 * @param packages Packages list.
 	 * @returns Map from package name to package.
 	 */
-	protected _packagesMapName(packages: Set<Package>) {
+	protected _packagesMapName(packages: Readonly<Set<Package>>) {
 		const r = new Map<string, Package>();
 
-		for (const entry of packages) {
+		for (const entry of packages as Set<Package>) {
 			const {name} = entry;
 			if (r.has(name)) {
 				throw new Error(`Duplicate package name: ${name}`);
@@ -377,10 +379,10 @@ export class Packages extends Object {
 	 * @param packages Packages list.
 	 * @returns Map from package sha256 to package.
 	 */
-	protected _packagesMapSha256(packages: Set<Package>) {
+	protected _packagesMapSha256(packages: Readonly<Set<Package>>) {
 		const r = new Map<string, Package>();
 
-		for (const entry of packages) {
+		for (const entry of packages as Set<Package>) {
 			const {sha256} = entry;
 			if (r.has(sha256)) {
 				throw new Error(`Duplicate package sha256: ${sha256}`);
@@ -398,10 +400,10 @@ export class Packages extends Object {
 	 * @param packages Packages list.
 	 * @returns Map from package unique to package.
 	 */
-	protected _packagesMapUnique(packages: Set<Package>) {
+	protected _packagesMapUnique(packages: Readonly<Set<Package>>) {
 		const r = new Map<string, Package>();
 
-		for (const entry of packages) {
+		for (const entry of packages as Set<Package>) {
 			for (const unique of [
 				entry.name,
 				entry.sha256
@@ -433,7 +435,7 @@ export class Packages extends Object {
 	 * @param packages Parsed data.
 	 * @returns Cast data.
 	 */
-	protected _castData(packages: any) {
+	protected _castData(packages: Readonly<any>) {
 		if (
 			!packages ||
 			typeof packages !== 'object' ||

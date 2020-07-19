@@ -21,7 +21,7 @@ import {
  * @returns Filtered array.
  */
 export async function arrayFilterAsync<T>(
-	list: T[],
+	list: Readonly<T[]>,
 	filter: (entry: T) => Promise<any>
 ) {
 	const r: T[] = [];
@@ -42,7 +42,7 @@ export async function arrayFilterAsync<T>(
  * @returns Mapped array.
  */
 export async function arrayMapAsync<T, U>(
-	list: T[],
+	list: Readonly<T[]>,
 	map: (entry: T) => Promise<U>
 ) {
 	const r: U[] = [];
@@ -167,7 +167,10 @@ export function hashNormalize(hash: string, encoding: HashEncoding) {
  * @param path File path.
  * @param hashes Hash list.
  */
-export async function fileHash(path: string, hashes: IHash[]) {
+export async function fileHash(
+	path: string,
+	hashes: Readonly<IHash[]>
+) {
 	const hashers = hashes.map(hash => ({
 		hash,
 		hasher: cryptoCreateHash(hash.algorithm)
@@ -195,7 +198,10 @@ export async function fileHash(path: string, hashes: IHash[]) {
  * @param path File path.
  * @param hashes Hash list.
  */
-export async function fileHashVerify(path: string, hashes: IHash[]) {
+export async function fileHashVerify(
+	path: string,
+	hashes: Readonly<Readonly<IHash>[]>
+) {
 	const all = hashes.map(hash => {
 		const hashed: IHash = {
 			algorithm: hash.algorithm,
@@ -276,7 +282,7 @@ export async function streamVerify(
 	source: Stream,
 	endEvent: string,
 	size: number | null = null,
-	hashes: IHash[] | null = null,
+	hashes: Readonly<Readonly<IHash>[]> | null = null,
 	onData: OnData | null = null
 ) {
 	const hashers = (hashes || []).map(hash => ({
@@ -342,7 +348,7 @@ export async function streamVerify(
 export async function streamRequest(
 	source: IRequestStream,
 	size: number | null = null,
-	hashes: IHash[] | null = null,
+	hashes: Readonly<Readonly<IHash>[]> | null = null,
 	onResponse: OnResponse | null = null,
 	onData: OnData | null = null
 ) {
@@ -384,7 +390,7 @@ export async function streamRequestDownload(
 	source: IRequestStream,
 	path: string,
 	size: number | null = null,
-	hashes: IHash[] | null = null,
+	hashes: Readonly<Readonly<IHash>[]> | null = null,
 	onResponse: OnResponse | null = null,
 	onData: OnData | null = null
 ) {
@@ -393,9 +399,10 @@ export async function streamRequestDownload(
 	});
 	const written = streamEndError(write, 'close');
 	source.pipe(write);
-
-	await streamRequest(source, size, hashes, onResponse, onData);
-	await written;
+	await Promise.all([
+		streamRequest(source, size, hashes, onResponse, onData),
+		written
+	]);
 }
 
 /**
@@ -408,10 +415,10 @@ export async function streamRequestDownload(
  * @param onData Data event handler, can throw to cancel download.
  */
 export async function zipEntryExtract(
-	entry: IZipItterEntry,
+	entry: Readonly<IZipItterEntry>,
 	path: string,
 	size: number | null = null,
-	hashes: IHash[] | null = null,
+	hashes: Readonly<Readonly<IHash>[]> | null = null,
 	onData: OnData | null = null
 ) {
 	const {sizeD} = entry;

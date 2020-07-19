@@ -28,7 +28,7 @@ class RequestStream extends Readable {
 	 * Request options.
 	 */
 	@property(false)
-	private _options_: IRequestOptions | null;
+	private _options_: Readonly<IRequestOptions> | null;
 
 	/**
 	 * Abort controller.
@@ -36,7 +36,7 @@ class RequestStream extends Readable {
 	@property(false)
 	private _abortController_: AbortController | null = null;
 
-	constructor(options: IRequestOptions) {
+	constructor(options: Readonly<IRequestOptions>) {
 		super();
 
 		this._options_ = options;
@@ -135,7 +135,7 @@ export class Request extends Object {
 	@property(false)
 	protected readonly _request: IRequestInstance;
 
-	constructor(defaults: IRequestDefaults = {}) {
+	constructor(defaults: Readonly<IRequestDefaults> = {}) {
 		super();
 
 		this._request = this._createRequestInstance(defaults);
@@ -149,7 +149,7 @@ export class Request extends Object {
 	 * @returns Stream object.
 	 */
 	public stream(
-		options: IRequestOptions,
+		options: Readonly<IRequestOptions>,
 		cb?: IRequestCallback
 	): IRequestStream {
 		const req = this._request;
@@ -162,7 +162,7 @@ export class Request extends Object {
 	 * @param options Request options.
 	 * @returns Stream response and body.
 	 */
-	public async promise(options: IRequestOptions) {
+	public async promise(options: Readonly<IRequestOptions>) {
 		return new Promise<IRequestPromiseValue>((resolve, reject) => {
 			const stream = this.stream(options, (error, response, body) => {
 				if (error) {
@@ -184,12 +184,14 @@ export class Request extends Object {
 	 * @param defaults Option defaults.
 	 * @returns Request instance.
 	 */
-	protected _createRequestInstance(defaults: IRequestDefaults = {}) {
+	protected _createRequestInstance(
+		defaults: Readonly<IRequestDefaults> = {}
+	) {
 		const request = this._createRequest(defaults) as any as (
 			IRequestInstance | null
 		);
 		return request || ((
-			options: IRequestOptions,
+			options: Readonly<IRequestOptions>,
 			cb?: IRequestCallback
 		) => {
 			const opts = {...defaults, ...options};
@@ -234,7 +236,7 @@ export class Request extends Object {
 	 * @deprecated Included for backwards compatability.
 	 */
 	protected _createRequest(
-		_defaults: IRequestDefaults = {}
+		_defaults: Readonly<IRequestDefaults> = {}
 	): Function | null {
 		return null;
 	}
