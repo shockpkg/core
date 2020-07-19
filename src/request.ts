@@ -65,6 +65,7 @@ class RequestStream extends Readable {
 
 		fetch(options.url, {
 			signal: (this._abortController_ = new AbortController()).signal,
+			method: options.method || 'GET',
 			headers: {
 				'User-Agent': userAgent,
 				...(options.headers || {})
