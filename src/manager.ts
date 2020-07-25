@@ -172,6 +172,14 @@ export class Manager extends Object {
 	);
 
 	/**
+	 * Package list error events.
+	 */
+	public readonly eventPackageListError = (
+		// eslint-disable-next-line no-invalid-this
+		new Dispatcher<Error>(this)
+	);
+
+	/**
 	 * Packages URL.
 	 */
 	@property(false)
@@ -1293,7 +1301,13 @@ export class Manager extends Object {
 
 		await this._ensureDirs();
 		await this._lock.aquire();
-		await this._packages.readIfExists();
+		try {
+			await this._packages.readIfExists();
+		}
+		catch (err) {
+			// eslint-disable-next-line no-sync
+			this.eventPackageListError.triggerSync(err);
+		}
 
 		this._inited = true;
 		this._destroyed = false;

@@ -1090,6 +1090,27 @@ describe('manager', () => {
 						expect(report.removed).toEqual([]);
 					}
 				));
+
+				it('old format', managerTestOne(
+					JSON.stringify(packages),
+					async manager => {
+						const mod = packagesCopy();
+						mod.format = '1.0';
+						await writePackage(manager, mod);
+						let errorMessage = '';
+						manager.eventPackageListError.on(err => {
+							errorMessage = err.message;
+						});
+
+						const loaded = await manager
+							.with(async manager => manager.loaded);
+
+						expect(loaded).toBeFalse();
+						expect(errorMessage).toEqual(
+							'Invalid format version minor: 1.0'
+						);
+					}
+				));
 			});
 		});
 
