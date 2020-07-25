@@ -39,6 +39,18 @@ export class Packages extends Object {
 	protected _packagesBySha256 = new Map<string, Package>();
 
 	/**
+	 * Packages mapped by sha1.
+	 */
+	@property(false)
+	protected _packagesBySha1 = new Map<string, Package>();
+
+	/**
+	 * Packages mapped by md5.
+	 */
+	@property(false)
+	protected _packagesByMd5 = new Map<string, Package>();
+
+	/**
 	 * Packages mapped by unique.
 	 */
 	@property(false)
@@ -53,7 +65,7 @@ export class Packages extends Object {
 	/**
 	 * Format version.
 	 */
-	public static readonly FORMAT: string = '1.0';
+	public static readonly FORMAT: string = '1.1';
 
 	constructor(path: string) {
 		super();
@@ -248,6 +260,26 @@ export class Packages extends Object {
 	}
 
 	/**
+	 * Get package by the sha1 hash.
+	 *
+	 * @param sha1 Package sha1.
+	 * @returns The package or null.
+	 */
+	public bySha1(sha1: string) {
+		return this._packagesBySha1.get(sha1) || null;
+	}
+
+	/**
+	 * Get package by the md5 hash.
+	 *
+	 * @param md5 Package md5.
+	 * @returns The package or null.
+	 */
+	public byMd5(md5: string) {
+		return this._packagesByMd5.get(md5) || null;
+	}
+
+	/**
 	 * Get package by the unique value.
 	 *
 	 * @param unique Package unique.
@@ -281,6 +313,8 @@ export class Packages extends Object {
 		// Map out the names and hashes.
 		const byName = this._packagesMapName(packages);
 		const bySha256 = this._packagesMapSha256(packages);
+		const bySha1 = this._packagesMapSha1(packages);
+		const byMd5 = this._packagesMapMd5(packages);
 		const byUnique = this._packagesMapUnique(packages);
 
 		// If all parsed successfully, set properties.
@@ -288,6 +322,8 @@ export class Packages extends Object {
 		this._packages = packages;
 		this._packagesByName = byName;
 		this._packagesBySha256 = bySha256;
+		this._packagesBySha1 = bySha1;
+		this._packagesByMd5 = byMd5;
 		this._packagesByUnique = byUnique;
 	}
 
@@ -394,6 +430,48 @@ export class Packages extends Object {
 	}
 
 	/**
+	 * Map out package list by sha1.
+	 * Throws on any duplicates.
+	 *
+	 * @param packages Packages list.
+	 * @returns Map from package sha256 to package.
+	 */
+	protected _packagesMapSha1(packages: Readonly<Set<Package>>) {
+		const r = new Map<string, Package>();
+
+		for (const entry of packages as Set<Package>) {
+			const {sha1} = entry;
+			if (r.has(sha1)) {
+				throw new Error(`Duplicate package sha1: ${sha1}`);
+			}
+			r.set(sha1, entry);
+		}
+
+		return r;
+	}
+
+	/**
+	 * Map out package list by md5.
+	 * Throws on any duplicates.
+	 *
+	 * @param packages Packages list.
+	 * @returns Map from package sha256 to package.
+	 */
+	protected _packagesMapMd5(packages: Readonly<Set<Package>>) {
+		const r = new Map<string, Package>();
+
+		for (const entry of packages as Set<Package>) {
+			const {md5} = entry;
+			if (r.has(md5)) {
+				throw new Error(`Duplicate package md5: ${md5}`);
+			}
+			r.set(md5, entry);
+		}
+
+		return r;
+	}
+
+	/**
 	 * Map out package list by unique.
 	 * Throws on any duplicates.
 	 *
@@ -406,7 +484,9 @@ export class Packages extends Object {
 		for (const entry of packages as Set<Package>) {
 			for (const unique of [
 				entry.name,
-				entry.sha256
+				entry.sha256,
+				entry.sha1,
+				entry.md5
 			]) {
 				if (r.has(unique)) {
 					throw new Error(`Duplicate package unique: ${unique}`);

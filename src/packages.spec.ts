@@ -23,17 +23,39 @@ function dummySha256(prefix: string) {
 	return prefix + stringRepeat('0', 64 - prefix.length);
 }
 
+/**
+ * Create dummy sha1 hash.
+ *
+ * @param prefix Hash prefix.
+ * @returns Dummy hash.
+ */
+function dummySha1(prefix: string) {
+	return prefix + stringRepeat('0', 40 - prefix.length);
+}
+
+/**
+ * Create dummy md5 hash.
+ *
+ * @param prefix Hash prefix.
+ * @returns Dummy hash.
+ */
+function dummyMd5(prefix: string) {
+	return prefix + stringRepeat('0', 32 - prefix.length);
+}
+
 const tmpPath = './spec/tmp';
 
 const tmpPathPackages = `${tmpPath}/packages.json`;
 
 const dummyPackages = {
-	format: '1.0',
+	format: '1.1',
 	packages: [
 		{
 			name: 'package-a',
 			file: 'package-a.zip',
 			sha256: dummySha256('A'),
+			sha1: dummySha1('A'),
+			md5: dummyMd5('A'),
 			size: 1000,
 			source: 'https://example.com/package-a.zip'
 		},
@@ -41,6 +63,8 @@ const dummyPackages = {
 			name: 'package-b',
 			file: 'package-b.zip',
 			sha256: dummySha256('B'),
+			sha1: dummySha1('B'),
+			md5: dummyMd5('B'),
 			size: 1000,
 			source: 'https://example.com/package-b.zip',
 			packages: [
@@ -48,6 +72,8 @@ const dummyPackages = {
 					name: 'package-b-a',
 					file: 'package-b-a.zip',
 					sha256: dummySha256('BA'),
+					sha1: dummySha1('BA'),
+					md5: dummyMd5('BA'),
 					size: 100,
 					source: 'package-b-a.zip',
 					packages: [
@@ -55,6 +81,8 @@ const dummyPackages = {
 							name: 'package-b-a-a',
 							file: 'package-b-a-a.zip',
 							sha256: dummySha256('BAA'),
+							sha1: dummySha1('BAA'),
+							md5: dummyMd5('BAA'),
 							size: 10,
 							source: 'package-b-a-a.zip'
 						},
@@ -62,6 +90,8 @@ const dummyPackages = {
 							name: 'package-b-a-b',
 							file: 'package-b-a-b.zip',
 							sha256: dummySha256('BAB'),
+							sha1: dummySha1('BAB'),
+							md5: dummyMd5('BAB'),
 							size: 10,
 							source: 'package-b-a-b.zip'
 						}
@@ -71,6 +101,8 @@ const dummyPackages = {
 					name: 'package-b-b',
 					file: 'package-b-b.zip',
 					sha256: dummySha256('BB'),
+					sha1: dummySha1('BB'),
+					md5: dummyMd5('BB'),
 					size: 100,
 					source: 'package-b-b.zip'
 				}
@@ -80,6 +112,8 @@ const dummyPackages = {
 			name: 'package-c',
 			file: 'package-c.zip',
 			sha256: dummySha256('C'),
+			sha1: dummySha1('C'),
+			md5: dummyMd5('C'),
 			size: 1000,
 			source: 'https://example.com/package-c.zip'
 		}
@@ -87,12 +121,14 @@ const dummyPackages = {
 };
 
 const dummyPackagesDuplicateName = {
-	format: '1.0',
+	format: '1.1',
 	packages: [
 		{
 			name: 'package-a',
 			file: 'package-a.zip',
 			sha256: dummySha256('A'),
+			sha1: dummySha1('A'),
+			md5: dummyMd5('A'),
 			size: 1000,
 			source: 'https://example.com/package-a.zip'
 		},
@@ -100,6 +136,8 @@ const dummyPackagesDuplicateName = {
 			name: 'package-a',
 			file: 'package-b.zip',
 			sha256: dummySha256('B'),
+			sha1: dummySha1('B'),
+			md5: dummyMd5('B'),
 			size: 1000,
 			source: 'https://example.com/package-b.zip'
 		}
@@ -107,12 +145,14 @@ const dummyPackagesDuplicateName = {
 };
 
 const dummyPackagesDuplicateHash = {
-	format: '1.0',
+	format: '1.1',
 	packages: [
 		{
 			name: 'package-a',
 			file: 'package-a.zip',
 			sha256: dummySha256('A'),
+			sha1: dummySha1('A'),
+			md5: dummyMd5('A'),
 			size: 1000,
 			source: 'https://example.com/package-a.zip'
 		},
@@ -120,6 +160,8 @@ const dummyPackagesDuplicateHash = {
 			name: 'package-b',
 			file: 'package-b.zip',
 			sha256: dummySha256('A'),
+			sha1: dummySha1('A'),
+			md5: dummyMd5('A'),
 			size: 1000,
 			source: 'https://example.com/package-b.zip'
 		}

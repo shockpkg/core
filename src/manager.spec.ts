@@ -27,6 +27,8 @@ const packageObsoleteA = {
 	file: 'package-obsolete-a.bin',
 	size: 42,
 	sha256: '4242424242424242424242424242424242424242424242424242424242424242',
+	sha1: '4242424242424242424242424242424242424242',
+	md5: '42424242424242424242424242424242',
 	source: 'http://example.com/package-obsolete-a.bin'
 };
 const packageObsoleteB = {
@@ -34,6 +36,8 @@ const packageObsoleteB = {
 	file: 'package-obsolete-b.bin',
 	size: 24,
 	sha256: '2424242424242424242424242424242424242424242424242424242424242424',
+	sha1: '2424242424242424242424242424242424242424',
+	md5: '24242424242424242424242424242424',
 	source: 'http://example.com/package-obsolete-b.bin'
 };
 
@@ -42,6 +46,8 @@ const packageSingle = {
 	file: 'package-single.bin',
 	size: 366161,
 	sha256: '781fea60126eb92dbb97d321eea607c3a65708eb16ed297b697563567a2d4cf2',
+	sha1: 'af83c8cf116f6c4f4670637ca62d8eb022faf1da',
+	md5: 'f10462a5ed89350011cfc120f5bd8a9a',
 	source: '/packages/package-single.bin'
 };
 const packageMultiA = {
@@ -49,6 +55,8 @@ const packageMultiA = {
 	file: 'package-multi-a.bin',
 	size: 270560,
 	sha256: 'd84821ba140cc355bf3b5f54b3c02a40467df267e0d9ca88f34c1a11c152bc7b',
+	sha1: '1ef6c57d5b9f80421988fe2b2bc293f58cec5964',
+	md5: '0933f47c8bf83c91a552d72d773258d6',
 	source: 'package-multi/package-multi-a.bin'
 };
 const packageMultiB = {
@@ -56,6 +64,8 @@ const packageMultiB = {
 	file: 'package-multi-b.bin',
 	size: 270560,
 	sha256: '5bfc83ad4988e63120c317166c985367ed0d6a155efef25f61b9b4837ab65fd1',
+	sha1: '5aa9f5e51f5a8bd965ba53e3a3b056361c93f95f',
+	md5: '2e82f05e1b2f313176fd4c0b3aab0e15',
 	source: 'package-multi/package-multi-b.bin'
 };
 const packageMulti = {
@@ -63,6 +73,8 @@ const packageMulti = {
 	file: 'package-multi.zip',
 	size: 130315,
 	sha256: 'b26ebd9b476943895c53ece1fbedb1a3f71741b96bb41386bf31f64858c882d9',
+	sha1: '55713f6be04ebc7984f569b2ecffb8b72a46cb11',
+	md5: '0c86607e1f057400ad66693a4bdda23c',
 	source: '/packages/package-multi.zip',
 	packages: [
 		packageMultiA,
@@ -74,6 +86,8 @@ const packageNested = {
 	file: 'package-nested.bin',
 	size: 729267,
 	sha256: '93116b4ab456da0d1d721f93673e084b5b80e283f617376bdef600993840c092',
+	sha1: 'de136cfe07f84cd5af12b389a19ed9197065d661',
+	md5: '63b7339834157c94bcc37e07310d93ce',
 	source: 'package-nested-1/package-nested.bin'
 };
 const packageNested1 = {
@@ -81,6 +95,8 @@ const packageNested1 = {
 	file: 'package-nested-1.zip',
 	size: 171949,
 	sha256: 'cbf960773625011d6788ed7b0e832b2a945ec995bc3c560e28881ffaffb61861',
+	sha1: 'd0dd9c4b1f6940b9637b7fd161672490512d2293',
+	md5: 'a6df4185081d004b4edd3a9a93b7971a',
 	source: 'package-nested-2/package-nested-1.zip',
 	packages: [
 		packageNested
@@ -91,6 +107,8 @@ const packageNested2 = {
 	file: 'package-nested-2.zip',
 	size: 172106,
 	sha256: '0cf6f565f2395fae74b4681f5ba51183fee6334e02fa3b1927b8abde718a272b',
+	sha1: '7e02827210c186e1a7b6552425853ff361f3b905',
+	md5: '7226700d765c668fd9bdf2ba2516c7e0',
 	source: '/packages/package-nested-2.zip',
 	packages: [
 		packageNested1
@@ -98,7 +116,7 @@ const packageNested2 = {
 };
 
 const packages = {
-	format: '1.0',
+	format: '1.1',
 	packages: [
 		packageSingle,
 		packageMulti,
@@ -111,6 +129,8 @@ const packageMultiMeta = {
 	file: packageMulti.file,
 	size: packageMulti.size,
 	sha256: packageMulti.sha256,
+	sha1: packageMulti.sha1,
+	md5: packageMulti.md5,
 	source: packageMulti.source
 };
 
@@ -119,6 +139,8 @@ const packageSingleMetaBad = {
 	file: packageSingle.file,
 	size: packageSingle.size + 1,
 	sha256: strReverse(packageSingle.sha256),
+	sha1: strReverse(packageSingle.sha1),
+	md5: strReverse(packageSingle.md5),
 	source: `https://example.com${packageSingle.source}`
 };
 
@@ -127,6 +149,8 @@ const packageNested1MetaBad = {
 	file: packageNested1.file,
 	size: packageNested1.size + 1,
 	sha256: strReverse(packageNested1.sha256),
+	sha1: strReverse(packageNested1.sha1),
+	md5: strReverse(packageNested1.md5),
 	source: packageNested1.source
 };
 
@@ -1137,6 +1161,50 @@ describe('manager', () => {
 			));
 		});
 
+		describe('packageBySha1', () => {
+			// eslint-disable-next-line no-sync
+			testMethodSync(
+				manager => manager.packageBySha1(packageSingle.sha1)
+			);
+
+			it('return', managerTestOneWith(
+				JSON.stringify(packages),
+				async manager => {
+					await manager.update();
+
+					expect(manager.packageBySha1(
+						packageSingleMetaBad.sha1
+					)).toBeNull();
+
+					expect(manager.packageBySha1(
+						packageSingle.sha1
+					)).toBeTruthy();
+				}
+			));
+		});
+
+		describe('packageByMd5', () => {
+			// eslint-disable-next-line no-sync
+			testMethodSync(
+				manager => manager.packageByMd5(packageSingle.md5)
+			);
+
+			it('return', managerTestOneWith(
+				JSON.stringify(packages),
+				async manager => {
+					await manager.update();
+
+					expect(manager.packageByMd5(
+						packageSingleMetaBad.md5
+					)).toBeNull();
+
+					expect(manager.packageByMd5(
+						packageSingle.md5
+					)).toBeTruthy();
+				}
+			));
+		});
+
 		describe('packageByUnique', () => {
 			// eslint-disable-next-line no-sync
 			testMethodSync(
@@ -1154,12 +1222,24 @@ describe('manager', () => {
 					expect(manager.packageByUnique(
 						packageSingleMetaBad.sha256
 					)).toBeNull();
+					expect(manager.packageByUnique(
+						packageSingleMetaBad.sha1
+					)).toBeNull();
+					expect(manager.packageByUnique(
+						packageSingleMetaBad.md5
+					)).toBeNull();
 
 					expect(manager.packageByUnique(
 						packageSingle.name
 					)).toBeTruthy();
 					expect(manager.packageByUnique(
 						packageSingle.sha256
+					)).toBeTruthy();
+					expect(manager.packageByUnique(
+						packageSingle.sha1
+					)).toBeTruthy();
+					expect(manager.packageByUnique(
+						packageSingle.md5
 					)).toBeTruthy();
 				}
 			));

@@ -28,6 +28,16 @@ export class Package extends Object {
 	public readonly sha256: string;
 
 	/**
+	 * SHA1 hash of file.
+	 */
+	public readonly sha1: string;
+
+	/**
+	 * MD5 hash of file.
+	 */
+	public readonly md5: string;
+
+	/**
 	 * Source path, URL for root, file path for child packages.
 	 */
 	public readonly source: string;
@@ -52,6 +62,8 @@ export class Package extends Object {
 		this.file = info.file;
 		this.size = info.size;
 		this.sha256 = info.sha256;
+		this.sha1 = info.sha1;
+		this.md5 = info.md5;
 		this.source = info.source;
 		this.parent = parent;
 		this.packages = this._createPackages(info.packages);

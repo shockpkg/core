@@ -471,6 +471,28 @@ export class Manager extends Object {
 	}
 
 	/**
+	 * Get package by the sha1 hash.
+	 *
+	 * @param sha1 Package sha1.
+	 * @returns The package or null.
+	 */
+	public packageBySha1(sha1: string) {
+		// eslint-disable-next-line no-sync
+		return this._exclusiveSync(() => this._packageBySha1(sha1));
+	}
+
+	/**
+	 * Get package by the md5 hash.
+	 *
+	 * @param md5 Package md5.
+	 * @returns The package or null.
+	 */
+	public packageByMd5(md5: string) {
+		// eslint-disable-next-line no-sync
+		return this._exclusiveSync(() => this._packageByMd5(md5));
+	}
+
+	/**
 	 * Get package by the unique value.
 	 *
 	 * @param unique Package unique.
@@ -861,6 +883,30 @@ export class Manager extends Object {
 		this._assertLoaded();
 
 		return this._packages.bySha256(sha256);
+	}
+
+	/**
+	 * Get package by the sha1 hash.
+	 *
+	 * @param sha1 Package sha1.
+	 * @returns The package or null.
+	 */
+	protected _packageBySha1(sha1: string) {
+		this._assertLoaded();
+
+		return this._packages.bySha1(sha1);
+	}
+
+	/**
+	 * Get package by the md5 hash.
+	 *
+	 * @param md5 Package md5.
+	 * @returns The package or null.
+	 */
+	protected _packageByMd5(md5: string) {
+		this._assertLoaded();
+
+		return this._packages.byMd5(md5);
 	}
 
 	/**

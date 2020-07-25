@@ -394,6 +394,16 @@ export interface IPackagesListPackage {
 	sha256: string;
 
 	/**
+	 * SHA1 hash of the file contents.
+	 */
+	sha1: string;
+
+	/**
+	 * MD5 hash of the file contents.
+	 */
+	md5: string;
+
+	/**
 	 * Source, URL for root or file path for children.
 	 */
 	source: string;
