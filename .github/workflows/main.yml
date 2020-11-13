@@ -19,10 +19,10 @@ jobs:
     - uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.config.node-version }}
-      env:
-      - NO_LINT: ${{ matrix.config.NO_LINT }}
 
     - run: npm install
     - run: npm run clean
     - run: npm run lint
+      env:
+      - NO_LINT: ${{ matrix.config.NO_LINT }}
     - run: npm run build
