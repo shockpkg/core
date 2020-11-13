@@ -10,7 +10,6 @@ jobs:
           - node-version: '10.0.0'
             NO_LINT: 1
           - node-version: '15.2.0'
-            NO_LINT: 0
 
     runs-on: ubuntu-20.04
 
@@ -25,5 +24,5 @@ jobs:
     - run: npm run clean
     - run: npm run lint
       env:
-      - NO_LINT: ${{ matrix.config.NO_LINT }}
+        NO_LINT: ${{ matrix.config.NO_LINT }}
     - run: npm run build
