@@ -23,6 +23,5 @@ jobs:
     - run: npm install
     - run: npm run clean
     - run: npm run lint
-      env:
-        NO_LINT: ${{ matrix.config.NO_LINT }}
+      if: matrix.config.NO_LINT != 1
     - run: npm run build
