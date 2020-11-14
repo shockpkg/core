@@ -25,3 +25,4 @@ jobs:
     - run: npm run lint
       if: matrix.config.NO_LINT != 1
     - run: npm run build
+    - run: npm run test
