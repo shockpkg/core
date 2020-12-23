@@ -60,7 +60,7 @@ export async function arrayMapAsync<T, U>(
  * @param end The end event name.
  */
 export async function streamEndError(obj: EventEmitter, end: string) {
-	await new Promise((resolve, reject) => {
+	await new Promise<void>((resolve, reject) => {
 		const done = (err: Error | null) => {
 			if (err) {
 				reject(err);

@@ -102,7 +102,7 @@ export class Zip extends Object {
 		}
 		this._zipfile = null;
 
-		await new Promise((resolve, reject) => {
+		await new Promise<void>((resolve, reject) => {
 			let error: Error | null = null;
 			const next = (err: Error | null) => {
 				if (err) {

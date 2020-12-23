@@ -288,7 +288,7 @@ async function createServer(packages: string) {
 	const url = `${protocol}//${host}`;
 
 	const close = async () => {
-		await new Promise(resolve => {
+		await new Promise<void>(resolve => {
 			server.close(() => {
 				resolve();
 			});
