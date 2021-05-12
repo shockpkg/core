@@ -4,7 +4,6 @@ import {promisify as utilPromisify} from 'util';
 
 import yauzl from 'yauzl';
 
-import {property} from './decorators';
 import {
 	ZipItter,
 	ZipStreamer
@@ -62,7 +61,6 @@ export class Zip extends Object {
 	/**
 	 * The zipfile instance, generic type to avoid dependency.
 	 */
-	@property(false)
 	protected _zipfile: any = null;
 
 	constructor() {

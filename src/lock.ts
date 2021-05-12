@@ -1,6 +1,5 @@
 import properLockfile from 'proper-lockfile';
 
-import {property} from './decorators';
 import {Dispatcher} from './dispatcher';
 
 /**
@@ -39,19 +38,16 @@ export class Lock extends Object {
 	/**
 	 * Lock has been compromised since aquire.
 	 */
-	@property(false)
 	protected _compromised = false;
 
 	/**
 	 * The path to lock.
 	 */
-	@property(false)
 	protected _path: string;
 
 	/**
 	 * The lock release function.
 	 */
-	@property(false)
 	protected _release: (() => Promise<void>) | null = null;
 
 	constructor(path: string) {

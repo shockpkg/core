@@ -1,6 +1,5 @@
 import fse from 'fs-extra';
 
-import {property} from './decorators';
 import {Package} from './package';
 import {
 	IPackagesList,
@@ -17,49 +16,41 @@ export class Packages extends Object {
 	/**
 	 * Packages data.
 	 */
-	@property(false)
 	protected _packagesList: IPackagesList | null = null;
 
 	/**
 	 * Packages array.
 	 */
-	@property(false)
 	protected _packages = new Set<Package>();
 
 	/**
 	 * Packages mapped by name.
 	 */
-	@property(false)
 	protected _packagesByName = new Map<string, Package>();
 
 	/**
 	 * Packages mapped by sha256.
 	 */
-	@property(false)
 	protected _packagesBySha256 = new Map<string, Package>();
 
 	/**
 	 * Packages mapped by sha1.
 	 */
-	@property(false)
 	protected _packagesBySha1 = new Map<string, Package>();
 
 	/**
 	 * Packages mapped by md5.
 	 */
-	@property(false)
 	protected _packagesByMd5 = new Map<string, Package>();
 
 	/**
 	 * Packages mapped by unique.
 	 */
-	@property(false)
 	protected _packagesByUnique = new Map<string, Package>();
 
 	/**
 	 * The path to the packages file.
 	 */
-	@property(false)
 	protected readonly _path: string;
 
 	/**

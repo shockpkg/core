@@ -4,7 +4,6 @@ import {Readable} from 'stream';
 import fetch from 'node-fetch';
 import AbortController from 'abort-controller';
 
-import {property} from './decorators';
 import {
 	IRequestCallback,
 	IRequestDefaults,
@@ -27,13 +26,11 @@ class RequestStream extends Readable {
 	/**
 	 * Request options.
 	 */
-	@property(false)
 	private _options_: Readonly<IRequestOptions> | null;
 
 	/**
 	 * Abort controller.
 	 */
-	@property(false)
 	private _abortController_: AbortController | null = null;
 
 	constructor(options: Readonly<IRequestOptions>) {
@@ -133,7 +130,6 @@ export class Request extends Object {
 	/**
 	 * Request instance.
 	 */
-	@property(false)
 	protected readonly _request: IRequestInstance;
 
 	constructor(defaults: Readonly<IRequestDefaults> = {}) {

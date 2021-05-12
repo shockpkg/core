@@ -12,7 +12,6 @@ import {
 	PATH_ENV,
 	TEMP_DIR
 } from './constants';
-import {property} from './decorators';
 import {Dispatcher} from './dispatcher';
 import {Lock} from './lock';
 import {Package} from './package';
@@ -182,91 +181,76 @@ export class Manager extends Object {
 	/**
 	 * Packages URL.
 	 */
-	@property(false)
 	protected readonly _packagesUrl: string = PACKAGES_URL;
 
 	/**
 	 * Packages file.
 	 */
-	@property(false)
 	protected readonly _packagesFile: string = PACKAGES_FILE;
 
 	/**
 	 * Package file.
 	 */
-	@property(false)
 	protected readonly _packageFile: string = PACKAGE_FILE;
 
 	/**
 	 * Main directory.
 	 */
-	@property(false)
 	protected readonly _mainDir: string = MAIN_DIR;
 
 	/**
 	 * Meta directory.
 	 */
-	@property(false)
 	protected readonly _metaDir: string = META_DIR;
 
 	/**
 	 * Temp directory.
 	 */
-	@property(false)
 	protected readonly _tempDir: string = TEMP_DIR;
 
 	/**
 	 * Path environment variable name.
 	 */
-	@property(false)
 	protected readonly _pathEnv: string = PATH_ENV;
 
 	/**
 	 * Packages URL environment variable name.
 	 */
-	@property(false)
 	protected readonly _packagesUrlEnv: string = PACKAGES_URL_ENV;
 
 	/**
 	 * Inited flag.
 	 */
-	@property(false)
 	protected _inited = false;
 
 	/**
 	 * Destroyed flag.
 	 */
-	@property(false)
 	protected _destroyed = false;
 
 	/**
 	 * Exclusive access flag.
 	 */
-	@property(false)
 	protected _exclusive = false;
 
 	/**
 	 * Root path.
 	 */
-	@property(false)
 	protected readonly _path: string;
 
 	/**
 	 * Lock file instance.
 	 */
-	@property(false)
 	protected readonly _lock: Lock;
 
 	/**
 	 * Packages instance.
 	 */
-	@property(false)
 	protected readonly _packages: Packages;
 
 	/**
 	 * Request instance.
 	 */
-	@property(false)
 	protected readonly _request: Request;
 
 	constructor(path: string | null = null) {

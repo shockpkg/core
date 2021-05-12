@@ -1,5 +1,3 @@
-import {property} from './decorators';
-
 /**
  * Event dispatcher.
  *
@@ -9,13 +7,11 @@ export class Dispatcher<T> extends Object {
 	/**
 	 * Event context.
 	 */
-	@property(false)
 	protected readonly _context: any;
 
 	/**
 	 * Event handlers.
 	 */
-	@property(false)
 	protected readonly _handlers = new Set<(event: T) => any>();
 
 	constructor(context: any) {
