@@ -1,6 +1,5 @@
 import {createHash as cryptoCreateHash} from 'crypto';
 import {Server} from 'http';
-import {parse as urlParse} from 'url';
 
 import express from 'express';
 import fse from 'fs-extra';
@@ -279,7 +278,11 @@ async function createServer(packages: string) {
 	const address = server.address();
 	// eslint-disable-next-line no-nested-ternary
 	const port = typeof address === 'string' ?
-		Number(urlParse(address).port) :
+		Number(
+			address.split('//')[1]
+				.split('/')[0]
+				.split(':').pop()
+		) :
 		(address ? address.port : null);
 	if (!port) {
 		throw new Error(`Failed to get port from ${address}`);
