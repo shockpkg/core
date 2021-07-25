@@ -1097,7 +1097,7 @@ export class Manager extends Object {
 			null
 		);
 		if (!r) {
-			throw new Error('Package is not installed');
+			throw new Error(`Package is not installed: ${name}`);
 		}
 		return r;
 	}

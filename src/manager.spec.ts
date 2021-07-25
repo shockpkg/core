@@ -2625,7 +2625,9 @@ describe('manager', () => {
 						manager.packageInstallVerify(packageSingle.name)
 					);
 
-					expect(error.message).toBe('Package is not installed');
+					expect(error.message).toBe(
+						`Package is not installed: ${packageSingle.name}`
+					);
 				}
 			));
 

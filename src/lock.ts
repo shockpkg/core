@@ -116,7 +116,7 @@ export class Lock extends Object {
 	 */
 	public async aquire() {
 		if (this._release) {
-			throw new Error('Lock already aquired');
+			throw new Error(`Lock already aquired on: ${this.path}`);
 		}
 
 		this._compromised = false;
@@ -140,7 +140,7 @@ export class Lock extends Object {
 	 */
 	public async release() {
 		if (!this._release) {
-			throw new Error('Lock not aquired');
+			throw new Error(`Lock not aquired on: ${this.path}`);
 		}
 
 		await this._release();
