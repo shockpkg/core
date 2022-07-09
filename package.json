@@ -104,7 +104,7 @@
 		"@types/proper-lockfile": "^4.1.2",
 		"abort-controller": "^3.0.0",
 		"fs-extra": "^10.1.0",
-		"node-fetch": "^2.6.1",
+		"node-fetch": "^2.6.7",
 		"proper-lockfile": "^4.1.2",
 		"yauzl": "^2.10.0"
 	}
