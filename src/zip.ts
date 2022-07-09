@@ -1,17 +1,11 @@
 /* eslint-disable max-classes-per-file */
 
-import {promisify as utilPromisify} from 'util';
+import {Readable} from 'stream';
 
 import yauzl from 'yauzl';
 
 import {ZipItter, ZipStreamer} from './types';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const yauzlOpen = yauzl.open.bind(yauzl);
-const yauzlOpenP = utilPromisify(yauzlOpen);
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const yauzlFromRAR = yauzl.fromRandomAccessReader.bind(yauzl);
-const yauzlFromRARP = utilPromisify(yauzlFromRAR);
 const openOpts = {lazyEntries: true};
 
 /**
@@ -82,7 +76,15 @@ export class Zip extends Object {
 	 */
 	public async openFile(file: string) {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		this._zipfile = await yauzlOpenP(file, openOpts);
+		this._zipfile = await new Promise((resolve, reject) => {
+			yauzl.open(file, openOpts, (err, zipfile) => {
+				if (err) {
+					reject(err);
+					return;
+				}
+				resolve(zipfile);
+			});
+		});
 	}
 
 	/**
@@ -93,8 +95,21 @@ export class Zip extends Object {
 	 */
 	public async openStreamer(streamer: ZipStreamer, totalSize: number) {
 		const reader = new StreamerRAR(streamer);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		this._zipfile = await yauzlFromRARP(reader, totalSize, openOpts);
+
+		this._zipfile = await new Promise((resolve, reject) => {
+			yauzl.fromRandomAccessReader(
+				reader,
+				totalSize,
+				openOpts,
+				(err, zipfile) => {
+					if (err) {
+						reject(err);
+						return;
+					}
+					resolve(zipfile);
+				}
+			);
+		});
 	}
 
 	/**
@@ -140,13 +155,16 @@ export class Zip extends Object {
 				 * @returns Open entry.
 				 */
 				const stream = async () => {
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-					const open = zipfile.openReadStream.bind(zipfile);
-					const openP = utilPromisify(open);
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-					const r = await openP(entry);
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-					return r;
+					const stream = new Promise<Readable>((resolve, reject) => {
+						zipfile.openReadStream(entry, (err, stream) => {
+							if (err) {
+								reject(err);
+								return;
+							}
+							resolve(stream as Readable);
+						});
+					});
+					return stream;
 				};
 
 				itter({
