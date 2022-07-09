@@ -127,8 +127,7 @@ export class Zip extends Object {
 				zipfile.readEntry();
 			};
 			zipfile.on('error', next);
-			// eslint-disable-next-line @typescript-eslint/no-misused-promises
-			zipfile.on('entry', async (entry: yauzl.Entry) => {
+			zipfile.on('entry', (entry: yauzl.Entry) => {
 				const path = entry.fileName.replace(/\\/g, '/');
 				const dir = path.endsWith('/');
 				const {crc32} = entry;
@@ -150,27 +149,23 @@ export class Zip extends Object {
 					return r;
 				};
 
-				let done = false;
-				try {
-					done = await itter({
-						path,
-						dir,
-						crc32,
-						sizeC,
-						sizeD,
-						stream
-					});
-				} catch (err) {
-					next(err);
-					return;
-				}
-
-				if (done) {
-					zipfile.close();
-				} else {
-					next(null);
-					return;
-				}
+				itter({
+					path,
+					dir,
+					crc32,
+					sizeC,
+					sizeD,
+					stream
+				})
+					.then(done => {
+						if (done) {
+							zipfile.close();
+						} else {
+							next(null);
+							return;
+						}
+					})
+					.catch(next);
 			});
 			zipfile.on('close', () => {
 				if (error) {
