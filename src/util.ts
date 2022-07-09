@@ -61,6 +61,11 @@ export async function arrayMapAsync<T, U>(
  */
 export async function streamEndError(obj: EventEmitter, end: string) {
 	await new Promise<void>((resolve, reject) => {
+		/**
+		 * Done callback.
+		 *
+		 * @param err Error object or null.
+		 */
 		const done = (err: Error | null) => {
 			if (err) {
 				reject(err);
@@ -88,8 +93,7 @@ export async function promiseCatch<T, U>(p: Promise<T>, d: U) {
 	let r: T | U = d;
 	try {
 		r = await p;
-	}
-	catch (err) {
+	} catch (err) {
 		// Do nothing.
 	}
 	return r;
@@ -167,10 +171,7 @@ export function hashNormalize(hash: string, encoding: HashEncoding) {
  * @param path File path.
  * @param hashes Hash list.
  */
-export async function fileHash(
-	path: string,
-	hashes: Readonly<IHash[]>
-) {
+export async function fileHash(path: string, hashes: Readonly<IHash[]>) {
 	const hashers = hashes.map(hash => ({
 		hash,
 		hasher: cryptoCreateHash(hash.algorithm)
@@ -214,7 +215,10 @@ export async function fileHashVerify(
 		};
 	});
 
-	await fileHash(path, all.map(entry => entry.hashed));
+	await fileHash(
+		path,
+		all.map(entry => entry.hashed)
+	);
 
 	for (const {hash, hashed} of all) {
 		const {encoding, algorithm} = hash;
@@ -291,13 +295,14 @@ export async function streamVerify(
 	}));
 
 	let streamSize = 0;
-	source.on('data', data => {
+	source.on('data', (data: string | Buffer) => {
 		// Update size, check no over read.
 		streamSize += data.length;
 		if (size !== null && streamSize > size) {
-			source.emit('error', new Error(
-				`Read size too large: ${streamSize}`
-			));
+			source.emit(
+				'error',
+				new Error(`Read size too large: ${streamSize}`)
+			);
 		}
 
 		// Update hashers.
@@ -309,8 +314,7 @@ export async function streamVerify(
 
 		try {
 			onData(data);
-		}
-		catch (err) {
+		} catch (err) {
 			source.emit('error', err);
 		}
 	});
@@ -357,8 +361,7 @@ export async function streamRequest(
 			if (onResponse) {
 				onResponse(response);
 			}
-		}
-		catch (err) {
+		} catch (err) {
 			source.emit('error', err);
 			return;
 		}
@@ -367,13 +370,7 @@ export async function streamRequest(
 		source.abort();
 	});
 
-	await streamVerify(
-		source,
-		'complete',
-		size,
-		hashes,
-		onData
-	);
+	await streamVerify(source, 'complete', size, hashes, onData);
 }
 
 /**
@@ -424,8 +421,7 @@ export async function zipEntryExtract(
 	const {sizeD} = entry;
 	if (size === null) {
 		size = sizeD;
-	}
-	else if (sizeD !== size) {
+	} else if (sizeD !== size) {
 		throw new Error(`Unexpected extract size: ${sizeD}`);
 	}
 

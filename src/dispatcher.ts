@@ -1,7 +1,5 @@
 /**
  * Event dispatcher.
- *
- * @param context Context object.
  */
 export class Dispatcher<T> extends Object {
 	/**
@@ -14,9 +12,15 @@ export class Dispatcher<T> extends Object {
 	 */
 	protected readonly _handlers = new Set<(event: T) => any>();
 
+	/**
+	 * Event dispatcher constructor.
+	 *
+	 * @param context Context object.
+	 */
 	constructor(context: any) {
 		super();
 
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		this._context = context;
 	}
 
@@ -45,6 +49,7 @@ export class Dispatcher<T> extends Object {
 	 * @returns Handler count.
 	 */
 	public triggerSync(event: T) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const self = this._context;
 		let i = 0;
 		for (const cb of this._handlers) {
@@ -61,6 +66,7 @@ export class Dispatcher<T> extends Object {
 	 * @returns Handler count.
 	 */
 	public async triggerAsync(event: T) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const self = this._context;
 		let i = 0;
 		for (const cb of this._handlers) {
@@ -90,7 +96,7 @@ export class Dispatcher<T> extends Object {
 	 * @returns Handler count.
 	 */
 	public async triggerOrThrowAsync(event: T) {
-		if (!await this.triggerAsync(event)) {
+		if (!(await this.triggerAsync(event))) {
 			throw event;
 		}
 	}

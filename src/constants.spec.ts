@@ -1,6 +1,4 @@
-import {
-	PACKAGES_URL
-} from './constants';
+import {PACKAGES_URL} from './constants';
 
 describe('constants', () => {
 	describe('PACKAGES_URL', () => {

@@ -10,11 +10,9 @@ The core shockpkg library.
 
 [![Build Status](https://github.com/shockpkg/core/workflows/main/badge.svg?branch=master)](https://github.com/shockpkg/core/actions?query=workflow%3Amain+branch%3Amaster)
 
-
 # Overview
 
 The core package manager library for shockpkg packages.
-
 
 # Usage
 
@@ -38,11 +36,9 @@ main().catch(err => {
 });
 ```
 
-
 # Bugs
 
 If you find a bug or have compatibility issues, please open a ticket under issues section for this repository.
-
 
 # License
 

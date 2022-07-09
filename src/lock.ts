@@ -3,9 +3,7 @@ import properLockfile from 'proper-lockfile';
 import {Dispatcher} from './dispatcher';
 
 /**
- * Lock constructor.
- *
- * @param path The path to lock.
+ * Lock file.
  */
 export class Lock extends Object {
 	/**
@@ -50,6 +48,11 @@ export class Lock extends Object {
 	 */
 	protected _release: (() => Promise<void>) | null = null;
 
+	/**
+	 * Lock file constructor.
+	 *
+	 * @param path The path to lock.
+	 */
 	constructor(path: string) {
 		super();
 
@@ -96,12 +99,10 @@ export class Lock extends Object {
 		let r: boolean;
 		try {
 			r = await properLockfile.check(this.path);
-		}
-		catch (err) {
-			if (err.code === 'ENOENT') {
+		} catch (err) {
+			if (err && (err as {code: string}).code === 'ENOENT') {
 				r = false;
-			}
-			else {
+			} else {
 				throw err;
 			}
 		}
@@ -126,6 +127,12 @@ export class Lock extends Object {
 			update: this.update,
 			retries: this.retries,
 			realpath: this.realpath,
+
+			/**
+			 * On lock file compromise.
+			 *
+			 * @param err Error object.
+			 */
 			onCompromised: async err => {
 				this._compromised = true;
 				this._release = null;

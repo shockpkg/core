@@ -7,28 +7,44 @@ jobs:
     strategy:
       matrix:
         config:
-        - node-version: '10.13.0' # LTS
-          NO_LINT: 1
-        - node-version: '12.13.0' # LTS
-          NO_LINT: 1
-        - node-version: '14.15.0' # LTS
-          NO_LINT: 1
-        - node-version: '16.13.0' # LTS
-          NO_LINT: 1
-        - node-version: '18.5.0'
+          - node-version: '10.13.0' # LTS
+            NO_FORMATTED: 1
+            NO_LINT: 1
+          - node-version: '12.13.0' # LTS
+            NO_FORMATTED: 1
+            NO_LINT: 1
+          - node-version: '14.15.0' # LTS
+            NO_FORMATTED: 1
+            NO_LINT: 1
+          - node-version: '16.13.0' # LTS
+            NO_FORMATTED: 1
+            NO_LINT: 1
+          - node-version: '18.5.0'
 
     runs-on: ubuntu-20.04
 
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.config.node-version }}
+      - name: Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.config.node-version }}
 
-    - run: npm ci
-    - run: npm run clean
-    - run: npm run lint
-      if: matrix.config.NO_LINT != 1
-    - run: npm run build
-    - run: npm run test
+      - name: Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test
+
+      - name: Formatted
+        run: npm run formatted
+        if: matrix.config.NO_FORMATTED != 1
+
+      - name: Lint
+        run: npm run lint
+        if: matrix.config.NO_LINT != 1

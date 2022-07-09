@@ -1,10 +1,7 @@
 import {IPackagesListPackage} from './types';
 
 /**
- * Package constructor.
- *
- * @param info Package info.
- * @param parent Package parent.
+ * Package object.
  */
 export class Package extends Object {
 	/**
@@ -52,6 +49,12 @@ export class Package extends Object {
 	 */
 	public readonly parent: Package | null;
 
+	/**
+	 * Package constructor.
+	 *
+	 * @param info Package info.
+	 * @param parent Package parent.
+	 */
 	constructor(
 		info: Readonly<IPackagesListPackage>,
 		parent: Package | null = null

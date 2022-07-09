@@ -53,130 +53,113 @@ import {
 import {Zip} from './zip';
 
 /**
- * Manager constructor.
- *
- * @param path The path, defaults to environment variable or relative.
+ * Package manager.
  */
 export class Manager extends Object {
 	/**
 	 * Package install before events.
 	 */
-	public readonly eventPackageInstallBefore = (
+	public readonly eventPackageInstallBefore =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageInstallBefore>(this)
-	);
+		new Dispatcher<IPackageInstallBefore>(this);
 
 	/**
 	 * Package install after events.
 	 */
-	public readonly eventPackageInstallAfter = (
+	public readonly eventPackageInstallAfter =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageInstallAfter>(this)
-	);
+		new Dispatcher<IPackageInstallAfter>(this);
 
 	/**
 	 * Package install current events.
 	 */
-	public readonly eventPackageInstallCurrent = (
+	public readonly eventPackageInstallCurrent =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageInstallCurrent>(this)
-	);
+		new Dispatcher<IPackageInstallCurrent>(this);
 
 	/**
 	 * Package download before events.
 	 */
-	public readonly eventPackageDownloadBefore = (
+	public readonly eventPackageDownloadBefore =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageDownloadBefore>(this)
-	);
+		new Dispatcher<IPackageDownloadBefore>(this);
 
 	/**
 	 * Package download after events.
 	 */
-	public readonly eventPackageDownloadAfter = (
+	public readonly eventPackageDownloadAfter =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageDownloadAfter>(this)
-	);
+		new Dispatcher<IPackageDownloadAfter>(this);
 
 	/**
 	 * Package download progress events.
 	 */
-	public readonly eventPackageDownloadProgress = (
+	public readonly eventPackageDownloadProgress =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageDownloadProgress>(this)
-	);
+		new Dispatcher<IPackageDownloadProgress>(this);
 
 	/**
 	 * Package stream before events.
 	 */
-	public readonly eventPackageStreamBefore = (
+	public readonly eventPackageStreamBefore =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageStreamBefore>(this)
-	);
+		new Dispatcher<IPackageStreamBefore>(this);
 
 	/**
 	 * Package stream after events.
 	 */
-	public readonly eventPackageStreamAfter = (
+	public readonly eventPackageStreamAfter =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageStreamAfter>(this)
-	);
+		new Dispatcher<IPackageStreamAfter>(this);
 
 	/**
 	 * Package stream progress events.
 	 */
-	public readonly eventPackageStreamProgress = (
+	public readonly eventPackageStreamProgress =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageStreamProgress>(this)
-	);
+		new Dispatcher<IPackageStreamProgress>(this);
 
 	/**
 	 * Package extract before events.
 	 */
-	public readonly eventPackageExtractBefore = (
+	public readonly eventPackageExtractBefore =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageExtractBefore>(this)
-	);
+		new Dispatcher<IPackageExtractBefore>(this);
 
 	/**
 	 * Package extract after events.
 	 */
-	public readonly eventPackageExtractAfter = (
+	public readonly eventPackageExtractAfter =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageExtractAfter>(this)
-	);
+		new Dispatcher<IPackageExtractAfter>(this);
 
 	/**
 	 * Package extract progress events.
 	 */
-	public readonly eventPackageExtractProgress = (
+	public readonly eventPackageExtractProgress =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageExtractProgress>(this)
-	);
+		new Dispatcher<IPackageExtractProgress>(this);
 
 	/**
 	 * Package cleanup before events.
 	 */
-	public readonly eventPackageCleanupBefore = (
+	public readonly eventPackageCleanupBefore =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageCleanupBefore>(this)
-	);
+		new Dispatcher<IPackageCleanupBefore>(this);
 
 	/**
 	 * Package cleanup after events.
 	 */
-	public readonly eventPackageCleanupAfter = (
+	public readonly eventPackageCleanupAfter =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageCleanupAfter>(this)
-	);
+		new Dispatcher<IPackageCleanupAfter>(this);
 
 	/**
 	 * Package list error events.
 	 */
-	public readonly eventPackageListError = (
+	public readonly eventPackageListError =
 		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<Error>(this)
-	);
+		new Dispatcher<Error>(this);
 
 	/**
 	 * Packages URL.
@@ -253,6 +236,11 @@ export class Manager extends Object {
 	 */
 	protected readonly _request: Request;
 
+	/**
+	 * Manager constructor.
+	 *
+	 * @param path The path, defaults to environment variable or relative.
+	 */
 	constructor(path: string | null = null) {
 		super();
 
@@ -418,13 +406,12 @@ export class Manager extends Object {
 	 * @param func Async function.
 	 * @returns Return value of the async function.
 	 */
-	public async with<T>(func: (self: this) => Promise<T>): Promise<T> {
+	public async with<T>(func: (self: this) => T | Promise<T>): Promise<T> {
 		await this.init();
 		let r: T;
 		try {
-			r = await func.call(this, this);
-		}
-		finally {
+			r = (await func.call(this, this)) as T;
+		} finally {
 			await this.destroy();
 		}
 		return r;
@@ -513,8 +500,8 @@ export class Manager extends Object {
 	 * @returns Install receipt.
 	 */
 	public async packageInstallReceipt(pkg: PackageLike) {
-		return this._exclusiveAsync(
-			async () => this._packageMetaReceiptRead(pkg)
+		return this._exclusiveAsync(async () =>
+			this._packageMetaReceiptRead(pkg)
 		);
 	}
 
@@ -766,8 +753,8 @@ export class Manager extends Object {
 	 */
 	public pathToPackageMeta(pkg: PackageLike, ...parts: string[]) {
 		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(
-			() => this._pathToPackageMeta(pkg, ...parts)
+		return this._exclusiveSync(() =>
+			this._pathToPackageMeta(pkg, ...parts)
 		);
 	}
 
@@ -811,9 +798,8 @@ export class Manager extends Object {
 		this._exclusive = true;
 		let r: T;
 		try {
-			r = func.call(this, this);
-		}
-		finally {
+			r = func.call(this, this) as T;
+		} finally {
 			this._exclusive = false;
 		}
 		return r;
@@ -833,9 +819,8 @@ export class Manager extends Object {
 		this._exclusive = true;
 		let r: T;
 		try {
-			r = await func.call(this, this);
-		}
-		finally {
+			r = (await func.call(this, this)) as T;
+		} finally {
 			this._exclusive = false;
 		}
 		return r;
@@ -843,8 +828,10 @@ export class Manager extends Object {
 
 	/**
 	 * Itterate over the packages.
+	 *
+	 * @yields Package object.
 	 */
-	protected * _packageItter() {
+	protected *_packageItter() {
 		this._assertActive();
 
 		for (const entry of this._packages.itter()) {
@@ -954,11 +941,13 @@ export class Manager extends Object {
 
 		await fileSizeVerify(filePath, size);
 
-		await fileHashVerify(filePath, [{
-			algorithm: 'sha256',
-			encoding: 'hex',
-			digest: sha256
-		}]);
+		await fileHashVerify(filePath, [
+			{
+				algorithm: 'sha256',
+				encoding: 'hex',
+				digest: sha256
+			}
+		]);
 	}
 
 	/**
@@ -979,8 +968,7 @@ export class Manager extends Object {
 				throw new Error(`Unknown package: ${pkg}`);
 			}
 			r = p;
-		}
-		else {
+		} else {
 			this._assertpackageIsMember(pkg);
 			r = pkg;
 		}
@@ -1006,8 +994,7 @@ export class Manager extends Object {
 				throw new Error(`Unknown package: ${pkg}`);
 			}
 			r = pkgObj ? pkgObj.name : pkg;
-		}
-		else {
+		} else {
 			this._assertpackageIsMember(pkg);
 			r = pkg.name;
 		}
@@ -1092,10 +1079,10 @@ export class Manager extends Object {
 		const name = this._packageToName(pkg, false);
 		const pkgf = this._pathToPackageMeta(name, this.packageFile);
 
-		const r: IPackageReceipt | null = await promiseCatch(
+		const r = (await promiseCatch(
 			fse.readJson(pkgf),
 			null
-		);
+		)) as IPackageReceipt | null;
 		if (!r) {
 			throw new Error(`Package is not installed: ${name}`);
 		}
@@ -1121,11 +1108,12 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * CReate package installed receipt object from a package.
+	 * Create package installed receipt object from a package.
 	 *
 	 * @param pkg The package.
 	 * @returns Receipt object.
 	 */
+	// eslint-disable-next-line @typescript-eslint/require-await
 	protected async _packageMetaReceiptFromPackage(pkg: PackageLike) {
 		this._assertLoaded();
 		pkg = this._packageToPackage(pkg);
@@ -1287,8 +1275,7 @@ export class Manager extends Object {
 		await this._lock.aquire();
 		try {
 			await this._packages.readIfExists();
-		}
-		catch (err) {
+		} catch (err) {
 			// eslint-disable-next-line no-sync
 			this.eventPackageListError.triggerSync(err);
 		}
@@ -1338,8 +1325,7 @@ export class Manager extends Object {
 
 		try {
 			await this._packageMetaReceiptRead(pkg);
-		}
-		catch (err) {
+		} catch (err) {
 			return false;
 		}
 		return true;
@@ -1358,8 +1344,7 @@ export class Manager extends Object {
 		let data: IPackageReceipt | null = null;
 		try {
 			data = await this._packageMetaReceiptRead(pkg);
-		}
-		catch (err) {
+		} catch (err) {
 			return false;
 		}
 		return !!(
@@ -1398,7 +1383,7 @@ export class Manager extends Object {
 		const dirList = await this._packagesDirList();
 		const filtered = await arrayFilterAsync(dirList, async entry => {
 			const pkg = this._packageByName(entry);
-			return pkg && !await this._isCurrent(pkg);
+			return pkg && !(await this._isCurrent(pkg));
 		});
 		return this._packagesDependOrdered(filtered);
 	}
@@ -1496,8 +1481,7 @@ export class Manager extends Object {
 					const pF = this._pathToPackage(parent, parent.file);
 					// eslint-disable-next-line no-await-in-loop
 					await this._packageExtract(p, tmpFile, pF);
-				}
-				else {
+				} else {
 					// eslint-disable-next-line no-await-in-loop
 					await this._packageDownload(p, tmpFile);
 				}
@@ -1512,8 +1496,7 @@ export class Manager extends Object {
 				await fse.move(tmpFile, outFile);
 				// eslint-disable-next-line no-await-in-loop
 				await this._packageMetaReceiptWrite(p);
-			}
-			finally {
+			} finally {
 				// eslint-disable-next-line no-await-in-loop
 				await this._tempDirRemove();
 			}
@@ -1539,10 +1522,10 @@ export class Manager extends Object {
 		this._assertLoaded();
 
 		const list = this._packagesDependOrdered(pkgs);
-		return await arrayMapAsync(list, async pkg => ({
+		return (await arrayMapAsync(list, async pkg => ({
 			package: pkg,
 			installed: await this._installFull(pkg)
-		})) as IPackageInstalled[];
+		}))) as IPackageInstalled[];
 	}
 
 	/**
@@ -1580,9 +1563,18 @@ export class Manager extends Object {
 
 		const outFile = this._pathToPackage(pkg, pkg.file);
 		const fileTmpBase = this.pathToTemp(pkg.name);
+
+		/**
+		 * Get tmp file name.
+		 *
+		 * @param i File index.
+		 * @returns Fele name.
+		 */
 		const fileTmp = (i: number) => `${fileTmpBase}.${i}.part`;
-		const oldFile = await this._isInstalled(pkg) ?
-			await this._packageInstallFile(pkg) : null;
+
+		const oldFile = (await this._isInstalled(pkg))
+			? await this._packageInstallFile(pkg)
+			: null;
 
 		// eslint-disable-next-line no-sync
 		this.eventPackageInstallBefore.triggerSync({
@@ -1607,20 +1599,19 @@ export class Manager extends Object {
 					// eslint-disable-next-line no-await-in-loop
 					await this._packageStream(p, tmpFile);
 					stream = false;
-				}
-				else {
+				} else {
 					// Use previous temp file if present.
 					// Else use parent file if not root file.
 					// A root package that is not streamed will be downloaded.
-					const archive = tmpFileP || (parent ?
-						this._pathToPackage(parent, parent.file) :
-						null
-					);
+					const archive =
+						tmpFileP ||
+						(parent
+							? this._pathToPackage(parent, parent.file)
+							: null);
 					if (archive) {
 						// eslint-disable-next-line no-await-in-loop
 						await this._packageExtract(p, tmpFile, archive);
-					}
-					else {
+					} else {
 						// eslint-disable-next-line no-await-in-loop
 						await this._packageDownload(p, tmpFile);
 					}
@@ -1644,8 +1635,7 @@ export class Manager extends Object {
 			}
 			await fse.move(tmpFile, outFile);
 			await this._packageMetaReceiptWrite(pkg);
-		}
-		finally {
+		} finally {
 			await this._tempDirRemove();
 		}
 
@@ -1668,10 +1658,10 @@ export class Manager extends Object {
 		this._assertLoaded();
 
 		const list = this._packagesDependOrdered(pkgs);
-		return await arrayMapAsync(list, async pkg => ({
+		return (await arrayMapAsync(list, async pkg => ({
 			package: pkg,
 			installed: await this._installSlim(pkg)
-		})) as IPackageInstalled[];
+		}))) as IPackageInstalled[];
 	}
 
 	/**
@@ -1705,10 +1695,9 @@ export class Manager extends Object {
 	protected async _isObsolete(pkg: string) {
 		this._assertLoaded();
 
-		const r = (
+		const r =
 			!this._packageByName(pkg) &&
-			await this._packageMetaDirExists(pkg)
-		);
+			(await this._packageMetaDirExists(pkg));
 		return r;
 	}
 
@@ -1721,9 +1710,8 @@ export class Manager extends Object {
 		this._assertLoaded();
 
 		const dirList = await this._packagesDirList();
-		return arrayFilterAsync(
-			dirList,
-			async entry => this._isObsolete(entry)
+		return arrayFilterAsync(dirList, async entry =>
+			this._isObsolete(entry)
 		);
 	}
 
@@ -1740,7 +1728,7 @@ export class Manager extends Object {
 
 		// Remove the obsolete packages.
 		const obsolete = await this._obsolete();
-		return await arrayMapAsync(obsolete, async pkg => {
+		return (await arrayMapAsync(obsolete, async pkg => {
 			// eslint-disable-next-line no-sync
 			this.eventPackageCleanupBefore.triggerSync({
 				package: pkg
@@ -1757,7 +1745,7 @@ export class Manager extends Object {
 				package: pkg,
 				removed
 			};
-		}) as IPackageRemovedObsolete[];
+		})) as IPackageRemovedObsolete[];
 	}
 
 	/**
@@ -1771,9 +1759,8 @@ export class Manager extends Object {
 		this._assertLoaded();
 
 		const dirList = await readDir(this.path, false);
-		return arrayFilterAsync(
-			dirList,
-			async entry => this._packageMetaDirExists(entry)
+		return arrayFilterAsync(dirList, async entry =>
+			this._packageMetaDirExists(entry)
 		);
 	}
 
@@ -1810,7 +1797,7 @@ export class Manager extends Object {
 		zip: Zip
 	) {
 		this._assertLoaded();
-		const pkgO = pkg = this._packageToPackage(pkg);
+		const pkgO = (pkg = this._packageToPackage(pkg));
 
 		const {source, size, sha256} = pkg;
 
@@ -1838,11 +1825,13 @@ export class Manager extends Object {
 				entry,
 				file,
 				size,
-				[{
-					algorithm: 'sha256',
-					encoding: 'hex',
-					digest: sha256
-				}],
+				[
+					{
+						algorithm: 'sha256',
+						encoding: 'hex',
+						digest: sha256
+					}
+				],
 				data => {
 					read += data.length;
 					// eslint-disable-next-line no-sync
@@ -1875,7 +1864,7 @@ export class Manager extends Object {
 	 */
 	protected async _packageDownload(pkg: PackageLike, file: string) {
 		this._assertLoaded();
-		const pkgO = pkg = this._packageToPackage(pkg);
+		const pkgO = (pkg = this._packageToPackage(pkg));
 
 		const {size, sha256} = pkg;
 
@@ -1891,11 +1880,13 @@ export class Manager extends Object {
 			}),
 			file,
 			size,
-			[{
-				algorithm: 'sha256',
-				encoding: 'hex',
-				digest: sha256
-			}],
+			[
+				{
+					algorithm: 'sha256',
+					encoding: 'hex',
+					digest: sha256
+				}
+			],
 			response => {
 				const {statusCode, headers} = response;
 				const contentLength = headers['content-length'];
@@ -1959,7 +1950,7 @@ export class Manager extends Object {
 	 */
 	protected _packageStreamStreamer(pkg: PackageLike) {
 		this._assertLoaded();
-		const pkgO = pkg = this._packageToPackage(pkg);
+		const pkgO = (pkg = this._packageToPackage(pkg));
 
 		const {source} = pkg;
 		return (start: number, end: number) => {
@@ -2030,6 +2021,7 @@ export class Manager extends Object {
 		this._assertActive();
 
 		// Headers and gzip to avoid compression and reduce transfer size.
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const {response, body} = await this._request.promise({
 			url: this.packagesUrl,
 			headers: {

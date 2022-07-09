@@ -23,14 +23,20 @@ async function exec(cmd: string, args: string[] = []) {
 	});
 }
 
-async function packageJSON() {
-	return JSON.parse(await readFile('package.json', 'utf8'));
+async function packageJson() {
+	return JSON.parse(await readFile('package.json', 'utf8')) as {
+		[p: string]: string;
+	};
 }
 
 async function babelrc() {
 	return {
 		...JSON.parse(await readFile('.babelrc', 'utf8')),
 		babelrc: false
+	} as {
+		presets: [string, unknown][];
+		babelOpts: unknown[];
+		plugins: unknown[];
 	};
 }
 
@@ -44,12 +50,13 @@ async function babelTarget(
 	const babelOptions = await babelrc();
 	for (const preset of babelOptions.presets) {
 		if (preset[0] === '@babel/preset-env') {
-			preset[1].modules = modules;
+			(preset[1] as {modules: string | boolean}).modules = modules;
 		}
 	}
 	if (!modules) {
 		babelOptions.plugins.push([
-			'esm-resolver', {
+			'esm-resolver',
+			{
 				source: {
 					extensions: [
 						[
@@ -63,7 +70,7 @@ async function babelTarget(
 	}
 
 	// Read the package JSON.
-	const pkg = await packageJSON();
+	const pkg = await packageJson();
 
 	// Filter meta data file and create replace transform.
 	const filterMeta = gulpFilter(['*/meta.ts'], {restore: true});
@@ -78,7 +85,7 @@ async function babelTarget(
 		...filterMetaReplaces,
 		filterMeta.restore,
 		gulpSourcemaps.init(),
-		gulpBabel(babelOptions),
+		gulpBabel(babelOptions as any),
 		gulpRename(path => {
 			if (!modules && path.extname === '.js') {
 				path.extname = '.mjs';
@@ -104,23 +111,14 @@ async function babelTarget(
 // clean
 
 gulp.task('clean:logs', async () => {
-	await del([
-		'npm-debug.log*',
-		'yarn-debug.log*',
-		'yarn-error.log*'
-	]);
+	await del(['npm-debug.log*', 'yarn-debug.log*', 'yarn-error.log*']);
 });
 
 gulp.task('clean:lib', async () => {
-	await del([
-		'lib'
-	]);
+	await del(['lib']);
 });
 
-gulp.task('clean', gulp.parallel([
-	'clean:logs',
-	'clean:lib'
-]));
+gulp.task('clean', gulp.parallel(['clean:logs', 'clean:lib']));
 
 // lint
 
@@ -128,9 +126,17 @@ gulp.task('lint:es', async () => {
 	await exec('eslint', ['.']);
 });
 
-gulp.task('lint', gulp.parallel([
-	'lint:es'
-]));
+gulp.task('lint', gulp.parallel(['lint:es']));
+
+// formatting
+
+gulp.task('format', async () => {
+	await exec('prettier', ['-w', '.']);
+});
+
+gulp.task('formatted', async () => {
+	await exec('prettier', ['-c', '.']);
+});
 
 // build
 
@@ -146,15 +152,12 @@ gulp.task('build:lib:mjs', async () => {
 	await babelTarget(['src/**/*.ts'], {}, 'lib', false);
 });
 
-gulp.task('build:lib', gulp.parallel([
-	'build:lib:dts',
-	'build:lib:cjs',
-	'build:lib:mjs'
-]));
+gulp.task(
+	'build:lib',
+	gulp.parallel(['build:lib:dts', 'build:lib:cjs', 'build:lib:mjs'])
+);
 
-gulp.task('build', gulp.parallel([
-	'build:lib'
-]));
+gulp.task('build', gulp.parallel(['build:lib']));
 
 // test
 
@@ -162,38 +165,22 @@ gulp.task('test:node', async () => {
 	await exec('jasmine');
 });
 
-gulp.task('test', gulp.parallel([
-	'test:node'
-]));
+gulp.task('test', gulp.parallel(['test:node']));
 
 // watch
 
 gulp.task('watch', () => {
-	gulp.watch([
-		'src/**/*'
-	], gulp.series([
-		'all'
-	]));
+	gulp.watch(['src/**/*'], gulp.series(['all']));
 });
 
 // all
 
-gulp.task('all', gulp.series([
-	'clean',
-	'build',
-	'test',
-	'lint'
-]));
+gulp.task('all', gulp.series(['clean', 'build', 'test', 'formatted', 'lint']));
 
 // prepack
 
-gulp.task('prepack', gulp.series([
-	'clean',
-	'build'
-]));
+gulp.task('prepack', gulp.series(['clean', 'build']));
 
 // default
 
-gulp.task('default', gulp.series([
-	'all'
-]));
+gulp.task('default', gulp.series(['all']));

@@ -4,21 +4,18 @@ import {promisify as utilPromisify} from 'util';
 
 import yauzl from 'yauzl';
 
-import {
-	ZipItter,
-	ZipStreamer
-} from './types';
+import {ZipItter, ZipStreamer} from './types';
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const yauzlOpen = yauzl.open.bind(yauzl);
 const yauzlOpenP = utilPromisify(yauzlOpen);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const yauzlFromRAR = yauzl.fromRandomAccessReader.bind(yauzl);
 const yauzlFromRARP = utilPromisify(yauzlFromRAR);
 const openOpts = {lazyEntries: true};
 
 /**
  * Streamer Random Access Read wrapper class.
- *
- * @param streamer ZipStreamer function.
  */
 class StreamerRAR extends yauzl.RandomAccessReader {
 	/**
@@ -26,6 +23,11 @@ class StreamerRAR extends yauzl.RandomAccessReader {
 	 */
 	private readonly _streamer_: ZipStreamer;
 
+	/**
+	 * Streamer Random Access Read wrapper constructor.
+	 *
+	 * @param streamer ZipStreamer function.
+	 */
 	constructor(streamer: ZipStreamer) {
 		super();
 		this._streamer_ = streamer;
@@ -43,9 +45,12 @@ class StreamerRAR extends yauzl.RandomAccessReader {
 		const streamer = this._streamer_(start, end);
 
 		// Method needed in Node 14+ but not present on a request stream.
-		const streamerAny = streamer as any;
+		const streamerAny = streamer as {unpipe: () => void};
 		if (!streamerAny.unpipe) {
-			streamerAny.unpipe = function() {
+			/**
+			 * Dummy function.
+			 */
+			streamerAny.unpipe = function () {
 				// Do nothing.
 			};
 		}
@@ -63,6 +68,9 @@ export class Zip extends Object {
 	 */
 	protected _zipfile: any = null;
 
+	/**
+	 * File file reader constructor.
+	 */
 	constructor() {
 		super();
 	}
@@ -73,6 +81,7 @@ export class Zip extends Object {
 	 * @param file File path.
 	 */
 	public async openFile(file: string) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		this._zipfile = await yauzlOpenP(file, openOpts);
 	}
 
@@ -84,6 +93,7 @@ export class Zip extends Object {
 	 */
 	public async openStreamer(streamer: ZipStreamer, totalSize: number) {
 		const reader = new StreamerRAR(streamer);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		this._zipfile = await yauzlFromRARP(reader, totalSize, openOpts);
 	}
 
@@ -102,6 +112,12 @@ export class Zip extends Object {
 
 		await new Promise<void>((resolve, reject) => {
 			let error: Error | null = null;
+
+			/**
+			 * Next callback.
+			 *
+			 * @param err Error object or null.
+			 */
 			const next = (err: Error | null) => {
 				if (err) {
 					error = err;
@@ -111,16 +127,26 @@ export class Zip extends Object {
 				zipfile.readEntry();
 			};
 			zipfile.on('error', next);
-			zipfile.on('entry', async entry => {
+			// eslint-disable-next-line @typescript-eslint/no-misused-promises
+			zipfile.on('entry', async (entry: yauzl.Entry) => {
 				const path = entry.fileName.replace(/\\/g, '/');
 				const dir = path.endsWith('/');
 				const {crc32} = entry;
 				const sizeC = entry.compressedSize;
 				const sizeD = entry.uncompressedSize;
+
+				/**
+				 * Open stream.
+				 *
+				 * @returns Open entry.
+				 */
 				const stream = async () => {
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const open = zipfile.openReadStream.bind(zipfile);
 					const openP = utilPromisify(open);
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const r = await openP(entry);
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 					return r;
 				};
 
@@ -134,16 +160,14 @@ export class Zip extends Object {
 						sizeD,
 						stream
 					});
-				}
-				catch (err) {
+				} catch (err) {
 					next(err);
 					return;
 				}
 
 				if (done) {
 					zipfile.close();
-				}
-				else {
+				} else {
 					next(null);
 					return;
 				}

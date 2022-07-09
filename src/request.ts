@@ -2,7 +2,7 @@
 import {Readable} from 'stream';
 
 import fetch from 'node-fetch';
-import AbortController from 'abort-controller';
+import {AbortController} from 'abort-controller';
 
 import {
 	IRequestCallback,
@@ -19,8 +19,6 @@ const userAgent = `${NAME}/${VERSION}`;
 
 /**
  * RequestStream, similar to the deprecated request module stream.
- *
- * @param options Request options.
  */
 class RequestStream extends Readable {
 	/**
@@ -33,6 +31,11 @@ class RequestStream extends Readable {
 	 */
 	private _abortController_: AbortController | null = null;
 
+	/**
+	 * RequestStream constructor.
+	 *
+	 * @param options Request options.
+	 */
 	constructor(options: Readonly<IRequestOptions>) {
 		super();
 
@@ -122,9 +125,7 @@ class RequestStream extends Readable {
 }
 
 /**
- * Request wrapper around the request module.
- *
- * @param defaults Default options.
+ * Request wrapper.
  */
 export class Request extends Object {
 	/**
@@ -132,6 +133,11 @@ export class Request extends Object {
 	 */
 	protected readonly _request: IRequestInstance;
 
+	/**
+	 * Request wrapper constructor.
+	 *
+	 * @param defaults Default options.
+	 */
 	constructor(defaults: Readonly<IRequestDefaults> = {}) {
 		super();
 
@@ -169,6 +175,7 @@ export class Request extends Object {
 				resolve({
 					stream,
 					response,
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					body
 				});
 			});
@@ -184,45 +191,45 @@ export class Request extends Object {
 	protected _createRequestInstance(
 		defaults: Readonly<IRequestDefaults> = {}
 	) {
-		const request = this._createRequest(defaults) as any as (
-			IRequestInstance | null
+		const request = this._createRequest(
+			defaults
+		) as any as IRequestInstance | null;
+		return (
+			request ||
+			((options: Readonly<IRequestOptions>, cb?: IRequestCallback) => {
+				const opts = {...defaults, ...options};
+				const request = new RequestStream(opts);
+				if (cb) {
+					let response: IRequestResponse = {
+						statusCode: 0,
+						headers: {}
+					};
+					const datas: Buffer[] = [];
+					request.on('response', (resp: IRequestResponse) => {
+						response = resp;
+					});
+					request.on('data', data => {
+						datas.push(data);
+					});
+					request.on('error', err => {
+						request.abort();
+						cb(err, response, Buffer.concat(datas));
+					});
+					request.on('complete', resp => {
+						const data = Buffer.concat(datas);
+						const {encoding} = opts;
+						cb(
+							null,
+							resp,
+							encoding === null
+								? data
+								: data.toString(encoding as any)
+						);
+					});
+				}
+				return request;
+			})
 		);
-		return request || ((
-			options: Readonly<IRequestOptions>,
-			cb?: IRequestCallback
-		) => {
-			const opts = {...defaults, ...options};
-			const request = new RequestStream(opts);
-			if (cb) {
-				let response: IRequestResponse = {
-					statusCode: 0,
-					headers: {}
-				};
-				const datas: Buffer[] = [];
-				request.on('response', resp => {
-					response = resp;
-				});
-				request.on('data', data => {
-					datas.push(data);
-				});
-				request.on('error', err => {
-					request.abort();
-					cb(err, response, Buffer.concat(datas));
-				});
-				request.on('complete', resp => {
-					const data = Buffer.concat(datas);
-					const {encoding} = opts;
-					cb(
-						null,
-						resp,
-						encoding === null ?
-							data :
-							data.toString(encoding as any)
-					);
-				});
-			}
-			return request;
-		});
 	}
 
 	/**

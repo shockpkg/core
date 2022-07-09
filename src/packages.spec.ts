@@ -1,3 +1,4 @@
+/* eslint-disable max-nested-callbacks */
 import fse from 'fs-extra';
 
 import {Packages} from './packages';
@@ -10,7 +11,7 @@ import {Packages} from './packages';
  * @returns Repeated string.
  */
 function stringRepeat(s: string, n: number) {
-	return (new Array(n + 1)).join(s);
+	return new Array(n + 1).join(s);
 }
 
 /**
@@ -197,8 +198,8 @@ const dummyPackagesFormatMinorOver = {
 async function getPromiseError(p: Promise<any>) {
 	try {
 		await p;
-	}
-	catch (err) {
+	} catch (err) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 		return err;
 	}
 	// eslint-disable-next-line no-undefined
@@ -363,8 +364,7 @@ describe('packages', () => {
 
 					if (root) {
 						expect(entry.parent).toBeNull();
-					}
-					else {
+					} else {
 						expect(entry.parent).toBeTruthy();
 					}
 

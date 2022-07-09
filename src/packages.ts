@@ -1,16 +1,10 @@
 import fse from 'fs-extra';
 
 import {Package} from './package';
-import {
-	IPackagesList,
-	IPackagesListPackage,
-	IPackageUpdated
-} from './types';
+import {IPackagesList, IPackagesListPackage, IPackageUpdated} from './types';
 
 /**
- * Packages constructor.
- *
- * @param path The path to the packages file.
+ * Packages object.
  */
 export class Packages extends Object {
 	/**
@@ -58,6 +52,11 @@ export class Packages extends Object {
 	 */
 	public static readonly FORMAT: string = '1.1';
 
+	/**
+	 * Packages constructor.
+	 *
+	 * @param path The path to the packages file.
+	 */
 	constructor(path: string) {
 		super();
 
@@ -166,8 +165,7 @@ export class Packages extends Object {
 	 * Read the file path.
 	 */
 	public async read() {
-		const data = await fse.readJson(this.path);
-		this._setPackagesList(this._castData(data));
+		this._setPackagesList(this._castData(await fse.readJson(this.path)));
 	}
 
 	/**
@@ -197,8 +195,10 @@ export class Packages extends Object {
 
 	/**
 	 * Itterate over the packages.
+	 *
+	 * @yields Package object.
 	 */
-	public * itter() {
+	public *itter() {
 		const packages = this._packages;
 		for (const entry of packages) {
 			// If the set changes, break loop.
@@ -496,8 +496,7 @@ export class Packages extends Object {
 	 * @returns Parsed and cast data.
 	 */
 	protected _parseData(data: string) {
-		const parsed = JSON.parse(data);
-		return this._castData(parsed);
+		return this._castData(JSON.parse(data));
 	}
 
 	/**

@@ -23,8 +23,8 @@ async function sleep(ms: number) {
 async function getPromiseError(p: Promise<any>) {
 	try {
 		await p;
-	}
-	catch (err) {
+	} catch (err) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 		return err;
 	}
 	// eslint-disable-next-line no-undefined
