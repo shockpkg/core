@@ -76,7 +76,7 @@ export async function streamEndError(obj: EventEmitter, end: string) {
 		obj.on(end, () => {
 			done(null);
 		});
-		obj.on('error', err => {
+		obj.on('error', (err: Error) => {
 			done(err);
 		});
 	});

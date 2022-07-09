@@ -392,7 +392,9 @@ async function managerFileSha256(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
 	const hasher = cryptoCreateHash('sha256');
 	const f = fse.createReadStream(fp);
-	f.on('data', hasher.update.bind(hasher));
+	f.on('data', data => {
+		hasher.update(data);
+	});
 	await streamEndError(f, 'close');
 	return hasher.digest('hex').toLowerCase();
 }

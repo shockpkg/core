@@ -1277,7 +1277,7 @@ export class Manager extends Object {
 			await this._packages.readIfExists();
 		} catch (err) {
 			// eslint-disable-next-line no-sync
-			this.eventPackageListError.triggerSync(err);
+			this.eventPackageListError.triggerSync(err as Error);
 		}
 
 		this._inited = true;

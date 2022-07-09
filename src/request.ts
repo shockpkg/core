@@ -67,6 +67,7 @@ class RequestStream extends Readable {
 			signal: (this._abortController_ = new AbortController()).signal,
 			method: options.method || 'GET',
 			headers: {
+				// eslint-disable-next-line @typescript-eslint/naming-convention
 				'User-Agent': userAgent,
 				...(options.headers || {})
 			},
@@ -208,14 +209,14 @@ export class Request extends Object {
 					request.on('response', (resp: IRequestResponse) => {
 						response = resp;
 					});
-					request.on('data', data => {
+					request.on('data', (data: Buffer) => {
 						datas.push(data);
 					});
 					request.on('error', err => {
 						request.abort();
 						cb(err, response, Buffer.concat(datas));
 					});
-					request.on('complete', resp => {
+					request.on('complete', (resp: IRequestResponse) => {
 						const data = Buffer.concat(datas);
 						const {encoding} = opts;
 						cb(
@@ -223,7 +224,7 @@ export class Request extends Object {
 							resp,
 							encoding === null
 								? data
-								: data.toString(encoding as any)
+								: data.toString(encoding as BufferEncoding)
 						);
 					});
 				}

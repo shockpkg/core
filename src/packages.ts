@@ -165,6 +165,7 @@ export class Packages extends Object {
 	 * Read the file path.
 	 */
 	public async read() {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 		this._setPackagesList(this._castData(await fse.readJson(this.path)));
 	}
 
@@ -496,6 +497,7 @@ export class Packages extends Object {
 	 * @returns Parsed and cast data.
 	 */
 	protected _parseData(data: string) {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 		return this._castData(JSON.parse(data));
 	}
 
