@@ -42,7 +42,6 @@ async function babelrc() {
 
 async function babelTarget(
 	src: string[],
-	srcOpts: any,
 	dest: string,
 	modules: string | boolean
 ) {
@@ -80,12 +79,12 @@ async function babelTarget(
 	].map(([f, r]) => gulpReplace(f, r));
 
 	await pipeline(
-		gulp.src(src, srcOpts),
+		gulp.src(src),
 		filterMeta,
 		...filterMetaReplaces,
 		filterMeta.restore,
 		gulpSourcemaps.init(),
-		gulpBabel(babelOptions as any),
+		gulpBabel(babelOptions as {}),
 		gulpRename(path => {
 			if (!modules && path.extname === '.js') {
 				path.extname = '.mjs';
@@ -145,11 +144,11 @@ gulp.task('build:dts', async () => {
 });
 
 gulp.task('build:cjs', async () => {
-	await babelTarget(['src/**/*.ts'], {}, 'lib', 'commonjs');
+	await babelTarget(['src/**/*.ts'], 'lib', 'commonjs');
 });
 
 gulp.task('build:esm', async () => {
-	await babelTarget(['src/**/*.ts'], {}, 'lib', false);
+	await babelTarget(['src/**/*.ts'], 'lib', false);
 });
 
 gulp.task('build', gulp.parallel(['build:dts', 'build:cjs', 'build:esm']));
