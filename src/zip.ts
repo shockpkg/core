@@ -161,7 +161,7 @@ export class Zip extends Object {
 								reject(err);
 								return;
 							}
-							resolve(stream as Readable);
+							resolve(stream);
 						});
 					});
 					return stream;
