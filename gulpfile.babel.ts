@@ -183,15 +183,15 @@ gulp.task('watch:esm', () => {
 
 gulp.task(
 	'all:cjs',
-	gulp.series(['clean', 'build:cjs', 'test:cjs', 'formatted', 'lint'])
+	gulp.series(['clean', 'build:cjs', 'test:cjs', 'lint', 'formatted'])
 );
 
 gulp.task(
 	'all:esm',
-	gulp.series(['clean', 'build:esm', 'test:esm', 'formatted', 'lint'])
+	gulp.series(['clean', 'build:esm', 'test:esm', 'lint', 'formatted'])
 );
 
-gulp.task('all', gulp.series(['clean', 'build', 'test', 'formatted', 'lint']));
+gulp.task('all', gulp.series(['clean', 'build', 'test', 'lint', 'formatted']));
 
 // prepack
 

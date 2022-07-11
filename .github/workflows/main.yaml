@@ -51,10 +51,10 @@ jobs:
         run: npm run test:esm
         if: matrix.config.NO_ESM != 1
 
-      - name: Formatted
-        run: npm run formatted
-        if: matrix.config.NO_FORMATTED != 1
-
       - name: Lint
         run: npm run lint
         if: matrix.config.NO_LINT != 1
+
+      - name: Formatted
+        run: npm run formatted
+        if: matrix.config.NO_FORMATTED != 1
