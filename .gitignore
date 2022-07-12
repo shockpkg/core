@@ -17,8 +17,8 @@ report.*.json
 *.tgz
 yarn.lock
 
-# Build files
-/lib
-
 # IDE config
 .vscode
+
+# Build files
+/lib
