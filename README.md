@@ -1,4 +1,4 @@
-# shockpkg core
+# shockpkg Core
 
 The core shockpkg library.
 
