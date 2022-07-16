@@ -333,11 +333,11 @@ export class Packages extends Object {
 			throw new Error(`Invalid format version value: ${format}`);
 		}
 
-		if (!(parts[0] === version[0])) {
+		if (parts[0] !== version[0]) {
 			throw new Error(`Invalid format version major: ${format}`);
 		}
 
-		if (!(parts[1] >= version[1])) {
+		if (parts[1] < version[1]) {
 			throw new Error(`Invalid format version minor: ${format}`);
 		}
 	}
