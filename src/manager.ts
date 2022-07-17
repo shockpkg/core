@@ -1,4 +1,7 @@
 import {join as pathJoin} from 'path';
+import {pipeline} from 'stream';
+import {promisify} from 'util';
+import {createHash} from 'crypto';
 
 import fse from 'fs-extra';
 
@@ -51,6 +54,8 @@ import {
 	zipEntryExtract
 } from './util';
 import {Zip} from './zip';
+
+const pipe = promisify(pipeline);
 
 /**
  * Package manager.
@@ -1777,11 +1782,61 @@ export class Manager extends Object {
 		archive: string
 	) {
 		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		const pkgO = (pkg = this._packageToPackage(pkg));
 
-		const zip = this._createZip();
-		await zip.openFile(archive);
-		await this._packageExtractZip(pkg, file, zip);
+		const {size, sha256} = pkg;
+
+		// eslint-disable-next-line no-sync
+		this.eventPackageExtractBefore.triggerSync({
+			package: pkgO
+		});
+
+		// Get start and end bytes (end byte is included, so size-1).
+		const [start, sizeC] = pkg.getZippedSlice();
+		const end = start + sizeC - 1;
+
+		// eslint-disable-next-line no-sync
+		this.eventPackageExtractProgress.triggerSync({
+			package: pkgO,
+			total: size,
+			amount: 0
+		});
+
+		let read = 0;
+		const hash = createHash('sha256');
+		const decompressor = pkg.getZippedDecompressor();
+		decompressor.on('data', (data: Buffer) => {
+			read += data.length;
+			hash.update(data);
+			// eslint-disable-next-line no-sync
+			this.eventPackageExtractProgress.triggerSync({
+				package: pkgO,
+				total: size,
+				amount: read
+			});
+		});
+
+		await pipe(
+			fse.createReadStream(archive, {start, end}),
+			decompressor,
+			fse.createWriteStream(file)
+		);
+
+		if (read !== size) {
+			throw new Error(`Unexpected extract size: ${read}`);
+		}
+
+		const hashed = hash.digest().toString('hex');
+		if (hashed !== sha256) {
+			throw new Error(
+				`Invalid sha256 hash: ${hashed} expected: ${sha256}`
+			);
+		}
+
+		// eslint-disable-next-line no-sync
+		this.eventPackageExtractAfter.triggerSync({
+			package: pkgO
+		});
 	}
 
 	/**

@@ -1,3 +1,6 @@
+import {Transform, PassThrough} from 'stream';
+import {createInflateRaw as zlibCreateInflateRaw} from 'zlib';
+
 import {IPackagesListPackage} from './types';
 
 /**
@@ -83,6 +86,54 @@ export class Package extends Object {
 		this.zipped = zipped || null;
 		this.parent = parent;
 		this.packages = this._createPackages(info.packages);
+	}
+
+	/**
+	 * Get zipped compression method.
+	 *
+	 * @returns Compression method.
+	 */
+	public getZippedCompression(): number {
+		const {zipped} = this;
+		if (!zipped) {
+			throw new Error('Not a child package');
+		}
+		return +zipped.split('-')[0];
+	}
+
+	/**
+	 * Get zipped data slice.
+	 *
+	 * @returns Data start and size.
+	 */
+	public getZippedSlice(): [number, number] {
+		const {zipped} = this;
+		if (!zipped) {
+			throw new Error('Not a child package');
+		}
+		const parts = zipped.split('-');
+		return [+parts[1], +parts[2]];
+	}
+
+	/**
+	 * Get zipped data decompressor.
+	 *
+	 * @returns Transform stream.
+	 */
+	public getZippedDecompressor(): Transform {
+		const method = this.getZippedCompression();
+		switch (method) {
+			case 0: {
+				return new PassThrough();
+			}
+			case 8: {
+				return zlibCreateInflateRaw();
+			}
+			default: {
+				// Do nothing.
+			}
+		}
+		throw new Error(`Unsupported zipped compression: ${method}`);
 	}
 
 	/**
