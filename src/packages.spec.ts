@@ -49,7 +49,7 @@ const tmpPath = './spec/tmp';
 const tmpPathPackages = `${tmpPath}/packages.json`;
 
 const dummyPackages = {
-	format: '1.1',
+	format: '1.2',
 	packages: [
 		{
 			name: 'package-a',
@@ -77,6 +77,7 @@ const dummyPackages = {
 					md5: dummyMd5('BA'),
 					size: 100,
 					source: 'package-b-a.zip',
+					zipped: '0-200-800',
 					packages: [
 						{
 							name: 'package-b-a-a',
@@ -85,7 +86,8 @@ const dummyPackages = {
 							sha1: dummySha1('BAA'),
 							md5: dummyMd5('BAA'),
 							size: 10,
-							source: 'package-b-a-a.zip'
+							source: 'package-b-a-a.zip',
+							zipped: '0-100-200'
 						},
 						{
 							name: 'package-b-a-b',
@@ -94,7 +96,8 @@ const dummyPackages = {
 							sha1: dummySha1('BAB'),
 							md5: dummyMd5('BAB'),
 							size: 10,
-							source: 'package-b-a-b.zip'
+							source: 'package-b-a-b.zip',
+							zipped: '0-500-200'
 						}
 					]
 				},
@@ -105,7 +108,8 @@ const dummyPackages = {
 					sha1: dummySha1('BB'),
 					md5: dummyMd5('BB'),
 					size: 100,
-					source: 'package-b-b.zip'
+					source: 'package-b-b.zip',
+					zipped: '0-900-300'
 				}
 			]
 		},
@@ -122,7 +126,7 @@ const dummyPackages = {
 };
 
 const dummyPackagesDuplicateName = {
-	format: '1.1',
+	format: '1.2',
 	packages: [
 		{
 			name: 'package-a',
@@ -146,7 +150,7 @@ const dummyPackagesDuplicateName = {
 };
 
 const dummyPackagesDuplicateHash = {
-	format: '1.1',
+	format: '1.2',
 	packages: [
 		{
 			name: 'package-a',

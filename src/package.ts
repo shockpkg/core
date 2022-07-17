@@ -40,6 +40,11 @@ export class Package extends Object {
 	public readonly source: string;
 
 	/**
+	 * Zipped info if a child package or null if a root package.
+	 */
+	public readonly zipped: string | null;
+
+	/**
 	 * Child packages.
 	 */
 	public readonly packages: Package[];
@@ -61,6 +66,13 @@ export class Package extends Object {
 	) {
 		super();
 
+		const {zipped} = info;
+		if (parent && !zipped) {
+			throw new Error(`Missing zipped info: ${info.name}`);
+		} else if (!parent && zipped) {
+			throw new Error(`Unexpected zipped info: ${info.name}`);
+		}
+
 		this.name = info.name;
 		this.file = info.file;
 		this.size = info.size;
@@ -68,6 +80,7 @@ export class Package extends Object {
 		this.sha1 = info.sha1;
 		this.md5 = info.md5;
 		this.source = info.source;
+		this.zipped = zipped || null;
 		this.parent = parent;
 		this.packages = this._createPackages(info.packages);
 	}

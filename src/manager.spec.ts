@@ -57,7 +57,8 @@ const packageMultiA = {
 	sha256: 'd84821ba140cc355bf3b5f54b3c02a40467df267e0d9ca88f34c1a11c152bc7b',
 	sha1: '1ef6c57d5b9f80421988fe2b2bc293f58cec5964',
 	md5: '0933f47c8bf83c91a552d72d773258d6',
-	source: 'package-multi/package-multi-a.bin'
+	source: 'package-multi/package-multi-a.bin',
+	zipped: '8-107-65092'
 };
 const packageMultiB = {
 	name: 'package-multi-b',
@@ -66,7 +67,8 @@ const packageMultiB = {
 	sha256: '5bfc83ad4988e63120c317166c985367ed0d6a155efef25f61b9b4837ab65fd1',
 	sha1: '5aa9f5e51f5a8bd965ba53e3a3b056361c93f95f',
 	md5: '2e82f05e1b2f313176fd4c0b3aab0e15',
-	source: 'package-multi/package-multi-b.bin'
+	source: 'package-multi/package-multi-b.bin',
+	zipped: '8-65262-64705'
 };
 const packageMulti = {
 	name: 'package-multi',
@@ -85,7 +87,8 @@ const packageNested = {
 	sha256: '93116b4ab456da0d1d721f93673e084b5b80e283f617376bdef600993840c092',
 	sha1: 'de136cfe07f84cd5af12b389a19ed9197065d661',
 	md5: '63b7339834157c94bcc37e07310d93ce',
-	source: 'package-nested-1/package-nested.bin'
+	source: 'package-nested-1/package-nested.bin',
+	zipped: '8-186-171223'
 };
 const packageNested1 = {
 	name: 'package-nested-1',
@@ -95,21 +98,22 @@ const packageNested1 = {
 	sha1: 'd0dd9c4b1f6940b9637b7fd161672490512d2293',
 	md5: 'a6df4185081d004b4edd3a9a93b7971a',
 	source: 'package-nested-2/package-nested-1.zip',
+	zipped: '0-170-171949',
 	packages: [packageNested]
 };
 const packageNested2 = {
 	name: 'package-nested-2',
 	file: 'package-nested-2.zip',
-	size: 172106,
-	sha256: '0cf6f565f2395fae74b4681f5ba51183fee6334e02fa3b1927b8abde718a272b',
-	sha1: '7e02827210c186e1a7b6552425853ff361f3b905',
-	md5: '7226700d765c668fd9bdf2ba2516c7e0',
+	size: 172335,
+	sha256: 'c053d326a100f85344080ffdad87ed71a42cfa35580548adf7480639e00acd6a',
+	sha1: '3de393e117cdc597ee5c593fa5456d1c4cb7ed49',
+	md5: 'e636b48088f9ddba7fc3295c7f401df8',
 	source: '/packages/package-nested-2.zip',
 	packages: [packageNested1]
 };
 
 const packages = {
-	format: '1.1',
+	format: '1.2',
 	packages: [packageSingle, packageMulti, packageNested2]
 };
 

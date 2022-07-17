@@ -50,7 +50,7 @@ export class Packages extends Object {
 	/**
 	 * Format version.
 	 */
-	public static readonly FORMAT: string = '1.1';
+	public static readonly FORMAT: string = '1.2';
 
 	/**
 	 * Packages constructor.

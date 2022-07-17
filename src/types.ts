@@ -412,6 +412,11 @@ export interface IPackagesListPackage {
 	 * Optional child package list.
 	 */
 	packages?: IPackagesListPackage[];
+
+	/**
+	 * Zipped info if a child package or null if a root package.
+	 */
+	zipped?: string;
 }
 
 export interface IPackagesList {
