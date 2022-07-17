@@ -1718,7 +1718,7 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * Cleanup all obsolete and outdated packages.
+	 * Cleanup all obsolete packages.
 	 *
 	 * @returns Lists of removed packages.
 	 */

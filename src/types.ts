@@ -187,19 +187,6 @@ export interface IPackageRemovedObsolete {
 	removed: boolean;
 }
 
-export interface IPackageRemovedOutdated {
-	//
-	/**
-	 * Package removed.
-	 */
-	package: Package;
-
-	/**
-	 * Removed or already removed.
-	 */
-	removed: boolean;
-}
-
 export interface IPackageUpdated {
 	//
 	/**
