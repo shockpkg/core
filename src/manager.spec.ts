@@ -626,23 +626,15 @@ function testMethodSync(func: (manager: ManagerTest) => any, loaded = true) {
  *
  * @param manager Manager instance.
  * @param events Events ordered.
- * @param eventsNoStream Events ordered, excluding stream events.
  * @returns Reset function to reset the lists.
  */
-function eventsLogger(
-	manager: ManagerTest,
-	events: IPackageEventLog[] = [],
-	eventsNoStream: IPackageEventLog[] = []
-) {
+function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 	let prevDownloadProgress: IPackageDownloadProgress | null = null;
 	let prevStreamProgress: IPackageStreamProgress | null = null;
 	let prevExtractProgress: IPackageExtractProgress | null = null;
 
 	const add = (o: IPackageEventLog) => {
 		events.push(o);
-		if (!o.which.startsWith('stream-')) {
-			eventsNoStream.push(o);
-		}
 	};
 
 	manager.eventPackageCleanupBefore.on(event => {
@@ -796,7 +788,6 @@ function eventsLogger(
 		prevStreamProgress = null;
 		prevExtractProgress = null;
 		events.splice(0, events.length);
-		eventsNoStream.splice(0, eventsNoStream.length);
 	};
 }
 
@@ -2135,33 +2126,28 @@ describe('manager', () => {
 							await manager.update();
 
 							const events: IPackageEventLog[] = [];
-							const eventsNoStream: IPackageEventLog[] = [];
-							const reset = eventsLogger(
-								manager,
-								events,
-								eventsNoStream
-							);
+							const reset = eventsLogger(manager, events);
 
 							await manager.installSlim(packageNested1.name);
-							expect(eventsNoStream).toEqual([
+							expect(events).toEqual([
 								{
 									which: 'install-before',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'extract-before',
+									which: 'stream-before',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'extract-progress',
+									which: 'stream-progress',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'extract-progress',
+									which: 'stream-progress',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'extract-after',
+									which: 'stream-after',
 									package: 'package-nested-1'
 								},
 								{
@@ -2254,33 +2240,28 @@ describe('manager', () => {
 							await manager.update();
 
 							const events: IPackageEventLog[] = [];
-							const eventsNoStream: IPackageEventLog[] = [];
-							const reset = eventsLogger(
-								manager,
-								events,
-								eventsNoStream
-							);
+							const reset = eventsLogger(manager, events);
 
 							await manager.installSlim(packageNested.name);
-							expect(eventsNoStream).toEqual([
+							expect(events).toEqual([
 								{
 									which: 'install-before',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-before',
+									which: 'stream-before',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'extract-progress',
+									which: 'stream-progress',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'extract-progress',
+									which: 'stream-progress',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'extract-after',
+									which: 'stream-after',
 									package: 'package-nested-1'
 								},
 								{
@@ -2549,29 +2530,28 @@ describe('manager', () => {
 					);
 
 					const events: IPackageEventLog[] = [];
-					const eventsNoStream: IPackageEventLog[] = [];
-					const reset = eventsLogger(manager, events, eventsNoStream);
+					const reset = eventsLogger(manager, events);
 
 					await manager.upgradeSlim();
-					expect(eventsNoStream).toEqual([
+					expect(events).toEqual([
 						{
 							which: 'install-before',
 							package: 'package-nested-1'
 						},
 						{
-							which: 'extract-before',
+							which: 'stream-before',
 							package: 'package-nested-1'
 						},
 						{
-							which: 'extract-progress',
+							which: 'stream-progress',
 							package: 'package-nested-1'
 						},
 						{
-							which: 'extract-progress',
+							which: 'stream-progress',
 							package: 'package-nested-1'
 						},
 						{
-							which: 'extract-after',
+							which: 'stream-after',
 							package: 'package-nested-1'
 						},
 						{

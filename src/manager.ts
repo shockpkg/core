@@ -1982,18 +1982,84 @@ export class Manager extends Object {
 	 */
 	protected async _packageStream(pkg: PackageLike, file: string) {
 		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		const pkgO = (pkg = this._packageToPackage(pkg));
 		const {parent} = pkg;
 
 		if (!parent || parent.parent) {
 			throw new Error('Can only stream direct children of root packages');
 		}
 
-		// Extract from zip without downloading the full zip.
-		const streamer = this._packageStreamStreamer(parent);
-		const zip = this._createZip();
-		await zip.openStreamer(streamer, parent.size);
-		await this._packageExtractZip(pkg, file, zip);
+		// eslint-disable-next-line no-sync
+		this.eventPackageStreamBefore.triggerSync({
+			package: pkgO
+		});
+
+		const {size, sha256} = pkg;
+
+		// Get start and end bytes (end byte is included, so size-1).
+		const [start, sizeC] = pkg.getZippedSlice();
+		const end = start + sizeC - 1;
+
+		let read = 0;
+		const hash = createHash('sha256');
+		const decompressor = pkg.getZippedDecompressor();
+		decompressor.on('data', (data: Buffer) => {
+			read += data.length;
+			hash.update(data);
+			// eslint-disable-next-line no-sync
+			this.eventPackageStreamProgress.triggerSync({
+				package: pkgO,
+				total: size,
+				amount: read
+			});
+		});
+
+		const source = this._request.stream({
+			url: parent.source,
+			headers: {
+				Range: `bytes=${start}-${end}`
+			}
+		});
+		source.on('response', response => {
+			try {
+				const {statusCode, headers} = response;
+				const contentLength = headers['content-length'];
+				this._assertStatusCode(206, statusCode);
+				if (contentLength) {
+					this._assertContentLength(sizeC, contentLength);
+				}
+
+				// eslint-disable-next-line no-sync
+				this.eventPackageStreamProgress.triggerSync({
+					package: pkgO,
+					total: size,
+					amount: 0
+				});
+			} catch (err) {
+				source.emit('error', err);
+			}
+		});
+		source.on('error', () => {
+			source.abort();
+		});
+
+		await pipe(source, decompressor, fse.createWriteStream(file));
+
+		if (read !== size) {
+			throw new Error(`Unexpected extract size: ${read}`);
+		}
+
+		const hashed = hash.digest().toString('hex');
+		if (hashed !== sha256) {
+			throw new Error(
+				`Invalid sha256 hash: ${hashed} expected: ${sha256}`
+			);
+		}
+
+		// eslint-disable-next-line no-sync
+		this.eventPackageStreamAfter.triggerSync({
+			package: pkgO
+		});
 	}
 
 	/**
