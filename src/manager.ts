@@ -48,8 +48,7 @@ import {
 	fileSizeVerify,
 	lstatExists,
 	promiseCatch,
-	readDir,
-	streamRequestDownload
+	readDir
 } from './util';
 
 const pipe = promisify(pipeline);
@@ -1805,6 +1804,7 @@ export class Manager extends Object {
 		decompressor.on('data', (data: Buffer) => {
 			read += data.length;
 			hash.update(data);
+
 			// eslint-disable-next-line no-sync
 			this.eventPackageExtractProgress.triggerSync({
 				package: pkgO,
@@ -1853,21 +1853,11 @@ export class Manager extends Object {
 			package: pkgO
 		});
 
-		let read = 0;
-		await streamRequestDownload(
-			this._request.stream({
-				url: pkg.source
-			}),
-			file,
-			size,
-			[
-				{
-					algorithm: 'sha256',
-					encoding: 'hex',
-					digest: sha256
-				}
-			],
-			response => {
+		const source = this._request.stream({
+			url: pkg.source
+		});
+		source.on('response', response => {
+			try {
 				const {statusCode, headers} = response;
 				const contentLength = headers['content-length'];
 				this._assertStatusCode(200, statusCode);
@@ -1881,17 +1871,40 @@ export class Manager extends Object {
 					total: size,
 					amount: 0
 				});
-			},
-			data => {
-				read += data.length;
-				// eslint-disable-next-line no-sync
-				this.eventPackageDownloadProgress.triggerSync({
-					package: pkgO,
-					total: size,
-					amount: read
-				});
+			} catch (err) {
+				source.emit('error', err);
 			}
-		);
+		});
+		source.on('error', () => {
+			source.abort();
+		});
+
+		let read = 0;
+		const hash = createHash('sha256');
+		source.on('data', (data: Buffer) => {
+			read += data.length;
+			hash.update(data);
+
+			// eslint-disable-next-line no-sync
+			this.eventPackageDownloadProgress.triggerSync({
+				package: pkgO,
+				total: size,
+				amount: read
+			});
+		});
+
+		await pipe(source, fse.createWriteStream(file));
+
+		if (read !== size) {
+			throw new Error(`Unexpected extract size: ${read}`);
+		}
+
+		const hashed = hash.digest().toString('hex');
+		if (hashed !== sha256) {
+			throw new Error(
+				`Invalid sha256 hash: ${hashed} expected: ${sha256}`
+			);
+		}
 
 		// eslint-disable-next-line no-sync
 		this.eventPackageDownloadAfter.triggerSync({
@@ -1931,6 +1944,7 @@ export class Manager extends Object {
 		decompressor.on('data', (data: Buffer) => {
 			read += data.length;
 			hash.update(data);
+
 			// eslint-disable-next-line no-sync
 			this.eventPackageStreamProgress.triggerSync({
 				package: pkgO,

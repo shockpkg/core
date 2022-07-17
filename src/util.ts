@@ -1,10 +1,9 @@
 import {createHash as cryptoCreateHash} from 'crypto';
 import {EventEmitter} from 'events';
-import {Stream} from 'stream';
 
 import fse from 'fs-extra';
 
-import {HashEncoding, IHash, IRequestStream, OnData, OnResponse} from './types';
+import {HashEncoding, IHash} from './types';
 
 /**
  * Like array filter method, but with asyncronous callback.
@@ -143,19 +142,7 @@ export async function hashFile(
 		hasher.update(data);
 	});
 	await streamEndError(reader, 'close');
-	const digest = hasher.digest(encoding);
-	return hashNormalize(digest, encoding);
-}
-
-/**
- * Normalize a hash string based on the encoding.
- *
- * @param hash Hash value.
- * @param encoding Hash encoding.
- * @returns Normalized hash.
- */
-export function hashNormalize(hash: string, encoding: HashEncoding) {
-	return encoding === 'hex' ? hash.toLowerCase() : hash;
+	return hasher.digest(encoding);
 }
 
 /**
@@ -181,8 +168,7 @@ export async function fileHash(path: string, hashes: Readonly<IHash[]>) {
 	// Verify hashes.
 	for (const {hash, hasher} of hashers) {
 		const {encoding} = hash;
-		const hashed = hasher.digest(encoding);
-		hash.digest = hashNormalize(hashed, encoding);
+		hash.digest = hasher.digest(encoding);
 	}
 }
 
@@ -214,9 +200,9 @@ export async function fileHashVerify(
 	);
 
 	for (const {hash, hashed} of all) {
-		const {encoding, algorithm} = hash;
-		const hashedV = hashNormalize(hashed.digest, encoding);
-		const expectedV = hashNormalize(hash.digest, encoding);
+		const {algorithm} = hash;
+		const hashedV = hashed.digest;
+		const expectedV = hash.digest;
 		if (hashedV === expectedV) {
 			continue;
 		}
@@ -264,133 +250,4 @@ export function dependSort<T>(list: T[], deps: (entry: T) => T[]) {
 		}
 		return 0;
 	});
-}
-
-/**
- * Stream verifier.
- *
- * @param source Request stream.
- * @param endEvent The end event name.
- * @param size Expected size.
- * @param hashes Expected hashes.
- * @param onData Data event handler, can throw to cancel download.
- */
-export async function streamVerify(
-	source: Stream,
-	endEvent: string,
-	size: number | null = null,
-	hashes: Readonly<Readonly<IHash>[]> | null = null,
-	onData: OnData | null = null
-) {
-	const hashers = (hashes || []).map(hash => ({
-		hash,
-		hasher: cryptoCreateHash(hash.algorithm)
-	}));
-
-	let streamSize = 0;
-	source.on('data', (data: string | Buffer) => {
-		// Update size, check no over read.
-		streamSize += data.length;
-		if (size !== null && streamSize > size) {
-			source.emit(
-				'error',
-				new Error(`Read size too large: ${streamSize}`)
-			);
-		}
-
-		// Update hashers.
-		hashers.forEach(entry => entry.hasher.update(data));
-
-		if (!onData) {
-			return;
-		}
-
-		try {
-			onData(data);
-		} catch (err) {
-			source.emit('error', err);
-		}
-	});
-
-	await streamEndError(source, endEvent);
-
-	// Verify size is not too small (too large is checked on data).
-	if (size !== null && streamSize < size) {
-		throw new Error(`Read size too small: ${streamSize}`);
-	}
-
-	for (const {hash, hasher} of hashers) {
-		const {algorithm, encoding, digest} = hash;
-		const expectedV = hashNormalize(digest, encoding);
-		const hashed = hasher.digest(encoding);
-		const hashedV = hashNormalize(hashed, encoding);
-		if (hashedV === expectedV) {
-			continue;
-		}
-		throw new Error(
-			`Invalid ${algorithm} hash: ${hashedV} expected: ${expectedV}`
-		);
-	}
-}
-
-/**
- * Stream a request stream to a specified directory.
- *
- * @param source Request stream.
- * @param size Expected size.
- * @param hashes Expected hashes.
- * @param onResponse Response event handler, can throw to cancel download.
- * @param onData Data event handler, can throw to cancel download.
- */
-export async function streamRequest(
-	source: IRequestStream,
-	size: number | null = null,
-	hashes: Readonly<Readonly<IHash>[]> | null = null,
-	onResponse: OnResponse | null = null,
-	onData: OnData | null = null
-) {
-	source.on('response', response => {
-		try {
-			if (onResponse) {
-				onResponse(response);
-			}
-		} catch (err) {
-			source.emit('error', err);
-			return;
-		}
-	});
-	source.on('error', () => {
-		source.abort();
-	});
-
-	await streamVerify(source, 'complete', size, hashes, onData);
-}
-
-/**
- * Write a request stream to a specified file.
- *
- * @param source Request stream.
- * @param path File path.
- * @param size Expected size.
- * @param hashes Expected hashes.
- * @param onResponse Response event handler, can throw to cancel download.
- * @param onData Data event handler, can throw to cancel download.
- */
-export async function streamRequestDownload(
-	source: IRequestStream,
-	path: string,
-	size: number | null = null,
-	hashes: Readonly<Readonly<IHash>[]> | null = null,
-	onResponse: OnResponse | null = null,
-	onData: OnData | null = null
-) {
-	const write = fse.createWriteStream(path, {
-		encoding: 'binary'
-	});
-	const written = streamEndError(write, 'close');
-	source.pipe(write);
-	await Promise.all([
-		streamRequest(source, size, hashes, onResponse, onData),
-		written
-	]);
 }
