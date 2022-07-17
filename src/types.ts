@@ -306,43 +306,6 @@ export interface IRequestPromiseValue {
 	body: any;
 }
 
-export interface IZipItterEntry {
-	//
-	/**
-	 * Path.
-	 */
-	path: string;
-
-	/**
-	 * Is directory.
-	 */
-	dir: boolean;
-
-	/**
-	 * CRC32.
-	 */
-	crc32: number;
-
-	/**
-	 * Size compressed.
-	 */
-	sizeC: number;
-
-	/**
-	 * Size decompressed.
-	 */
-	sizeD: number;
-
-	/**
-	 * Stream contents (does not wait for it to be closed).
-	 */
-	stream(): Promise<Readable>;
-}
-
-export type ZipItter = (info: IZipItterEntry) => Promise<boolean>;
-
-export type ZipStreamer = (start: number, end: number) => Readable;
-
 export interface IPackageReceipt {
 	//
 	/**

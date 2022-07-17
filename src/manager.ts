@@ -49,11 +49,8 @@ import {
 	lstatExists,
 	promiseCatch,
 	readDir,
-	streamRequest,
-	streamRequestDownload,
-	zipEntryExtract
+	streamRequestDownload
 } from './util';
-import {Zip} from './zip';
 
 const pipe = promisify(pipeline);
 
@@ -1840,78 +1837,6 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * Extract package from zip instance.
-	 *
-	 * @param pkg The package.
-	 * @param file Out file.
-	 * @param zip Archive file.
-	 */
-	protected async _packageExtractZip(
-		pkg: PackageLike,
-		file: string,
-		zip: Zip
-	) {
-		this._assertLoaded();
-		const pkgO = (pkg = this._packageToPackage(pkg));
-
-		const {source, size, sha256} = pkg;
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageExtractBefore.triggerSync({
-			package: pkgO
-		});
-
-		let found = false;
-		await zip.read(async entry => {
-			if (entry.path !== source) {
-				return false;
-			}
-
-			let read = 0;
-
-			// eslint-disable-next-line no-sync
-			this.eventPackageExtractProgress.triggerSync({
-				package: pkgO,
-				total: size,
-				amount: 0
-			});
-
-			await zipEntryExtract(
-				entry,
-				file,
-				size,
-				[
-					{
-						algorithm: 'sha256',
-						encoding: 'hex',
-						digest: sha256
-					}
-				],
-				data => {
-					read += data.length;
-					// eslint-disable-next-line no-sync
-					this.eventPackageExtractProgress.triggerSync({
-						package: pkgO,
-						total: size,
-						amount: read
-					});
-				}
-			);
-
-			found = true;
-			return true;
-		});
-		if (!found) {
-			throw new Error(`Failed to locate for extraction: ${source}`);
-		}
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageExtractAfter.triggerSync({
-			package: pkgO
-		});
-	}
-
-	/**
 	 * Download package.
 	 *
 	 * @param pkg The package.
@@ -2063,77 +1988,6 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * Create streamer function for a package.
-	 * Only works for a root package.
-	 *
-	 * @param pkg The package.
-	 * @returns Streamer function.
-	 */
-	protected _packageStreamStreamer(pkg: PackageLike) {
-		this._assertLoaded();
-		const pkgO = (pkg = this._packageToPackage(pkg));
-
-		const {source} = pkg;
-		return (start: number, end: number) => {
-			const size = end - start;
-
-			// eslint-disable-next-line no-sync
-			this.eventPackageStreamBefore.triggerSync({
-				package: pkgO
-			});
-
-			let read = 0;
-			const stream = this._request.stream({
-				url: source,
-				headers: {
-					Range: `bytes=${start}-${end - 1}`
-				}
-			});
-			streamRequest(
-				stream,
-				null,
-				null,
-				response => {
-					const {statusCode, headers} = response;
-					const contentLength = headers['content-length'];
-					this._assertStatusCode(206, statusCode);
-					if (contentLength) {
-						this._assertContentLength(size, contentLength);
-					}
-
-					// eslint-disable-next-line no-sync
-					this.eventPackageStreamProgress.triggerSync({
-						package: pkgO,
-						total: size,
-						amount: 0
-					});
-				},
-				data => {
-					read += data.length;
-					// eslint-disable-next-line no-sync
-					this.eventPackageStreamProgress.triggerSync({
-						package: pkgO,
-						total: size,
-						amount: read
-					});
-				}
-			)
-				.then(() => {
-					// eslint-disable-next-line no-sync
-					this.eventPackageStreamAfter.triggerSync({
-						package: pkgO
-					});
-				})
-				.catch(() => {
-					// Do nothing, let ZIP library handle stream errors.
-				});
-
-			// Workaround for type issue.
-			return stream;
-		};
-	}
-
-	/**
 	 * Request the packages file.
 	 *
 	 * @returns File contents as string.
@@ -2250,14 +2104,5 @@ export class Manager extends Object {
 	 */
 	protected _createRequest() {
 		return new Request();
-	}
-
-	/**
-	 * Create a Zip instance.
-	 *
-	 * @returns Zip instance.
-	 */
-	protected _createZip() {
-		return new Zip();
 	}
 }

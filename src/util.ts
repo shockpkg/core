@@ -4,14 +4,7 @@ import {Stream} from 'stream';
 
 import fse from 'fs-extra';
 
-import {
-	HashEncoding,
-	IHash,
-	IRequestStream,
-	IZipItterEntry,
-	OnData,
-	OnResponse
-} from './types';
+import {HashEncoding, IHash, IRequestStream, OnData, OnResponse} from './types';
 
 /**
  * Like array filter method, but with asyncronous callback.
@@ -400,38 +393,4 @@ export async function streamRequestDownload(
 		streamRequest(source, size, hashes, onResponse, onData),
 		written
 	]);
-}
-
-/**
- * Write a ZIP entry to a specified file.
- *
- * @param entry ZIP entry.
- * @param path File path.
- * @param size Expected size.
- * @param hashes Expected hashes.
- * @param onData Data event handler, can throw to cancel download.
- */
-export async function zipEntryExtract(
-	entry: Readonly<IZipItterEntry>,
-	path: string,
-	size: number | null = null,
-	hashes: Readonly<Readonly<IHash>[]> | null = null,
-	onData: OnData | null = null
-) {
-	const {sizeD} = entry;
-	if (size === null) {
-		size = sizeD;
-	} else if (sizeD !== size) {
-		throw new Error(`Unexpected extract size: ${sizeD}`);
-	}
-
-	const source = await entry.stream();
-	const write = fse.createWriteStream(path, {
-		encoding: 'binary'
-	});
-	const written = streamEndError(write, 'close');
-	source.pipe(write);
-
-	await streamVerify(source, 'end', size, hashes, onData);
-	await written;
 }
