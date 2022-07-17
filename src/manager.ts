@@ -4,6 +4,7 @@ import {promisify} from 'util';
 import {createHash} from 'crypto';
 
 import fse from 'fs-extra';
+// import fetch from 'node-fetch';
 
 import {
 	MAIN_DIR,
@@ -19,7 +20,6 @@ import {Dispatcher} from './dispatcher';
 import {Lock} from './lock';
 import {Package} from './package';
 import {Packages} from './packages';
-import {Request} from './request';
 import {
 	IPackageCleanupAfter,
 	IPackageCleanupBefore,
@@ -40,6 +40,7 @@ import {
 	IPackageStreamProgress,
 	PackageLike
 } from './types';
+import {IFetch, fetch} from './fetch';
 import {
 	arrayFilterAsync,
 	arrayMapAsync,
@@ -50,6 +51,7 @@ import {
 	promiseCatch,
 	readDir
 } from './util';
+import {NAME, VERSION} from './meta';
 
 const pipe = promisify(pipeline);
 
@@ -57,6 +59,19 @@ const pipe = promisify(pipeline);
  * Package manager.
  */
 export class Manager extends Object {
+	/**
+	 * The default headers for HTTP requests.
+	 */
+	public headers: {[header: string]: string} = {
+		// eslint-disable-next-line @typescript-eslint/naming-convention
+		'User-Agent': `${NAME}/${VERSION}`
+	};
+
+	/**
+	 * A node-fetch similar interface requiring only a sebset of features.
+	 */
+	public fetch: IFetch = fetch;
+
 	/**
 	 * Package install before events.
 	 */
@@ -233,11 +248,6 @@ export class Manager extends Object {
 	protected readonly _packages: Packages;
 
 	/**
-	 * Request instance.
-	 */
-	protected readonly _request: Request;
-
-	/**
 	 * Manager constructor.
 	 *
 	 * @param path The path, defaults to environment variable or relative.
@@ -253,7 +263,6 @@ export class Manager extends Object {
 		this._lock = lock;
 		this._packagesUrl = this._createPackagesUrl(this._packagesUrl);
 		this._packages = this._createPackages();
-		this._request = this._createRequest();
 	}
 
 	/**
@@ -1853,35 +1862,28 @@ export class Manager extends Object {
 			package: pkgO
 		});
 
-		const source = this._request.stream({
-			url: pkg.source
-		});
-		source.on('response', response => {
-			try {
-				const {statusCode, headers} = response;
-				const contentLength = headers['content-length'];
-				this._assertStatusCode(200, statusCode);
-				if (contentLength) {
-					this._assertContentLength(size, contentLength);
-				}
-
-				// eslint-disable-next-line no-sync
-				this.eventPackageDownloadProgress.triggerSync({
-					package: pkgO,
-					total: size,
-					amount: 0
-				});
-			} catch (err) {
-				source.emit('error', err);
+		const response = await fetch(pkg.source, {
+			headers: {
+				...this.headers
 			}
 		});
-		source.on('error', () => {
-			source.abort();
+		this._assertStatusCode(200, response.status);
+		const contentLength = response.headers.get('content-length');
+		if (contentLength) {
+			this._assertContentLength(size, contentLength);
+		}
+
+		// eslint-disable-next-line no-sync
+		this.eventPackageDownloadProgress.triggerSync({
+			package: pkgO,
+			total: size,
+			amount: 0
 		});
 
+		const {body} = response;
 		let read = 0;
 		const hash = createHash('sha256');
-		source.on('data', (data: Buffer) => {
+		body.on('data', (data: Buffer) => {
 			read += data.length;
 			hash.update(data);
 
@@ -1893,7 +1895,7 @@ export class Manager extends Object {
 			});
 		});
 
-		await pipe(source, fse.createWriteStream(file));
+		await pipe(body, fse.createWriteStream(file));
 
 		if (read !== size) {
 			throw new Error(`Unexpected extract size: ${read}`);
@@ -1953,36 +1955,26 @@ export class Manager extends Object {
 			});
 		});
 
-		const source = this._request.stream({
-			url: parent.source,
+		const response = await this.fetch(parent.source, {
 			headers: {
+				...this.headers,
 				Range: `bytes=${start}-${end}`
 			}
 		});
-		source.on('response', response => {
-			try {
-				const {statusCode, headers} = response;
-				const contentLength = headers['content-length'];
-				this._assertStatusCode(206, statusCode);
-				if (contentLength) {
-					this._assertContentLength(sizeC, contentLength);
-				}
+		this._assertStatusCode(206, response.status);
+		const contentLength = response.headers.get('content-length');
+		if (contentLength) {
+			this._assertContentLength(sizeC, contentLength);
+		}
 
-				// eslint-disable-next-line no-sync
-				this.eventPackageStreamProgress.triggerSync({
-					package: pkgO,
-					total: size,
-					amount: 0
-				});
-			} catch (err) {
-				source.emit('error', err);
-			}
-		});
-		source.on('error', () => {
-			source.abort();
+		// eslint-disable-next-line no-sync
+		this.eventPackageStreamProgress.triggerSync({
+			package: pkgO,
+			total: size,
+			amount: 0
 		});
 
-		await pipe(source, decompressor, fse.createWriteStream(file));
+		await pipe(response.body, decompressor, fse.createWriteStream(file));
 
 		if (read !== size) {
 			throw new Error(`Unexpected extract size: ${read}`);
@@ -2009,23 +2001,17 @@ export class Manager extends Object {
 	protected async _requestPackages() {
 		this._assertActive();
 
-		// Headers and gzip to avoid compression and reduce transfer size.
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const {response, body} = await this._request.promise({
-			url: this.packagesUrl,
+		const response = await this.fetch(this.packagesUrl, {
 			headers: {
+				...this.headers,
 				// eslint-disable-next-line @typescript-eslint/naming-convention
 				'Cache-Control': 'max-age=0',
 				Pragma: 'no-cache'
-			},
-			gzip: true
+			}
 		});
-		const {statusCode} = response;
-		this._assertStatusCode(200, statusCode);
-		if (typeof body !== 'string') {
-			throw new Error(`Unexpected response body type: ${typeof body}`);
-		}
-		return body;
+
+		this._assertStatusCode(200, response.status);
+		return response.text();
 	}
 
 	/**
@@ -2109,14 +2095,5 @@ export class Manager extends Object {
 	 */
 	protected _createPackages() {
 		return new Packages(this.pathMetaPackages);
-	}
-
-	/**
-	 * Create the Request instance.
-	 *
-	 * @returns Request instance.
-	 */
-	protected _createRequest() {
-		return new Request();
 	}
 }

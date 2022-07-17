@@ -1,12 +1,6 @@
-import {Readable} from 'stream';
-
 import {Package} from './package';
 
 export type PackageLike = Package | string;
-
-export type OnData = (data: string | Buffer) => any;
-
-export type OnResponse = (response: IRequestResponse) => any;
 
 export interface IPackageInstallBefore {
 	//
@@ -208,89 +202,6 @@ export interface IPackageUpdated {
 	 * SHA256 hash of the file contents.
 	 */
 	sha256: string;
-}
-
-export interface IRequestDefaults {
-	//
-	/**
-	 * Request method.
-	 */
-	method?: string;
-
-	/**
-	 * Request headers.
-	 */
-	headers?: {[key: string]: string};
-
-	/**
-	 * Gzip compression.
-	 */
-	gzip?: boolean;
-
-	/**
-	 * Body encoding used for callback functions.
-	 */
-	encoding?: string | null;
-}
-
-export interface IRequestOptions extends IRequestDefaults {
-	//
-	/**
-	 * URL string.
-	 */
-	url: string;
-}
-
-export interface IRequestStream extends Readable {
-	on(event: 'error', listener: (e: Error) => void): this;
-	on(event: 'response', listener: (resp: IRequestResponse) => void): this;
-	on(event: 'data', listener: (data: Buffer | string) => void): this;
-	// eslint-disable-next-line @typescript-eslint/unified-signatures
-	on(event: 'complete', listener: (resp: IRequestResponse) => void): this;
-	on(event: string | symbol, listener: (...args: any[]) => void): this;
-	abort(): void;
-}
-
-export interface IRequestResponse {
-	//
-	/**
-	 * Status code.
-	 */
-	statusCode: number;
-
-	/**
-	 * Response headers, all lowercase.
-	 */
-	headers: {[key: string]: string};
-}
-
-export type IRequestCallback = (
-	error: any,
-	response: IRequestResponse,
-	body: any
-) => void;
-
-export type IRequestInstance = (
-	options: IRequestOptions,
-	cb?: IRequestCallback
-) => IRequestStream;
-
-export interface IRequestPromiseValue {
-	//
-	/**
-	 * Request stream.
-	 */
-	stream: IRequestStream;
-
-	/**
-	 * Request response.
-	 */
-	response: IRequestResponse;
-
-	/**
-	 * Request body.
-	 */
-	body: any;
 }
 
 export interface IPackageReceipt {

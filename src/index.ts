@@ -4,7 +4,7 @@ export * from './constants';
 export * from './util';
 export * from './dispatcher';
 export * from './lock';
-export * from './request';
+export * from './fetch';
 export * from './package';
 export * from './packages';
 export * from './manager';
