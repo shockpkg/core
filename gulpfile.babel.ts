@@ -116,28 +116,21 @@ async function babelTarget(
 
 // clean
 
-gulp.task('clean:logs', async () => {
+gulp.task('clean', async () => {
 	await del([
 		'npm-debug.log*',
 		'yarn-debug.log*',
 		'yarn-error.log*',
-		'report.*.json'
+		'report.*.json',
+		'lib'
 	]);
 });
 
-gulp.task('clean:lib', async () => {
-	await del(['lib']);
-});
-
-gulp.task('clean', gulp.parallel(['clean:logs', 'clean:lib']));
-
 // lint
 
-gulp.task('lint:es', async () => {
+gulp.task('lint', async () => {
 	await exec('eslint', ['.']);
 });
-
-gulp.task('lint', gulp.parallel(['lint:es']));
 
 // formatting
 
