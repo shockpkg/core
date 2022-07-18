@@ -2,7 +2,6 @@
 /* eslint-disable max-nested-callbacks */
 
 import {createHash as cryptoCreateHash} from 'crypto';
-import {Server} from 'http';
 
 import express from 'express';
 import fse from 'fs-extra';
@@ -15,6 +14,7 @@ import {
 	IPackageStreamProgress
 } from './types';
 import {streamEndError} from './util';
+import {createServer} from './util.spec';
 
 const strReverse = (s: string) => s.split('').reverse().join('');
 
@@ -233,84 +233,22 @@ async function promiseError(p: Promise<any>) {
  * @param packages Packages list to use.
  * @returns Server details.
  */
-async function createServer(packages: string) {
-	const protocol = 'http:';
-	const hostname = '127.0.0.1';
-	let errors = false;
-
-	const app = express();
-	let host = '';
-
-	const server = await new Promise<Server>((resolve, reject) => {
-		let inited = false;
-		app.on('error', err => {
-			errors = true;
-			if (inited) {
-				// eslint-disable-next-line no-console
-				console.error(err);
-				return;
-			}
-			inited = true;
-			reject(err);
-		});
-		app.get('/packages.json', (req, res) => {
-			// eslint-disable-next-line no-use-before-define
-			const reqHost = req.headers.host || host;
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			const data = JSON.parse(packages);
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-			for (const pkg of data.packages || []) {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
-				pkg.source = `${protocol}//${reqHost}${pkg.source}`;
-			}
-			res.send(JSON.stringify(data, null, '\t'));
-		});
-		app.use('/packages', express.static('spec/fixtures/packages'));
-		const server = app.listen(0, () => {
-			if (inited) {
-				return;
-			}
-			inited = true;
-			resolve(server);
-		});
-	});
-
-	const address = server.address();
-	// eslint-disable-next-line no-nested-ternary
-	let port = null;
-	if (typeof address === 'string') {
-		port = Number(address.split('//')[1].split('/')[0].split(':').pop());
-	} else if (address) {
-		({port} = address);
-	}
-	if (!port) {
-		// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-		throw new Error(`Failed to get port from ${address}`);
-	}
-	host = `${hostname}:${port}`;
-	const url = `${protocol}//${host}`;
-
-	const close = async () => {
-		await new Promise<void>(resolve => {
-			server.close(() => {
-				resolve();
-			});
-		});
-		if (errors) {
-			throw new Error('Server throw errors while serving requests');
+async function createServerManager(packages: string) {
+	const server = await createServer();
+	server.app.get('/packages.json', (req, res) => {
+		// eslint-disable-next-line no-use-before-define
+		const reqHost = req.headers.host || server.host;
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const data = JSON.parse(packages);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+		for (const pkg of data.packages || []) {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
+			pkg.source = `${server.protocol}//${reqHost}${pkg.source}`;
 		}
-	};
-
-	return {
-		app,
-		server,
-		protocol,
-		hostname,
-		host,
-		port,
-		url,
-		close
-	};
+		res.send(JSON.stringify(data, null, '\t'));
+	});
+	server.app.use('/packages', express.static('spec/fixtures/packages'));
+	return server;
 }
 
 /**
@@ -416,7 +354,9 @@ function managerTest(
 ) {
 	return async () => {
 		const localServer =
-			typeof packages === 'string' ? await createServer(packages) : null;
+			typeof packages === 'string'
+				? await createServerManager(packages)
+				: null;
 
 		const serverUrl = localServer ? localServer.url : 'http://0.0.0.0';
 		const packagesUrl = `${serverUrl}/packages.json`;
