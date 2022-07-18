@@ -1,12 +1,13 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable max-nested-callbacks */
 
+import {createReadStream} from 'fs';
+import {lstat, mkdir, rm, writeFile} from 'fs/promises';
 import {pipeline} from 'stream';
 import {promisify} from 'util';
 import {createHash} from 'crypto';
 
 import express from 'express';
-import fse from 'fs-extra';
 
 import {Manager} from './manager';
 import {Package} from './package';
@@ -271,7 +272,9 @@ function sha256Buffer(buffer: Buffer) {
  * @param dirs Directory paths.
  */
 async function managerEnsureDirs(manager: ManagerTest, dirs: string[][]) {
-	await Promise.all(dirs.map(async a => fse.ensureDir(manager.pathTo(...a))));
+	await Promise.all(
+		dirs.map(async a => mkdir(manager.pathTo(...a), {recursive: true}))
+	);
 }
 
 /**
@@ -287,7 +290,8 @@ async function managerWritePackageMeta(
 	info: any
 ) {
 	const f = manager.pathTo(pkg, manager.metaDir, manager.packageFile);
-	await fse.outputJson(f, info, {spaces: '\t'});
+	await mkdir(manager.pathTo(pkg, manager.metaDir), {recursive: true});
+	await writeFile(f, JSON.stringify(info, null, '\t'));
 }
 
 /**
@@ -300,7 +304,7 @@ async function managerWritePackageMeta(
 async function managerFileExists(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
 	try {
-		const stat = await fse.lstat(fp);
+		const stat = await lstat(fp);
 		return stat.isFile();
 	} catch (err) {
 		return false;
@@ -317,7 +321,7 @@ async function managerFileExists(manager: ManagerTest, path: string[]) {
 async function managerDirExists(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
 	try {
-		const stat = await fse.lstat(fp);
+		const stat = await lstat(fp);
 		return stat.isDirectory();
 	} catch (err) {
 		return false;
@@ -333,7 +337,7 @@ async function managerDirExists(manager: ManagerTest, path: string[]) {
  */
 async function managerFileSha256(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
-	const stream = fse.createReadStream(fp);
+	const stream = createReadStream(fp);
 	let hashsum = '';
 	const hash = createHash('sha256');
 	hash.setEncoding('hex');
@@ -737,11 +741,11 @@ function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 describe('manager', () => {
 	describe('Manager', () => {
 		beforeEach(async () => {
-			await fse.remove(tmpPath);
+			await rm(tmpPath, {recursive: true, force: true});
 		});
 
 		afterEach(async () => {
-			await fse.remove(tmpPath);
+			await rm(tmpPath, {recursive: true, force: true});
 		});
 
 		describe('init + destroy', () => {
@@ -888,17 +892,17 @@ describe('manager', () => {
 					await manager.with(async manager => {
 						expect(manager.active).toBe(true);
 
-						const statTmpPath = await fse.lstat(tmpPath);
+						const statTmpPath = await lstat(tmpPath);
 						expect(statTmpPath.isDirectory()).toBe(true);
 
-						const statMetaDir = await fse.lstat(manager.pathMeta);
+						const statMetaDir = await lstat(manager.pathMeta);
 						expect(statMetaDir.isDirectory()).toBe(true);
 					});
 
-					const statTmpPath = await fse.lstat(tmpPath);
+					const statTmpPath = await lstat(tmpPath);
 					expect(statTmpPath.isDirectory()).toBe(true);
 
-					const statMetaDir = await fse.lstat(manager.pathMeta);
+					const statMetaDir = await lstat(manager.pathMeta);
 					expect(statMetaDir.isDirectory()).toBe(true);
 				})
 			);
@@ -937,7 +941,8 @@ describe('manager', () => {
 			describe('return', () => {
 				const writePackage = async (manager: Manager, obj: any) => {
 					const jsonFile = manager.pathToMeta(manager.packagesFile);
-					await fse.outputJson(jsonFile, obj, {spaces: '\t'});
+					await mkdir(manager.pathToMeta(), {recursive: true});
+					await writeFile(jsonFile, JSON.stringify(obj, null, '\t'));
 				};
 
 				it(
@@ -2667,7 +2672,7 @@ describe('manager', () => {
 					);
 					const {size} = packageSingle;
 					const fd = Buffer.alloc(size + 1);
-					await fse.outputFile(fp, fd);
+					await writeFile(fp, fd);
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const error = await promiseError(
@@ -2694,7 +2699,7 @@ describe('manager', () => {
 					const {size, sha256} = packageSingle;
 					const fd = Buffer.alloc(size);
 					const fdSha256 = sha256Buffer(fd);
-					await fse.outputFile(fp, fd);
+					await writeFile(fp, fd);
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const error = await promiseError(

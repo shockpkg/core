@@ -1,9 +1,18 @@
+import {createReadStream, createWriteStream} from 'fs';
+import {
+	access,
+	lstat,
+	mkdir,
+	readdir,
+	readFile,
+	rename,
+	rm,
+	writeFile
+} from 'fs/promises';
 import {join as pathJoin} from 'path';
 import {pipeline} from 'stream';
 import {promisify} from 'util';
 import {createHash} from 'crypto';
-
-import fse from 'fs-extra';
 
 import {
 	MAIN_DIR,
@@ -939,13 +948,13 @@ export class Manager extends Object {
 		const {sha256, file, size} = data;
 		const filePath = this._pathToPackage(pkg, file);
 
-		const stat = await fse.lstat(filePath);
+		const stat = await lstat(filePath);
 		const fSize = stat.size;
 		if (fSize !== size) {
 			throw new Error(`Invalid file size: ${fSize} expected: ${size}`);
 		}
 
-		const stream = fse.createReadStream(filePath);
+		const stream = createReadStream(filePath);
 		let hashsum = '';
 		const hash = createHash('sha256');
 		hash.setEncoding('hex');
@@ -1090,9 +1099,9 @@ export class Manager extends Object {
 		const name = this._packageToName(pkg, false);
 		const pkgf = this._pathToPackageMeta(name, this.packageFile);
 
-		const r = (await fse
-			.readJson(pkgf)
-			.catch(() => null)) as IPackageReceipt | null;
+		const r = await readFile(pkgf, 'utf8')
+			.then(s => JSON.parse(s) as IPackageReceipt)
+			.catch(() => null);
 		if (!r) {
 			throw new Error(`Package is not installed: ${name}`);
 		}
@@ -1112,9 +1121,7 @@ export class Manager extends Object {
 		const pkgf = this._pathToPackageMeta(name, this.packageFile);
 
 		const receipt = await this._packageMetaReceiptFromPackage(pkg);
-		await fse.outputJson(pkgf, receipt, {
-			spaces: '\t'
-		});
+		await writeFile(pkgf, JSON.stringify(receipt, null, '\t'));
 	}
 
 	/**
@@ -1148,7 +1155,10 @@ export class Manager extends Object {
 		this._assertLoaded();
 
 		const dir = this._pathToPackageMeta(pkg);
-		return fse.pathExists(dir);
+		return access(dir).then(
+			() => true,
+			() => false
+		);
 	}
 
 	/**
@@ -1162,8 +1172,8 @@ export class Manager extends Object {
 
 		const dir = this._pathToPackage(pkg);
 		const dirMeta = this._pathToPackageMeta(pkg);
-		await fse.ensureDir(dir);
-		await fse.ensureDir(dirMeta);
+		await mkdir(dir, {recursive: true});
+		await mkdir(dirMeta, {recursive: true});
 	}
 
 	/**
@@ -1500,10 +1510,10 @@ export class Manager extends Object {
 				await this._packageDirsEnsure(p);
 				if (oldFile) {
 					// eslint-disable-next-line no-await-in-loop
-					await fse.remove(oldFile);
+					await rm(oldFile, {force: true});
 				}
 				// eslint-disable-next-line no-await-in-loop
-				await fse.move(tmpFile, outFile);
+				await rename(tmpFile, outFile);
 				// eslint-disable-next-line no-await-in-loop
 				await this._packageMetaReceiptWrite(p);
 			} finally {
@@ -1630,7 +1640,7 @@ export class Manager extends Object {
 				// Remove previous temporary file if present.
 				if (tmpFileP) {
 					// eslint-disable-next-line no-await-in-loop
-					await fse.remove(tmpFileP);
+					await rm(tmpFileP, {force: true});
 				}
 				tmpFileP = tmpFile;
 
@@ -1641,9 +1651,9 @@ export class Manager extends Object {
 			// Write the package file last, means successful install.
 			await this._packageDirsEnsure(pkg);
 			if (oldFile) {
-				await fse.remove(oldFile);
+				await rm(oldFile, {force: true});
 			}
-			await fse.move(tmpFile, outFile);
+			await rename(tmpFile, outFile);
 			await this._packageMetaReceiptWrite(pkg);
 		} finally {
 			await this._tempDirRemove();
@@ -1684,15 +1694,15 @@ export class Manager extends Object {
 		this._assertLoaded();
 
 		const dir = this._pathToPackage(pkg);
-		const stat = await fse.lstat(dir).catch(() => null);
+		const stat = await lstat(dir).catch(() => null);
 		if (!stat) {
 			return false;
 		}
 		const dirMeta = this._pathToPackageMeta(pkg);
 
 		// Remove meta directory first, avoid partial installed state.
-		await fse.remove(dirMeta);
-		await fse.remove(dir);
+		await rm(dirMeta, {recursive: true, force: true});
+		await rm(dir, {recursive: true, force: true});
 		return true;
 	}
 
@@ -1768,7 +1778,7 @@ export class Manager extends Object {
 	protected async _packagesDirList() {
 		this._assertLoaded();
 
-		const dirList = (await fse.readdir(this.path, {withFileTypes: true}))
+		const dirList = (await readdir(this.path, {withFileTypes: true}))
 			.filter(e => !e.name.startsWith('.') && e.isDirectory())
 			.map(e => e.name)
 			.sort();
@@ -1810,7 +1820,7 @@ export class Manager extends Object {
 			amount: 0
 		});
 
-		const body = fse.createReadStream(archive, {start, end});
+		const body = createReadStream(archive, {start, end});
 
 		let read = 0;
 		const hash = createHash('sha256');
@@ -1828,9 +1838,9 @@ export class Manager extends Object {
 		});
 
 		if (decompressor) {
-			await pipe(body, decompressor, fse.createWriteStream(file));
+			await pipe(body, decompressor, createWriteStream(file));
 		} else {
-			await pipe(body, fse.createWriteStream(file));
+			await pipe(body, createWriteStream(file));
 		}
 
 		if (read !== size) {
@@ -1900,7 +1910,7 @@ export class Manager extends Object {
 			});
 		});
 
-		await pipe(body, fse.createWriteStream(file));
+		await pipe(body, createWriteStream(file));
 
 		if (read !== size) {
 			throw new Error(`Unexpected extract size: ${read}`);
@@ -1981,9 +1991,9 @@ export class Manager extends Object {
 		});
 
 		if (decompressor) {
-			await pipe(body, decompressor, fse.createWriteStream(file));
+			await pipe(body, decompressor, createWriteStream(file));
 		} else {
-			await pipe(body, fse.createWriteStream(file));
+			await pipe(body, createWriteStream(file));
 		}
 
 		if (read !== size) {
@@ -2043,8 +2053,8 @@ export class Manager extends Object {
 	 * Ensure base directories exists.
 	 */
 	protected async _ensureDirs() {
-		await fse.ensureDir(this.path);
-		await fse.ensureDir(this.pathMeta);
+		await mkdir(this.path, {recursive: true});
+		await mkdir(this.pathMeta, {recursive: true});
 	}
 
 	/**
@@ -2056,14 +2066,14 @@ export class Manager extends Object {
 		if (clean) {
 			await this._tempDirRemove();
 		}
-		await fse.ensureDir(this.pathToTemp());
+		await mkdir(this.pathToTemp(), {recursive: true});
 	}
 
 	/**
 	 * Ensure temp directory removed.
 	 */
 	protected async _tempDirRemove() {
-		await fse.remove(this.pathToTemp());
+		await rm(this.pathToTemp(), {recursive: true, force: true});
 	}
 
 	/**

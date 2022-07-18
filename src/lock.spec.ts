@@ -1,4 +1,4 @@
-import fse from 'fs-extra';
+import {mkdir, rm} from 'fs/promises';
 
 import {Lock} from './lock';
 
@@ -34,12 +34,12 @@ async function getPromiseError(p: Promise<any>) {
 describe('lock', () => {
 	describe('Lock', () => {
 		beforeEach(async () => {
-			await fse.remove(tmpPath);
-			await fse.ensureDir(tmpPathDir);
+			await rm(tmpPath, {recursive: true, force: true});
+			await mkdir(tmpPathDir, {recursive: true});
 		});
 
 		afterEach(async () => {
-			await fse.remove(tmpPath);
+			await rm(tmpPath, {recursive: true, force: true});
 		});
 
 		it('normal', async () => {
@@ -107,7 +107,7 @@ describe('lock', () => {
 
 			await lock.aquire();
 
-			await fse.remove(`${tmpPathDir}.lock`);
+			await rm(`${tmpPathDir}.lock`, {recursive: true, force: true});
 
 			// Wait until lock fails or timeout.
 			const timeout = Date.now() + lock.stale;

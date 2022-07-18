@@ -1,4 +1,4 @@
-import fse from 'fs-extra';
+import {access, readFile, writeFile} from 'fs/promises';
 
 import {Package} from './package';
 import {IPackagesList, IPackagesListPackage, IPackageUpdated} from './types';
@@ -158,7 +158,10 @@ export class Packages extends Object {
 	 * @returns Does exist.
 	 */
 	public async exists() {
-		return fse.pathExists(this.path);
+		return access(this.path).then(
+			() => true,
+			() => false
+		);
 	}
 
 	/**
@@ -166,7 +169,11 @@ export class Packages extends Object {
 	 */
 	public async read() {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-		this._setPackagesList(this._castData(await fse.readJson(this.path)));
+		this._setPackagesList(
+			this._castData(
+				JSON.parse(await readFile(this.path, 'utf8')) as unknown
+			)
+		);
 	}
 
 	/**
@@ -176,9 +183,10 @@ export class Packages extends Object {
 		if (!this._packagesList) {
 			throw new Error('Cannot write unloaded list');
 		}
-		await fse.writeJson(this.path, this._packagesList, {
-			spaces: '\t'
-		});
+		await writeFile(
+			this.path,
+			JSON.stringify(this._packagesList, null, '\t')
+		);
 	}
 
 	/**
@@ -507,12 +515,12 @@ export class Packages extends Object {
 	 * @param packages Parsed data.
 	 * @returns Cast data.
 	 */
-	protected _castData(packages: Readonly<any>) {
+	protected _castData(packages: unknown) {
 		if (
 			!packages ||
 			typeof packages !== 'object' ||
-			typeof packages.format !== 'string' ||
-			!Array.isArray(packages.packages)
+			typeof (packages as {format: unknown}).format !== 'string' ||
+			!Array.isArray((packages as {packages: unknown}).packages)
 		) {
 			throw new Error('Failed to validate packages');
 		}

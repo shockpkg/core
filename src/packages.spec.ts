@@ -1,5 +1,6 @@
 /* eslint-disable max-nested-callbacks */
-import fse from 'fs-extra';
+
+import {access, mkdir, rm, writeFile} from 'fs/promises';
 
 import {Packages} from './packages';
 
@@ -213,12 +214,12 @@ async function getPromiseError(p: Promise<any>) {
 describe('packages', () => {
 	describe('Packages', () => {
 		beforeEach(async () => {
-			await fse.remove(tmpPath);
-			await fse.ensureDir(tmpPath);
+			await rm(tmpPath, {recursive: true, force: true});
+			await mkdir(tmpPath, {recursive: true});
 		});
 
 		afterEach(async () => {
-			await fse.remove(tmpPath);
+			await rm(tmpPath, {recursive: true, force: true});
 		});
 
 		describe('update', () => {
@@ -302,12 +303,22 @@ describe('packages', () => {
 		it('write', async () => {
 			const packages = new Packages(tmpPathPackages);
 
-			expect(await fse.pathExists(tmpPathPackages)).toBe(false);
+			expect(
+				await access(tmpPathPackages).then(
+					() => true,
+					() => false
+				)
+			).toBe(false);
 
 			packages.update(JSON.stringify(dummyPackages));
 			await packages.write();
 
-			expect(await fse.pathExists(tmpPathPackages)).toBe(true);
+			expect(
+				await access(tmpPathPackages).then(
+					() => true,
+					() => false
+				)
+			).toBe(true);
 		});
 
 		it('read', async () => {
@@ -319,9 +330,10 @@ describe('packages', () => {
 
 			expect(packages.loaded).toBe(false);
 
-			await fse.writeJson(tmpPathPackages, dummyPackages, {
-				spaces: '\t'
-			});
+			await writeFile(
+				tmpPathPackages,
+				JSON.stringify(dummyPackages, null, '\t')
+			);
 
 			await packages.read();
 
@@ -333,9 +345,10 @@ describe('packages', () => {
 
 			expect(await packages.exists()).toBe(false);
 
-			await fse.writeJson(tmpPathPackages, dummyPackages, {
-				spaces: '\t'
-			});
+			await writeFile(
+				tmpPathPackages,
+				JSON.stringify(dummyPackages, null, '\t')
+			);
 
 			expect(await packages.exists()).toBe(true);
 		});
@@ -349,9 +362,10 @@ describe('packages', () => {
 
 			expect(packages.loaded).toBe(false);
 
-			await fse.writeJson(tmpPathPackages, dummyPackages, {
-				spaces: '\t'
-			});
+			await writeFile(
+				tmpPathPackages,
+				JSON.stringify(dummyPackages, null, '\t')
+			);
 
 			expect(await packages.readIfExists()).toBe(true);
 
