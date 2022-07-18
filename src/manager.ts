@@ -4,7 +4,6 @@ import {promisify} from 'util';
 import {createHash} from 'crypto';
 
 import fse from 'fs-extra';
-// import fetch from 'node-fetch';
 
 import {
 	MAIN_DIR,
@@ -41,16 +40,7 @@ import {
 	PackageLike
 } from './types';
 import {IFetch, fetch} from './fetch';
-import {
-	arrayFilterAsync,
-	arrayMapAsync,
-	dependSort,
-	fileHashVerify,
-	fileSizeVerify,
-	lstatExists,
-	promiseCatch,
-	readDir
-} from './util';
+import {arrayFilterAsync, arrayMapAsync, dependSort, readDir} from './util';
 import {NAME, VERSION} from './meta';
 
 const pipe = promisify(pipeline);
@@ -949,15 +939,26 @@ export class Manager extends Object {
 		const {sha256, file, size} = data;
 		const filePath = this._pathToPackage(pkg, file);
 
-		await fileSizeVerify(filePath, size);
+		const stat = await fse.lstat(filePath);
+		const fSize = stat.size;
+		if (fSize !== size) {
+			throw new Error(`Invalid file size: ${fSize} expected: ${size}`);
+		}
 
-		await fileHashVerify(filePath, [
-			{
-				algorithm: 'sha256',
-				encoding: 'hex',
-				digest: sha256
-			}
-		]);
+		const stream = fse.createReadStream(filePath);
+		let hashsum = '';
+		const hash = createHash('sha256');
+		hash.setEncoding('hex');
+		hash.on('finish', () => {
+			hashsum = hash.read() as string;
+		});
+		await pipe(stream, hash);
+
+		if (hashsum !== sha256) {
+			throw new Error(
+				`Invalid sha256 hash: ${hashsum} expected: ${sha256}`
+			);
+		}
 	}
 
 	/**
@@ -1089,10 +1090,9 @@ export class Manager extends Object {
 		const name = this._packageToName(pkg, false);
 		const pkgf = this._pathToPackageMeta(name, this.packageFile);
 
-		const r = (await promiseCatch(
-			fse.readJson(pkgf),
-			null
-		)) as IPackageReceipt | null;
+		const r = (await fse
+			.readJson(pkgf)
+			.catch(() => null)) as IPackageReceipt | null;
 		if (!r) {
 			throw new Error(`Package is not installed: ${name}`);
 		}
@@ -1684,7 +1684,7 @@ export class Manager extends Object {
 		this._assertLoaded();
 
 		const dir = this._pathToPackage(pkg);
-		const stat = await lstatExists(dir);
+		const stat = await fse.lstat(dir).catch(() => null);
 		if (!stat) {
 			return false;
 		}
