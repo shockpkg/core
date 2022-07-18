@@ -1,7 +1,9 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable max-nested-callbacks */
 
-import {createHash as cryptoCreateHash} from 'crypto';
+import {pipeline} from 'stream';
+import {promisify} from 'util';
+import {createHash} from 'crypto';
 
 import express from 'express';
 import fse from 'fs-extra';
@@ -13,8 +15,9 @@ import {
 	IPackageExtractProgress,
 	IPackageStreamProgress
 } from './types';
-import {streamEndError} from './util';
 import {createServer} from './util.spec';
+
+const pipe = promisify(pipeline);
 
 const strReverse = (s: string) => s.split('').reverse().join('');
 
@@ -258,9 +261,7 @@ async function createServerManager(packages: string) {
  * @returns SHA256 hash.
  */
 function sha256Buffer(buffer: Buffer) {
-	const hasher = cryptoCreateHash('sha256');
-	hasher.update(buffer);
-	return hasher.digest('hex').toLowerCase();
+	return createHash('sha256').update(buffer).digest('hex');
 }
 
 /**
@@ -332,13 +333,15 @@ async function managerDirExists(manager: ManagerTest, path: string[]) {
  */
 async function managerFileSha256(manager: ManagerTest, path: string[]) {
 	const fp = manager.pathTo(...path);
-	const hasher = cryptoCreateHash('sha256');
-	const f = fse.createReadStream(fp);
-	f.on('data', data => {
-		hasher.update(data);
+	const stream = fse.createReadStream(fp);
+	let hashsum = '';
+	const hash = createHash('sha256');
+	hash.setEncoding('hex');
+	hash.on('finish', () => {
+		hashsum = hash.read() as string;
 	});
-	await streamEndError(f, 'close');
-	return hasher.digest('hex').toLowerCase();
+	await pipe(stream, hash);
+	return hashsum;
 }
 
 /**

@@ -1,5 +1,3 @@
-import {EventEmitter} from 'events';
-
 import fse from 'fs-extra';
 
 /**
@@ -40,35 +38,6 @@ export async function arrayMapAsync<T, U>(
 		r.push(await map(entry));
 	}
 	return r;
-}
-
-/**
- * Promise for event emitter object to end successfully or in an error.
- *
- * @param obj Event emitter.
- * @param end The end event name.
- */
-export async function streamEndError(obj: EventEmitter, end: string) {
-	await new Promise<void>((resolve, reject) => {
-		/**
-		 * Done callback.
-		 *
-		 * @param err Error object or null.
-		 */
-		const done = (err: Error | null) => {
-			if (err) {
-				reject(err);
-				return;
-			}
-			resolve();
-		};
-		obj.on(end, () => {
-			done(null);
-		});
-		obj.on('error', (err: Error) => {
-			done(err);
-		});
-	});
 }
 
 /**
