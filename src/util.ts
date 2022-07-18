@@ -1,5 +1,3 @@
-import fse from 'fs-extra';
-
 /**
  * Like array filter method, but with asyncronous callback.
  *
@@ -37,28 +35,6 @@ export async function arrayMapAsync<T, U>(
 		// eslint-disable-next-line no-await-in-loop
 		r.push(await map(entry));
 	}
-	return r;
-}
-
-/**
- * Read directory, optional skip dot files, sorted order.
- *
- * @param path Path to the directory to list.
- * @param dotfile Include dot files in the list or not.
- * @returns Directory list, sorted order.
- */
-export async function readDir(path: string, dotfile = true) {
-	const list = await fse.readdir(path);
-	const r: string[] = [];
-	for (const entry of list) {
-		// Skip any dot files.
-		// eslint-disable-next-line @typescript-eslint/prefer-string-starts-ends-with
-		if (!dotfile && entry.charAt(0) === '.') {
-			continue;
-		}
-		r.push(entry);
-	}
-	r.sort();
 	return r;
 }
 

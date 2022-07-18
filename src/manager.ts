@@ -40,7 +40,7 @@ import {
 	PackageLike
 } from './types';
 import {IFetch, fetch} from './fetch';
-import {arrayFilterAsync, arrayMapAsync, dependSort, readDir} from './util';
+import {arrayFilterAsync, arrayMapAsync, dependSort} from './util';
 import {NAME, VERSION} from './meta';
 
 const pipe = promisify(pipeline);
@@ -1768,7 +1768,10 @@ export class Manager extends Object {
 	protected async _packagesDirList() {
 		this._assertLoaded();
 
-		const dirList = await readDir(this.path, false);
+		const dirList = (await fse.readdir(this.path, {withFileTypes: true}))
+			.filter(e => !e.name.startsWith('.') && e.isDirectory())
+			.map(e => e.name)
+			.sort();
 		return arrayFilterAsync(dirList, async entry =>
 			this._packageMetaDirExists(entry)
 		);
