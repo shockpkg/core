@@ -118,7 +118,7 @@ export class Package extends Object {
 	/**
 	 * Get zipped data decompressor.
 	 *
-	 * @returns Transform stream.
+	 * @returns Transform stream or null if entry not compressed.
 	 */
 	public getZippedDecompressor(): Transform | null {
 		const method = this.getZippedCompression();
