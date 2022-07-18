@@ -14,6 +14,7 @@ export interface IPackageInstallBefore {
 	 */
 	method: string;
 }
+
 export interface IPackageInstallAfter {
 	//
 	/**
@@ -26,6 +27,7 @@ export interface IPackageInstallAfter {
 	 */
 	method: string;
 }
+
 export interface IPackageInstallCurrent {
 	//
 	/**
@@ -46,6 +48,7 @@ export interface IPackageDownloadBefore {
 	 */
 	package: Package;
 }
+
 export interface IPackageDownloadAfter {
 	//
 	/**
@@ -53,6 +56,7 @@ export interface IPackageDownloadAfter {
 	 */
 	package: Package;
 }
+
 export interface IPackageDownloadProgress {
 	//
 	/**
@@ -78,6 +82,7 @@ export interface IPackageStreamBefore {
 	 */
 	package: Package;
 }
+
 export interface IPackageStreamAfter {
 	//
 	/**
@@ -85,6 +90,7 @@ export interface IPackageStreamAfter {
 	 */
 	package: Package;
 }
+
 export interface IPackageStreamProgress {
 	//
 	/**
@@ -110,6 +116,7 @@ export interface IPackageExtractBefore {
 	 */
 	package: Package;
 }
+
 export interface IPackageExtractAfter {
 	//
 	/**
@@ -117,6 +124,7 @@ export interface IPackageExtractAfter {
 	 */
 	package: Package;
 }
+
 export interface IPackageExtractProgress {
 	//
 	/**
@@ -142,6 +150,7 @@ export interface IPackageCleanupBefore {
 	 */
 	package: string;
 }
+
 export interface IPackageCleanupAfter {
 	//
 	/**
@@ -291,24 +300,4 @@ export interface IPackagesList {
 	 * Package list.
 	 */
 	packages: IPackagesListPackage[];
-}
-
-export type HashEncoding = 'hex' | 'base64';
-
-export interface IHash {
-	//
-	/**
-	 * Hash algorithm.
-	 */
-	algorithm: string;
-
-	/**
-	 * Hash encoding.
-	 */
-	encoding: HashEncoding;
-
-	/**
-	 * Digest value.
-	 */
-	digest: string;
 }
