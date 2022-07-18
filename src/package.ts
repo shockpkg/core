@@ -1,4 +1,4 @@
-import {Transform, PassThrough} from 'stream';
+import {Transform} from 'stream';
 import {createInflateRaw as zlibCreateInflateRaw} from 'zlib';
 
 import {IPackagesListPackage} from './types';
@@ -120,11 +120,11 @@ export class Package extends Object {
 	 *
 	 * @returns Transform stream.
 	 */
-	public getZippedDecompressor(): Transform {
+	public getZippedDecompressor(): Transform | null {
 		const method = this.getZippedCompression();
 		switch (method) {
 			case 0: {
-				return new PassThrough();
+				return null;
 			}
 			case 8: {
 				return zlibCreateInflateRaw();

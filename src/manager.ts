@@ -1807,10 +1807,12 @@ export class Manager extends Object {
 			amount: 0
 		});
 
+		const body = fse.createReadStream(archive, {start, end});
+
 		let read = 0;
 		const hash = createHash('sha256');
 		const decompressor = pkg.getZippedDecompressor();
-		decompressor.on('data', (data: Buffer) => {
+		(decompressor || body).on('data', (data: Buffer) => {
 			read += data.length;
 			hash.update(data);
 
@@ -1822,11 +1824,11 @@ export class Manager extends Object {
 			});
 		});
 
-		await pipe(
-			fse.createReadStream(archive, {start, end}),
-			decompressor,
-			fse.createWriteStream(file)
-		);
+		if (decompressor) {
+			await pipe(body, decompressor, fse.createWriteStream(file));
+		} else {
+			await pipe(body, fse.createWriteStream(file));
+		}
 
 		if (read !== size) {
 			throw new Error(`Unexpected extract size: ${read}`);
@@ -1940,21 +1942,6 @@ export class Manager extends Object {
 		const [start, sizeC] = pkg.getZippedSlice();
 		const end = start + sizeC - 1;
 
-		let read = 0;
-		const hash = createHash('sha256');
-		const decompressor = pkg.getZippedDecompressor();
-		decompressor.on('data', (data: Buffer) => {
-			read += data.length;
-			hash.update(data);
-
-			// eslint-disable-next-line no-sync
-			this.eventPackageStreamProgress.triggerSync({
-				package: pkgO,
-				total: size,
-				amount: read
-			});
-		});
-
 		const response = await this.fetch(parent.source, {
 			headers: {
 				...this.headers,
@@ -1974,7 +1961,27 @@ export class Manager extends Object {
 			amount: 0
 		});
 
-		await pipe(response.body, decompressor, fse.createWriteStream(file));
+		const {body} = response;
+		let read = 0;
+		const hash = createHash('sha256');
+		const decompressor = pkg.getZippedDecompressor();
+		(decompressor || body).on('data', (data: Buffer) => {
+			read += data.length;
+			hash.update(data);
+
+			// eslint-disable-next-line no-sync
+			this.eventPackageStreamProgress.triggerSync({
+				package: pkgO,
+				total: size,
+				amount: read
+			});
+		});
+
+		if (decompressor) {
+			await pipe(body, decompressor, fse.createWriteStream(file));
+		} else {
+			await pipe(body, fse.createWriteStream(file));
+		}
 
 		if (read !== size) {
 			throw new Error(`Unexpected extract size: ${read}`);
