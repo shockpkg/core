@@ -5,19 +5,36 @@ import {WriteStream, createWriteStream} from 'fs';
  * Adds the missing wrote event to monitor write progress.
  */
 export class WriterStream extends WriteStream {
-	// eslint-disable-next-line @typescript-eslint/naming-convention, jsdoc/require-jsdoc
+	/**
+	 * A flag to hook _write methods only once.
+	 */
+	protected _writing = false;
+
+	/**
+	 * @inheritDoc
+	 */
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public _write(
 		chunk: any,
 		encoding: BufferEncoding,
 		callback: (error?: Error | null | undefined) => void
 	): void {
+		if (this._writing) {
+			return super._write(chunk, encoding, callback);
+		}
+
+		this._writing = true;
 		return super._write(chunk, encoding, err => {
+			this._writing = false;
 			this.emit('wrote');
-			callback(err);
+			return err ? callback(err) : callback();
 		});
 	}
 
-	// eslint-disable-next-line @typescript-eslint/naming-convention, jsdoc/require-jsdoc
+	/**
+	 * @inheritDoc
+	 */
+	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public _writev(
 		chunks: {
 			chunk: any;
@@ -25,12 +42,21 @@ export class WriterStream extends WriteStream {
 		}[],
 		callback: (error?: Error | null) => void
 	): void {
-		// Never undefined for WriteStream.
+		// Do not hook a write within a write.
+		if (this._writing) {
+			return (super._writev as NonNullable<WriteStream['_writev']>)(
+				chunks,
+				callback
+			);
+		}
+
+		// For WriteStream _writev is never undefined.
 		return (super._writev as NonNullable<WriteStream['_writev']>)(
 			chunks,
 			err => {
+				this._writing = false;
 				this.emit('wrote');
-				callback(err);
+				return err ? callback(err) : callback();
 			}
 		);
 	}
