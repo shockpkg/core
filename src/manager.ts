@@ -1,4 +1,4 @@
-import {createReadStream, createWriteStream} from 'fs';
+import {createReadStream} from 'fs';
 import {
 	access,
 	lstat,
@@ -25,6 +25,7 @@ import {
 	TEMP_DIR
 } from './constants';
 import {Dispatcher} from './dispatcher';
+import {createWriterStream} from './stream';
 import {Lock} from './lock';
 import {Package} from './package';
 import {Packages} from './packages';
@@ -1821,30 +1822,31 @@ export class Manager extends Object {
 		});
 
 		const body = createReadStream(archive, {start, end});
-
-		let read = 0;
-		const hash = createHash('sha256');
 		const decompressor = pkg.getZippedDecompressor();
-		(decompressor || body).on('data', (data: Buffer) => {
-			read += data.length;
-			hash.update(data);
+		const output = createWriterStream(file);
 
+		const hash = createHash('sha256');
+		(decompressor || body).on('data', data => {
+			hash.update(data);
+		});
+
+		output.on('wrote', () => {
 			// eslint-disable-next-line no-sync
 			this.eventPackageExtractProgress.triggerSync({
 				package: pkgO,
 				total: size,
-				amount: read
+				amount: output.bytesWritten
 			});
 		});
 
 		if (decompressor) {
-			await pipe(body, decompressor, createWriteStream(file));
+			await pipe(body, decompressor, output);
 		} else {
-			await pipe(body, createWriteStream(file));
+			await pipe(body, output);
 		}
 
-		if (read !== size) {
-			throw new Error(`Unexpected extract size: ${read}`);
+		if (output.bytesWritten !== size) {
+			throw new Error(`Unexpected extract size: ${output.bytesWritten}`);
 		}
 
 		const hashed = hash.digest().toString('hex');
@@ -1896,24 +1898,26 @@ export class Manager extends Object {
 		});
 
 		const {body} = response;
-		let read = 0;
+		const output = createWriterStream(file);
+
 		const hash = createHash('sha256');
 		body.on('data', (data: Buffer) => {
-			read += data.length;
 			hash.update(data);
+		});
 
+		output.on('wrote', () => {
 			// eslint-disable-next-line no-sync
 			this.eventPackageDownloadProgress.triggerSync({
 				package: pkgO,
 				total: size,
-				amount: read
+				amount: output.bytesWritten
 			});
 		});
 
-		await pipe(body, createWriteStream(file));
+		await pipe(body, output);
 
-		if (read !== size) {
-			throw new Error(`Unexpected extract size: ${read}`);
+		if (output.bytesWritten !== size) {
+			throw new Error(`Unexpected download size: ${output.bytesWritten}`);
 		}
 
 		const hashed = hash.digest().toString('hex');
@@ -1975,29 +1979,31 @@ export class Manager extends Object {
 		});
 
 		const {body} = response;
-		let read = 0;
-		const hash = createHash('sha256');
 		const decompressor = pkg.getZippedDecompressor();
-		(decompressor || body).on('data', (data: Buffer) => {
-			read += data.length;
-			hash.update(data);
+		const output = createWriterStream(file);
 
+		const hash = createHash('sha256');
+		(decompressor || body).on('data', (data: Buffer) => {
+			hash.update(data);
+		});
+
+		output.on('wrote', () => {
 			// eslint-disable-next-line no-sync
 			this.eventPackageStreamProgress.triggerSync({
 				package: pkgO,
 				total: size,
-				amount: read
+				amount: output.bytesWritten
 			});
 		});
 
 		if (decompressor) {
-			await pipe(body, decompressor, createWriteStream(file));
+			await pipe(body, decompressor, output);
 		} else {
-			await pipe(body, createWriteStream(file));
+			await pipe(body, output);
 		}
 
-		if (read !== size) {
-			throw new Error(`Unexpected extract size: ${read}`);
+		if (output.bytesWritten !== size) {
+			throw new Error(`Unexpected extract size: ${output.bytesWritten}`);
 		}
 
 		const hashed = hash.digest().toString('hex');
