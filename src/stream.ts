@@ -22,7 +22,6 @@ export class WriterStream extends WriteStream {
 		if (this._writing) {
 			return super._write(chunk, encoding, callback);
 		}
-
 		this._writing = true;
 		return super._write(chunk, encoding, err => {
 			this._writing = false;
@@ -49,8 +48,7 @@ export class WriterStream extends WriteStream {
 				callback
 			);
 		}
-
-		// For WriteStream _writev is never undefined.
+		this._writing = true;
 		return (super._writev as NonNullable<WriteStream['_writev']>)(
 			chunks,
 			err => {
