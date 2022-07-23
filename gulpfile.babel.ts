@@ -98,13 +98,11 @@ async function babelTarget(
 			addComment: false,
 			destPath: dest
 		}),
-		gulpInsert.transform((contents, file) => {
-			// Manually append sourcemap comment.
-			if (/\.m?js$/i.test(file.path)) {
-				const base = basename(file.path);
-				return `${contents}\n//# sourceMappingURL=${base}.map\n`;
+		gulpInsert.transform((code, {path}) => {
+			if (/\.m?js$/i.test(path)) {
+				return `${code}\n//# sourceMappingURL=${basename(path)}.map\n`;
 			}
-			return contents;
+			return code;
 		}),
 		gulp.dest(dest)
 	);
