@@ -25,7 +25,7 @@ import {
 	TEMP_DIR
 } from './constants';
 import {Dispatcher} from './dispatcher';
-import {createWriterStream, SliceStream} from './stream';
+import {createWriterStream, EmptyStream, SliceStream} from './stream';
 import {Lock} from './lock';
 import {Package} from './package';
 import {Packages} from './packages';
@@ -46,7 +46,7 @@ import {
 	IPackageRemovedObsolete,
 	PackageLike
 } from './types';
-import {IFetch, fetch, IFetchRequestHeaders} from './fetch';
+import {IFetch, fetch} from './fetch';
 import {arrayFilterAsync, arrayMapAsync, dependSort} from './util';
 import {NAME, VERSION} from './meta';
 
@@ -1405,16 +1405,24 @@ export class Manager extends Object {
 					amount: 0
 				});
 
-				const options: {start?: number; end?: number} = {};
+				const srcFile = this._pathToPackage(srcPkg, srcPkg.file);
 				if (slice) {
 					const [start, size] = slice;
-					options.start = start;
-					options.end = start + size - 1;
+					if (size > 0) {
+						input = createReadStream(srcFile, {
+							start,
+							end: start + size - 1
+						});
+					} else if (size === 0) {
+						input = new EmptyStream();
+					} else {
+						throw new Error(
+							`Cannot extract negative size: ${size}`
+						);
+					}
+				} else {
+					input = createReadStream(srcFile);
 				}
-				input = createReadStream(
-					this._pathToPackage(srcPkg, srcPkg.file),
-					options
-				);
 			} else {
 				// eslint-disable-next-line no-sync
 				this.eventPackageDownloadBefore.triggerSync({
@@ -1428,23 +1436,39 @@ export class Manager extends Object {
 					amount: 0
 				});
 
-				const headers: IFetchRequestHeaders = {...this.headers};
 				if (slice) {
 					const [start, size] = slice;
-					headers.Range = `bytes=${start}-${start + size - 1}`;
+					if (size > 0) {
+						const response = await this.fetch(srcPkg.source, {
+							headers: {
+								...this.headers,
+								Range: `bytes=${start}-${start + size - 1}`
+							}
+						});
+						this._assertStatusCode(206, response.status);
+						const cl = response.headers.get('content-length');
+						if (cl) {
+							this._assertContentLength(size, cl);
+						}
+						input = response.body;
+					} else if (size === 0) {
+						input = new EmptyStream();
+					} else {
+						throw new Error(
+							`Cannot download negative size: ${size}`
+						);
+					}
+				} else {
+					const response = await this.fetch(srcPkg.source, {
+						headers: this.headers
+					});
+					this._assertStatusCode(200, response.status);
+					const cl = response.headers.get('content-length');
+					if (cl) {
+						this._assertContentLength(srcPkg.size, cl);
+					}
+					input = response.body;
 				}
-				const response = await this.fetch(srcPkg.source, {
-					headers
-				});
-				this._assertStatusCode(slice ? 206 : 200, response.status);
-				const contentLength = response.headers.get('content-length');
-				if (contentLength) {
-					this._assertContentLength(
-						slice ? slice[1] : srcPkg.size,
-						contentLength
-					);
-				}
-				input = response.body;
 			}
 
 			// Hash the last readable stream to verify package.

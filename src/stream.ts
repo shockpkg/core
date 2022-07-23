@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import {WriteStream, createWriteStream} from 'fs';
-import {Transform, TransformCallback} from 'stream';
+import {Readable, Transform, TransformCallback} from 'stream';
 
 /**
  * Extends WriteStream.
@@ -189,5 +189,18 @@ export class SliceStream extends Transform {
 		this._transformed += c.length;
 		this.push(c.subarray());
 		return callback();
+	}
+}
+
+/**
+ * An empty read stream.
+ */
+export class EmptyStream extends Readable {
+	/**
+	 * @inheritDoc
+	 */
+	// eslint-disable-next-line @typescript-eslint/naming-convention
+	public _read(_size: number) {
+		this.push(null);
 	}
 }

@@ -3,7 +3,7 @@ import {join as pathJoin} from 'path';
 import {promisify} from 'util';
 import {rm, mkdir, lstat} from 'fs/promises';
 
-import {createWriterStream, SliceStream} from './stream';
+import {createWriterStream, EmptyStream, SliceStream} from './stream';
 
 const pipe = promisify(pipeline);
 
@@ -194,6 +194,21 @@ describe('stream', () => {
 			expect(datas[2].length).toBe(MB);
 			expect(datas[3].length).toBe(MB);
 			expect(datas[4].length).toBe(MB);
+		});
+	});
+
+	describe('EmptyStream', () => {
+		it('no data', async () => {
+			let datas = 0;
+			await new Promise((resolve, reject) => {
+				const s = new EmptyStream();
+				s.on('data', () => {
+					datas++;
+				});
+				s.once('close', resolve);
+				s.once('error', reject);
+			});
+			expect(datas).toBe(0);
 		});
 	});
 });
