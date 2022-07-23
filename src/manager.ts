@@ -25,7 +25,7 @@ import {
 	TEMP_DIR
 } from './constants';
 import {Dispatcher} from './dispatcher';
-import {createWriterStream, StreamSlice} from './stream';
+import {createWriterStream, SliceStream} from './stream';
 import {Lock} from './lock';
 import {Package} from './package';
 import {Packages} from './packages';
@@ -1371,7 +1371,7 @@ export class Manager extends Object {
 			while (i < packages.length) {
 				const p = packages[i++];
 				const [ss, sl] = p.getZippedSlice();
-				transforms.push(new StreamSlice(ss, sl));
+				transforms.push(new SliceStream(ss, sl));
 				const d = p.getZippedDecompressor();
 				if (d) {
 					transforms.push(d);

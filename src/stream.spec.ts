@@ -3,7 +3,7 @@ import {join as pathJoin} from 'path';
 import {promisify} from 'util';
 import {rm, mkdir, lstat} from 'fs/promises';
 
-import {createWriterStream, StreamSlice} from './stream';
+import {createWriterStream, SliceStream} from './stream';
 
 const pipe = promisify(pipeline);
 
@@ -50,10 +50,10 @@ describe('stream', () => {
 		});
 	});
 
-	describe('StreamSlice', () => {
+	describe('SliceStream', () => {
 		it('2MB - 10b', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(2 * MB, 10);
+			const transform = new SliceStream(2 * MB, 10);
 			const datas: number[][] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
@@ -64,7 +64,7 @@ describe('stream', () => {
 
 		it('2MB - 0b', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(2 * MB, 0);
+			const transform = new SliceStream(2 * MB, 0);
 			const datas: number[][] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
@@ -75,7 +75,7 @@ describe('stream', () => {
 
 		it('2MB+1 - 0b', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(2 * MB + 1, 0);
+			const transform = new SliceStream(2 * MB + 1, 0);
 			const datas: number[][] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
@@ -86,7 +86,7 @@ describe('stream', () => {
 
 		it('2MB+1 - 10b', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(2 * MB + 1, 10);
+			const transform = new SliceStream(2 * MB + 1, 10);
 			const datas: number[][] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
@@ -97,7 +97,7 @@ describe('stream', () => {
 
 		it('2MB-1 - 10b', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(2 * MB - 1, 10);
+			const transform = new SliceStream(2 * MB - 1, 10);
 			const datas: number[][] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
@@ -108,7 +108,7 @@ describe('stream', () => {
 
 		it('2MB-4 - 4b', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(2 * MB - 4, 4);
+			const transform = new SliceStream(2 * MB - 4, 4);
 			const datas: number[][] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
@@ -119,7 +119,7 @@ describe('stream', () => {
 
 		it('1.5MB - 2MB', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(1.5 * MB, 2 * MB);
+			const transform = new SliceStream(1.5 * MB, 2 * MB);
 			const datas: Buffer[] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
@@ -133,7 +133,7 @@ describe('stream', () => {
 
 		it('4MB - -1', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(4 * MB, -1);
+			const transform = new SliceStream(4 * MB, -1);
 			const datas: Buffer[] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
@@ -145,7 +145,7 @@ describe('stream', () => {
 
 		it('4MB-1 - -1', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(4 * MB - 1, -1);
+			const transform = new SliceStream(4 * MB - 1, -1);
 			const datas: Buffer[] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
@@ -158,7 +158,7 @@ describe('stream', () => {
 
 		it('4MB+1 - -1', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(4 * MB + 1, -1);
+			const transform = new SliceStream(4 * MB + 1, -1);
 			const datas: Buffer[] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
@@ -170,7 +170,7 @@ describe('stream', () => {
 
 		it('4.5MB - -1', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(4.5 * MB, -1);
+			const transform = new SliceStream(4.5 * MB, -1);
 			const datas: Buffer[] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
@@ -182,7 +182,7 @@ describe('stream', () => {
 
 		it('0.5MB - -1', async () => {
 			const reader = new Reader();
-			const transform = new StreamSlice(0.5 * MB, -1);
+			const transform = new SliceStream(0.5 * MB, -1);
 			const datas: Buffer[] = [];
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);

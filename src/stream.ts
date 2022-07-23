@@ -83,7 +83,7 @@ export function createWriterStream(
 /**
  * Gets buffer slice out of a readable stream.
  */
-export class StreamSlice extends Transform {
+export class SliceStream extends Transform {
 	/**
 	 * Slice start.
 	 */
@@ -100,7 +100,7 @@ export class StreamSlice extends Transform {
 	protected _transformed = 0;
 
 	/**
-	 * StreamSlice constructor.
+	 * SliceStream constructor.
 	 *
 	 * @param start Start offset.
 	 * @param size Total Size.
