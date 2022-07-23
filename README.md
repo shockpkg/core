@@ -26,7 +26,7 @@ async function main() {
 	await manager.with(async manager => {
 		await manager.update();
 
-		await manager.installSlim('some-package-name-or-hash');
+		await manager.install('some-package-name-or-hash');
 	});
 }
 

@@ -594,7 +594,7 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * An alias for upgradeSlim.
+	 * Upgrade any outdated packages.
 	 *
 	 * @returns List of packages upgraded.
 	 */
@@ -603,75 +603,25 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * Upgrade any outdated packages.
-	 *
-	 * @returns List of packages upgraded.
-	 */
-	public async upgradeFull() {
-		return this._exclusiveAsync(async () => this._upgradeFull());
-	}
-
-	/**
-	 * Upgrade any outdated packages, using slim install method.
-	 *
-	 * @returns List of packages upgraded.
-	 */
-	public async upgradeSlim() {
-		return this._exclusiveAsync(async () => this._upgradeSlim());
-	}
-
-	/**
-	 * An alias for installSlim.
-	 *
-	 * @param pkg The package.
-	 * @returns True if was installed, false if already installed.
-	 */
-	public async install(pkg: PackageLike) {
-		return this._exclusiveAsync(async () => this._install(pkg));
-	}
-
-	/**
-	 * Install package, with parents.
-	 * Returns the list of packages installed to install.
-	 * Returns empty array if current version is already installed.
-	 *
-	 * @param pkg The package.
-	 * @returns List of packages processed.
-	 */
-	public async installFull(pkg: PackageLike) {
-		return this._exclusiveAsync(async () => this._installFull(pkg));
-	}
-
-	/**
-	 * Install multiple package with parents, higher dependencies first.
-	 *
-	 * @param pkgs Packages list.
-	 * @returns Installed list.
-	 */
-	public async installFullMulti(pkgs: PackageLike[]) {
-		return this._exclusiveAsync(async () => this._installFullMulti(pkgs));
-	}
-
-	/**
-	 * Install package, without parents.
+	 * Install package.
 	 * Returns the list of packages downloaded or extracted to install.
 	 * Returns empty array if current version is already installed.
 	 *
 	 * @param pkg The package.
 	 * @returns List of packages processed.
 	 */
-	public async installSlim(pkg: PackageLike) {
-		return this._exclusiveAsync(async () => this._installSlim(pkg));
+	public async install(pkg: PackageLike) {
+		return this._exclusiveAsync(async () => this._install(pkg));
 	}
 
 	/**
-	 * Install multiple package without parents, higher dependencies first.
+	 * Install multiple packages, higher dependencies first.
 	 *
 	 * @param pkgs Packages list.
 	 * @returns Installed list.
 	 */
-	public async installSlimMulti(pkgs: PackageLike[]) {
-		return this._exclusiveAsync(async () => this._installSlimMulti(pkgs));
+	public async installMulti(pkgs: PackageLike[]) {
+		return this._exclusiveAsync(async () => this._installMulti(pkgs));
 	}
 
 	/**
@@ -1410,57 +1360,26 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * An alias for upgradeSlim.
-	 *
-	 * @returns List of packages upgraded.
-	 */
-	protected async _upgrade() {
-		return this._upgradeSlim();
-	}
-
-	/**
 	 * Upgrade any outdated packages.
 	 *
 	 * @returns List of packages upgraded.
 	 */
-	protected async _upgradeFull() {
+	protected async _upgrade() {
 		this._assertLoaded();
 
 		const outdated = await this._outdated();
-		return this._installFullMulti(outdated);
+		return this._installMulti(outdated);
 	}
 
 	/**
-	 * Upgrade any outdated packages, using slim install method.
-	 *
-	 * @returns List of packages upgraded.
-	 */
-	protected async _upgradeSlim() {
-		this._assertLoaded();
-
-		const outdated = await this._outdated();
-		return this._installSlimMulti(outdated);
-	}
-
-	/**
-	 * An alias for installSlim.
+	 * Install package.
+	 * Returns the list of packages processed to install.
+	 * Returns empty array if current version is already installed.
 	 *
 	 * @param pkg The package.
-	 * @returns True if was installed, false if already installed.
+	 * @returns List of packages processed.
 	 */
 	protected async _install(pkg: PackageLike) {
-		return this._installSlim(pkg);
-	}
-
-	/**
-	 * Install package, with parents.
-	 * Returns the list of packages installed to install.
-	 * Returns empty array if current version is already installed.
-	 *
-	 * @param pkg The package.
-	 * @returns List of packages processed.
-	 */
-	protected async _installFull(pkg: PackageLike) {
 		this._assertLoaded();
 		pkg = this._packageToPackage(pkg);
 
@@ -1469,105 +1388,7 @@ export class Manager extends Object {
 		if (installed) {
 			// eslint-disable-next-line no-sync
 			this.eventPackageInstallCurrent.triggerSync({
-				package: pkg,
-				method: 'full'
-			});
-			return [];
-		}
-
-		// List packages to install.
-		const list = await this._packageInstallList(pkg);
-		const r: Package[] = [];
-		for (const p of list) {
-			// eslint-disable-next-line no-sync
-			this.eventPackageInstallBefore.triggerSync({
-				package: pkg,
-				method: 'full'
-			});
-
-			const {parent} = p;
-			const tmpFile = this.pathToTemp(`${p.name}.part`);
-			const outFile = this._pathToPackage(p, p.file);
-			// eslint-disable-next-line no-await-in-loop
-			const inIns = await this._isInstalled(p);
-			// eslint-disable-next-line no-await-in-loop
-			const oldFile = inIns ? await this._packageInstallFile(p) : null;
-
-			// Download or extract, remove temporary directory on failure.
-			// Write the package file last, means successful install.
-			try {
-				// eslint-disable-next-line no-await-in-loop
-				await this._tempDirEnsure(true);
-				if (parent) {
-					const pF = this._pathToPackage(parent, parent.file);
-					// eslint-disable-next-line no-await-in-loop
-					await this._packageExtract(p, tmpFile, pF);
-				} else {
-					// eslint-disable-next-line no-await-in-loop
-					await this._packageDownload(p, tmpFile);
-				}
-
-				// eslint-disable-next-line no-await-in-loop
-				await this._packageDirsEnsure(p);
-				if (oldFile) {
-					// eslint-disable-next-line no-await-in-loop
-					await rm(oldFile, {force: true});
-				}
-				// eslint-disable-next-line no-await-in-loop
-				await rename(tmpFile, outFile);
-				// eslint-disable-next-line no-await-in-loop
-				await this._packageMetaReceiptWrite(p);
-			} finally {
-				// eslint-disable-next-line no-await-in-loop
-				await this._tempDirRemove();
-			}
-
-			// eslint-disable-next-line no-sync
-			this.eventPackageInstallAfter.triggerSync({
-				package: pkg,
-				method: 'full'
-			});
-
-			r.push(p);
-		}
-		return r;
-	}
-
-	/**
-	 * Install multiple package with parents, higher dependencies first.
-	 *
-	 * @param pkgs Packages list.
-	 * @returns Installed list.
-	 */
-	protected async _installFullMulti(pkgs: PackageLike[]) {
-		this._assertLoaded();
-
-		const list = this._packagesDependOrdered(pkgs);
-		return (await arrayMapAsync(list, async pkg => ({
-			package: pkg,
-			installed: await this._installFull(pkg)
-		}))) as IPackageInstalled[];
-	}
-
-	/**
-	 * Install package, without parents.
-	 * Returns the list of packages downloaded or extracted to install.
-	 * Returns empty array if current version is already installed.
-	 *
-	 * @param pkg The package.
-	 * @returns List of packages processed.
-	 */
-	protected async _installSlim(pkg: PackageLike) {
-		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
-
-		// If current version is installed, skip.
-		const installed = await this._isCurrent(pkg);
-		if (installed) {
-			// eslint-disable-next-line no-sync
-			this.eventPackageInstallCurrent.triggerSync({
-				package: pkg,
-				method: 'slim'
+				package: pkg
 			});
 			return [];
 		}
@@ -1599,8 +1420,7 @@ export class Manager extends Object {
 
 		// eslint-disable-next-line no-sync
 		this.eventPackageInstallBefore.triggerSync({
-			package: pkg,
-			method: 'slim'
+			package: pkg
 		});
 
 		const r: Package[] = [];
@@ -1662,26 +1482,25 @@ export class Manager extends Object {
 
 		// eslint-disable-next-line no-sync
 		this.eventPackageInstallAfter.triggerSync({
-			package: pkg,
-			method: 'slim'
+			package: pkg
 		});
 
 		return r;
 	}
 
 	/**
-	 * Install multiple package without parents, higher dependencies first.
+	 * Install multiple package, higher dependencies first.
 	 *
 	 * @param pkgs Packages list.
 	 * @returns Installed list.
 	 */
-	protected async _installSlimMulti(pkgs: PackageLike[]) {
+	protected async _installMulti(pkgs: PackageLike[]) {
 		this._assertLoaded();
 
 		const list = this._packagesDependOrdered(pkgs);
 		return (await arrayMapAsync(list, async pkg => ({
 			package: pkg,
-			installed: await this._installSlim(pkg)
+			installed: await this._install(pkg)
 		}))) as IPackageInstalled[];
 	}
 

@@ -8,11 +8,6 @@ export interface IPackageInstallBefore {
 	 * Package instance.
 	 */
 	package: Package;
-
-	/**
-	 * Install method.
-	 */
-	method: string;
 }
 
 export interface IPackageInstallAfter {
@@ -21,11 +16,6 @@ export interface IPackageInstallAfter {
 	 * Package instance.
 	 */
 	package: Package;
-
-	/**
-	 * Install method.
-	 */
-	method: string;
 }
 
 export interface IPackageInstallCurrent {
@@ -34,11 +24,6 @@ export interface IPackageInstallCurrent {
 	 * Package instance.
 	 */
 	package: Package;
-
-	/**
-	 * Install method.
-	 */
-	method: string;
 }
 
 export interface IPackageDownloadBefore {
