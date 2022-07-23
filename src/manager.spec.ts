@@ -2135,15 +2135,12 @@ describe('manager', () => {
 
 					const aValues = a.map(p => ({
 						name: p.package.name,
-						installed: p.installed.map(p => p.name)
+						install: p.install.map(p => p.name)
 					}));
 					expect(aValues).toEqual([
 						{
 							name: packageNested1.name,
-							installed: [
-								packageNested2.name,
-								packageNested1.name
-							]
+							install: [packageNested2.name, packageNested1.name]
 						}
 					]);
 					expect(b).toEqual([]);

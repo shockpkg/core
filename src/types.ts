@@ -123,9 +123,9 @@ export interface IPackageInstalled {
 	package: Package;
 
 	/**
-	 * List of packages processed.
+	 * List of packages processed to complete the install.
 	 */
-	installed: Package[];
+	install: Package[];
 }
 
 export interface IPackageRemovedObsolete {

@@ -580,11 +580,11 @@ export class Manager extends Object {
 
 	/**
 	 * Install package.
-	 * Returns the list of packages downloaded or extracted to install.
+	 * Returns the list of packages processed to install.
 	 * Returns empty array if current version is already installed.
 	 *
 	 * @param pkg The package.
-	 * @returns List of packages processed.
+	 * @returns List of packages processed to complete the install.
 	 */
 	public async install(pkg: PackageLike) {
 		return this._exclusiveAsync(async () => this._install(pkg));
@@ -1286,7 +1286,7 @@ export class Manager extends Object {
 	 * Returns empty array if current version is already installed.
 	 *
 	 * @param pkg The package.
-	 * @returns List of packages processed.
+	 * @returns List of packages processed to complete the install.
 	 */
 	protected async _install(pkg: PackageLike) {
 		this._assertLoaded();
@@ -1545,7 +1545,7 @@ export class Manager extends Object {
 		const list = this._packagesDependOrdered(pkgs);
 		return (await arrayMapAsync(list, async pkg => ({
 			package: pkg,
-			installed: await this._install(pkg)
+			install: await this._install(pkg)
 		}))) as IPackageInstalled[];
 	}
 
