@@ -91,9 +91,7 @@ async function babelTarget(
 		gulpSourcemaps.init(),
 		gulpBabel(babelOptions as {}),
 		gulpRename(path => {
-			if (!modules && path.extname === '.js') {
-				path.extname = '.mjs';
-			}
+			path.extname = modules ? '.js' : '.mjs';
 		}),
 		gulpSourcemaps.write('.', {
 			includeContent: true,
