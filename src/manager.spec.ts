@@ -298,9 +298,9 @@ async function managerWritePackageMeta(
  * @returns True if file, false if anything else or not exist.
  */
 async function managerFileExists(manager: ManagerTest, path: string[]) {
-	const fp = manager.pathTo(...path);
+	const file = manager.pathTo(...path);
 	try {
-		const stat = await lstat(fp);
+		const stat = await lstat(file);
 		return stat.isFile();
 	} catch (err) {
 		return false;
@@ -315,9 +315,9 @@ async function managerFileExists(manager: ManagerTest, path: string[]) {
  * @returns True if diectory, false if anything else or not exist.
  */
 async function managerDirExists(manager: ManagerTest, path: string[]) {
-	const fp = manager.pathTo(...path);
+	const dir = manager.pathTo(...path);
 	try {
-		const stat = await lstat(fp);
+		const stat = await lstat(dir);
 		return stat.isDirectory();
 	} catch (err) {
 		return false;
@@ -332,8 +332,8 @@ async function managerDirExists(manager: ManagerTest, path: string[]) {
  * @returns SHA256 hash, hex encoded, lower case.
  */
 async function managerFileSha256(manager: ManagerTest, path: string[]) {
-	const fp = manager.pathTo(...path);
-	const stream = createReadStream(fp);
+	const file = manager.pathTo(...path);
+	const stream = createReadStream(file);
 	let hashsum = '';
 	const hash = createHash('sha256');
 	hash.setEncoding('hex');
@@ -2347,12 +2347,12 @@ describe('manager', () => {
 
 					await manager.install(packageSingle.name);
 
-					const fp = await manager.packageInstallFile(
+					const file = await manager.packageInstallFile(
 						packageSingle.name
 					);
-					const {size} = packageSingle;
-					const fd = Buffer.alloc(size + 1);
-					await writeFile(fp, fd);
+					const size = packageSingle.size + 1;
+					const data = Buffer.alloc(size);
+					await writeFile(file, data);
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const error = await promiseError(
@@ -2360,9 +2360,7 @@ describe('manager', () => {
 					);
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					expect(error.message).toBe(
-						`Invalid file size: ${fd.length} expected: ${size}`
-					);
+					expect(error.message).toBe(`Invalid file size: ${size}`);
 				})
 			);
 
@@ -2373,13 +2371,13 @@ describe('manager', () => {
 
 					await manager.install(packageSingle.name);
 
-					const fp = await manager.packageInstallFile(
+					const file = await manager.packageInstallFile(
 						packageSingle.name
 					);
-					const {size, sha256} = packageSingle;
-					const fd = Buffer.alloc(size);
-					const fdSha256 = sha256Buffer(fd);
-					await writeFile(fp, fd);
+					const {size} = packageSingle;
+					const data = Buffer.alloc(size);
+					const hash = sha256Buffer(data);
+					await writeFile(file, data);
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const error = await promiseError(
@@ -2387,9 +2385,7 @@ describe('manager', () => {
 					);
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					expect(error.message).toBe(
-						`Invalid sha256 hash: ${fdSha256} expected: ${sha256}`
-					);
+					expect(error.message).toBe(`Invalid sha256 hash: ${hash}`);
 				})
 			);
 		});

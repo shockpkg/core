@@ -878,7 +878,7 @@ export class Manager extends Object {
 		const stat = await lstat(filePath);
 		const fSize = stat.size;
 		if (fSize !== size) {
-			throw new Error(`Invalid file size: ${fSize} expected: ${size}`);
+			throw new Error(`Invalid file size: ${fSize}`);
 		}
 
 		const stream = createReadStream(filePath);
@@ -891,9 +891,7 @@ export class Manager extends Object {
 		await pipe(stream, hash);
 
 		if (hashsum !== sha256) {
-			throw new Error(
-				`Invalid sha256 hash: ${hashsum} expected: ${sha256}`
-			);
+			throw new Error(`Invalid sha256 hash: ${hashsum}`);
 		}
 	}
 
