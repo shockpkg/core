@@ -60,40 +60,6 @@ export interface IPackageDownloadProgress {
 	amount: number;
 }
 
-export interface IPackageStreamBefore {
-	//
-	/**
-	 * Package instance.
-	 */
-	package: Package;
-}
-
-export interface IPackageStreamAfter {
-	//
-	/**
-	 * Package instance.
-	 */
-	package: Package;
-}
-
-export interface IPackageStreamProgress {
-	//
-	/**
-	 * Package instance.
-	 */
-	package: Package;
-
-	/**
-	 * Progress total.
-	 */
-	total: number;
-
-	/**
-	 * Progress amount.
-	 */
-	amount: number;
-}
-
 export interface IPackageExtractBefore {
 	//
 	/**

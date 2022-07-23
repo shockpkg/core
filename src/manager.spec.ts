@@ -11,11 +11,7 @@ import express from 'express';
 
 import {Manager} from './manager';
 import {Package} from './package';
-import {
-	IPackageDownloadProgress,
-	IPackageExtractProgress,
-	IPackageStreamProgress
-} from './types';
+import {IPackageDownloadProgress, IPackageExtractProgress} from './types';
 import {createServer} from './util.spec';
 
 const pipe = promisify(pipeline);
@@ -577,7 +573,6 @@ function testMethodSync(func: (manager: ManagerTest) => any, loaded = true) {
  */
 function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 	let prevDownloadProgress: IPackageDownloadProgress | null = null;
-	let prevStreamProgress: IPackageStreamProgress | null = null;
 	let prevExtractProgress: IPackageExtractProgress | null = null;
 
 	const add = (o: IPackageEventLog) => {
@@ -654,44 +649,6 @@ function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 		});
 	});
 
-	manager.eventPackageStreamBefore.on(event => {
-		add({
-			which: 'stream-before',
-			package: event.package.name
-		});
-	});
-	manager.eventPackageStreamProgress.on(event => {
-		const start = event.amount === 0;
-		const end = event.amount === event.total;
-
-		if (event.amount > event.total) {
-			throw new Error('Stream progress: Over amount');
-		}
-		if (prevStreamProgress && !start) {
-			if (event.total !== prevStreamProgress.total) {
-				throw new Error('Stream progress: Total changed');
-			}
-			if (event.amount <= prevStreamProgress.amount) {
-				throw new Error('Stream progress: No progress');
-			}
-		}
-
-		// Only add first and last progress.
-		if (start || end) {
-			add({
-				which: 'stream-progress',
-				package: event.package.name
-			});
-		}
-		prevStreamProgress = event;
-	});
-	manager.eventPackageStreamAfter.on(event => {
-		add({
-			which: 'stream-after',
-			package: event.package.name
-		});
-	});
-
 	manager.eventPackageExtractBefore.on(event => {
 		add({
 			which: 'extract-before',
@@ -732,7 +689,6 @@ function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 
 	return () => {
 		prevDownloadProgress = null;
-		prevStreamProgress = null;
 		prevExtractProgress = null;
 		events.splice(0, events.length);
 	};
@@ -1772,7 +1728,10 @@ describe('manager', () => {
 							);
 
 							const aValues = a.map(p => p.name);
-							expect(aValues).toEqual([packageNested1.name]);
+							expect(aValues).toEqual([
+								packageNested2.name,
+								packageNested1.name
+							]);
 							expect(b).toEqual([]);
 						}
 					)
@@ -1795,19 +1754,19 @@ describe('manager', () => {
 									package: 'package-nested-1'
 								},
 								{
-									which: 'stream-before',
+									which: 'download-before',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'stream-progress',
+									which: 'download-progress',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'stream-progress',
+									which: 'download-progress',
 									package: 'package-nested-1'
 								},
 								{
-									which: 'stream-after',
+									which: 'download-after',
 									package: 'package-nested-1'
 								},
 								{
@@ -1880,6 +1839,7 @@ describe('manager', () => {
 
 							const aValues = a.map(p => p.name);
 							expect(aValues).toEqual([
+								packageNested2.name,
 								packageNested1.name,
 								packageNested.name
 							]);
@@ -1905,35 +1865,19 @@ describe('manager', () => {
 									package: 'package-nested'
 								},
 								{
-									which: 'stream-before',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'stream-progress',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'stream-progress',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'stream-after',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'extract-before',
+									which: 'download-before',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-progress',
+									which: 'download-progress',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-progress',
+									which: 'download-progress',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-after',
+									which: 'download-after',
 									package: 'package-nested'
 								},
 								{
@@ -2032,22 +1976,6 @@ describe('manager', () => {
 								},
 								{
 									which: 'extract-before',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'extract-progress',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'extract-progress',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'extract-after',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'extract-before',
 									package: 'package-nested'
 								},
 								{
@@ -2105,22 +2033,6 @@ describe('manager', () => {
 								{
 									which: 'install-before',
 									package: 'package-nested'
-								},
-								{
-									which: 'extract-before',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'extract-progress',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'extract-progress',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'extract-after',
-									package: 'package-nested-1'
 								},
 								{
 									which: 'extract-before',
@@ -2228,7 +2140,10 @@ describe('manager', () => {
 					expect(aValues).toEqual([
 						{
 							name: packageNested1.name,
-							installed: [packageNested1.name]
+							installed: [
+								packageNested2.name,
+								packageNested1.name
+							]
 						}
 					]);
 					expect(b).toEqual([]);
@@ -2258,19 +2173,19 @@ describe('manager', () => {
 							package: 'package-nested-1'
 						},
 						{
-							which: 'stream-before',
+							which: 'download-before',
 							package: 'package-nested-1'
 						},
 						{
-							which: 'stream-progress',
+							which: 'download-progress',
 							package: 'package-nested-1'
 						},
 						{
-							which: 'stream-progress',
+							which: 'download-progress',
 							package: 'package-nested-1'
 						},
 						{
-							which: 'stream-after',
+							which: 'download-after',
 							package: 'package-nested-1'
 						},
 						{
@@ -2302,14 +2217,11 @@ describe('manager', () => {
 						packageNested1MetaBad
 					);
 
-					const list = await manager.installed();
-
-					const listNames = list.map(pkg => pkg.name);
-					const listNamesExpected = [
+					const list = (await manager.installed()).map(s => s.name);
+					expect(list).toEqual([
 						packageNested1.name,
 						packageSingle.name
-					].sort();
-					expect(listNames).toEqual(listNamesExpected);
+					]);
 				})
 			);
 		});

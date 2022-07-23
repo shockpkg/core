@@ -10,7 +10,7 @@ import {
 	writeFile
 } from 'fs/promises';
 import {join as pathJoin} from 'path';
-import {pipeline} from 'stream';
+import {pipeline, Transform} from 'stream';
 import {promisify} from 'util';
 import {createHash} from 'crypto';
 
@@ -25,7 +25,7 @@ import {
 	TEMP_DIR
 } from './constants';
 import {Dispatcher} from './dispatcher';
-import {createWriterStream} from './stream';
+import {createWriterStream, StreamSlice} from './stream';
 import {Lock} from './lock';
 import {Package} from './package';
 import {Packages} from './packages';
@@ -44,12 +44,9 @@ import {
 	IPackageInstalled,
 	IPackageReceipt,
 	IPackageRemovedObsolete,
-	IPackageStreamAfter,
-	IPackageStreamBefore,
-	IPackageStreamProgress,
 	PackageLike
 } from './types';
-import {IFetch, fetch} from './fetch';
+import {IFetch, fetch, IFetchRequestHeaders} from './fetch';
 import {arrayFilterAsync, arrayMapAsync, dependSort} from './util';
 import {NAME, VERSION} from './meta';
 
@@ -113,27 +110,6 @@ export class Manager extends Object {
 	public readonly eventPackageDownloadProgress =
 		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageDownloadProgress>(this);
-
-	/**
-	 * Package stream before events.
-	 */
-	public readonly eventPackageStreamBefore =
-		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageStreamBefore>(this);
-
-	/**
-	 * Package stream after events.
-	 */
-	public readonly eventPackageStreamAfter =
-		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageStreamAfter>(this);
-
-	/**
-	 * Package stream progress events.
-	 */
-	public readonly eventPackageStreamProgress =
-		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageStreamProgress>(this);
 
 	/**
 	 * Package extract before events.
@@ -990,42 +966,6 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * List package parent packages not updated.
-	 *
-	 * @param pkg The package.
-	 * @returns Packages list.
-	 */
-	protected async _packageParentsNotUpdated(pkg: PackageLike) {
-		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
-
-		const r: Package[] = [];
-		for (let p = pkg.parent; p; p = p.parent) {
-			// eslint-disable-next-line no-await-in-loop
-			if (await this._isCurrent(p)) {
-				break;
-			}
-			r.push(p);
-		}
-		return r;
-	}
-
-	/**
-	 * List the packages that need to be installed.
-	 *
-	 * @param pkg The package.
-	 * @returns Package root or null and the children list.
-	 */
-	protected async _packageInstallList(pkg: PackageLike) {
-		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
-
-		const r = await this._packageParentsNotUpdated(pkg);
-		r.reverse().push(pkg);
-		return r;
-	}
-
-	/**
 	 * Packages ordered by dependencies.
 	 *
 	 * @param pkgs Packages list.
@@ -1381,7 +1321,7 @@ export class Manager extends Object {
 	 */
 	protected async _install(pkg: PackageLike) {
 		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		const pkgO = (pkg = this._packageToPackage(pkg));
 
 		// If current version is installed, skip.
 		const installed = await this._isCurrent(pkg);
@@ -1393,79 +1333,183 @@ export class Manager extends Object {
 			return [];
 		}
 
-		// List packages to install.
-		const list = await this._packageInstallList(pkg);
-
-		// If first root and not only, extract without downloading all.
-		let stream = false;
-		if (list.length > 1 && !list[0].parent) {
-			stream = true;
-			list.shift();
+		// Find the closest current installed parent, if any.
+		const packages: Package[] = [pkg];
+		let hasCurrent = false;
+		for (let p = pkg.parent; p; p = p.parent) {
+			packages.push(p);
+			// eslint-disable-next-line no-await-in-loop
+			if (await this._isCurrent(p)) {
+				hasCurrent = true;
+				break;
+			}
 		}
+		packages.reverse();
+		const [srcPkg] = packages;
 
-		const outFile = this._pathToPackage(pkg, pkg.file);
-		const fileTmpBase = this.pathToTemp(pkg.name);
-
-		const oldFile = (await this._isInstalled(pkg))
-			? await this._packageInstallFile(pkg)
-			: null;
+		// Find the lowest slice to read before compression.
+		// Build transforms to pipe the source slice through.
+		let slice: [number, number] | null = null;
+		const transforms: Transform[] = [];
+		let i = 1;
+		for (; i < packages.length; i++) {
+			const p = packages[i];
+			const [ss, sl] = p.getZippedSlice();
+			if (slice) {
+				slice[0] += ss;
+				slice[1] = sl;
+			} else {
+				slice = [ss, sl];
+			}
+			const d = p.getZippedDecompressor();
+			if (d) {
+				transforms.push(d);
+				i++;
+				break;
+			}
+		}
+		for (; i < packages.length; i++) {
+			const p = packages[i];
+			const [ss, sl] = p.getZippedSlice();
+			transforms.push(new StreamSlice(ss, sl));
+			const d = p.getZippedDecompressor();
+			if (d) {
+				transforms.push(d);
+			}
+		}
 
 		// eslint-disable-next-line no-sync
 		this.eventPackageInstallBefore.triggerSync({
 			package: pkg
 		});
 
-		const r: Package[] = [];
+		const outFile = this._pathToPackage(pkg, pkg.file);
+		const tmpFile = this.pathToTemp(`${pkg.name}.part`);
+
+		// Create temporary directory, cleanup on failure.
+		await this._tempDirEnsure(true);
 		try {
-			await this._tempDirEnsure(true);
-			await this._packageDirsEnsure(pkg);
+			// Read from installed file of from a URL.
+			let input: NodeJS.ReadableStream;
+			if (hasCurrent) {
+				// eslint-disable-next-line no-sync
+				this.eventPackageExtractBefore.triggerSync({
+					package: pkgO
+				});
 
-			let i = 0;
-			let tmpFileP = '';
-			let tmpFile = '';
-			for (const p of list) {
-				tmpFile = `${fileTmpBase}.${i++}.part`;
-				const {parent} = p;
+				// eslint-disable-next-line no-sync
+				this.eventPackageExtractProgress.triggerSync({
+					package: pkgO,
+					total: pkgO.size,
+					amount: 0
+				});
 
-				// If streaming from a root package, handle that.
-				if (stream) {
-					// eslint-disable-next-line no-await-in-loop
-					await this._packageStream(p, tmpFile);
-					stream = false;
+				const options: {start?: number; end?: number} = {};
+				if (slice) {
+					const [start, size] = slice;
+					options.start = start;
+					options.end = start + size - 1;
+				}
+				input = createReadStream(
+					this._pathToPackage(srcPkg, srcPkg.file),
+					options
+				);
+			} else {
+				// eslint-disable-next-line no-sync
+				this.eventPackageDownloadBefore.triggerSync({
+					package: pkgO
+				});
+
+				// eslint-disable-next-line no-sync
+				this.eventPackageDownloadProgress.triggerSync({
+					package: pkgO,
+					total: pkgO.size,
+					amount: 0
+				});
+
+				const headers: IFetchRequestHeaders = {...this.headers};
+				if (slice) {
+					const [start, size] = slice;
+					headers.Range = `bytes=${start}-${start + size - 1}`;
+				}
+				const response = await this.fetch(srcPkg.source, {
+					headers
+				});
+				this._assertStatusCode(slice ? 206 : 200, response.status);
+				const contentLength = response.headers.get('content-length');
+				if (contentLength) {
+					this._assertContentLength(
+						slice ? slice[1] : srcPkg.size,
+						contentLength
+					);
+				}
+				input = response.body;
+			}
+
+			// Hash the last readable stream to verify package.
+			const hash = createHash('sha256');
+			const lastData = transforms.length
+				? transforms[transforms.length - 1]
+				: input;
+			lastData.on('data', (data: Buffer) => {
+				hash.update(data);
+			});
+
+			// Create output file, monitoring write progress.
+			const output = createWriterStream(tmpFile);
+			output.on('wrote', () => {
+				if (hasCurrent) {
+					// eslint-disable-next-line no-sync
+					this.eventPackageExtractProgress.triggerSync({
+						package: pkgO,
+						total: pkgO.size,
+						amount: output.bytesWritten
+					});
 				} else {
-					// Use previous temp file if present.
-					// Else use parent file if not root file.
-					// A root package that is not streamed will be downloaded.
-					const archive =
-						tmpFileP ||
-						(parent
-							? this._pathToPackage(parent, parent.file)
-							: null);
-					if (archive) {
-						// eslint-disable-next-line no-await-in-loop
-						await this._packageExtract(p, tmpFile, archive);
-					} else {
-						// eslint-disable-next-line no-await-in-loop
-						await this._packageDownload(p, tmpFile);
-					}
+					// eslint-disable-next-line no-sync
+					this.eventPackageDownloadProgress.triggerSync({
+						package: pkgO,
+						total: pkgO.size,
+						amount: output.bytesWritten
+					});
 				}
+			});
 
-				// Remove previous temporary file if present.
-				if (tmpFileP) {
-					// eslint-disable-next-line no-await-in-loop
-					await rm(tmpFileP, {force: true});
-				}
-				tmpFileP = tmpFile;
+			// Pipe all the streams through the pipeline.
+			// Work around types failing on variable args.
+			await (pipe as (...args: unknown[]) => Promise<void>)(
+				input,
+				...transforms,
+				output
+			);
 
-				r.push(p);
+			// Verify the write size.
+			if (output.bytesWritten !== pkg.size) {
+				throw new Error(`Invalid extract size: ${output.bytesWritten}`);
+			}
+
+			// Verify the file hash.
+			const hashed = hash.digest().toString('hex');
+			if (hashed !== pkg.sha256) {
+				throw new Error(`Invalid sha256 hash: ${hashed}`);
+			}
+
+			if (hasCurrent) {
+				// eslint-disable-next-line no-sync
+				this.eventPackageExtractAfter.triggerSync({
+					package: pkgO
+				});
+			} else {
+				// eslint-disable-next-line no-sync
+				this.eventPackageDownloadAfter.triggerSync({
+					package: pkgO
+				});
 			}
 
 			// Move the final file into place and write package file.
-			// Write the package file last, means successful install.
+			// Write the package receipt last, means successful install.
 			await this._packageDirsEnsure(pkg);
-			if (oldFile) {
-				await rm(oldFile, {force: true});
-			}
+			await rm(outFile, {force: true});
 			await rename(tmpFile, outFile);
 			await this._packageMetaReceiptWrite(pkg);
 		} finally {
@@ -1477,7 +1521,7 @@ export class Manager extends Object {
 			package: pkg
 		});
 
-		return r;
+		return packages;
 	}
 
 	/**
@@ -1597,237 +1641,6 @@ export class Manager extends Object {
 		return arrayFilterAsync(dirList, async entry =>
 			this._packageMetaDirExists(entry)
 		);
-	}
-
-	/**
-	 * Extract package from archive path.
-	 *
-	 * @param pkg The package.
-	 * @param file Out file.
-	 * @param archive Archive file.
-	 */
-	protected async _packageExtract(
-		pkg: PackageLike,
-		file: string,
-		archive: string
-	) {
-		this._assertLoaded();
-		const pkgO = (pkg = this._packageToPackage(pkg));
-
-		const {size, sha256} = pkg;
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageExtractBefore.triggerSync({
-			package: pkgO
-		});
-
-		// Get start and end bytes (end byte is included, so size-1).
-		const [start, sizeC] = pkg.getZippedSlice();
-		const end = start + sizeC - 1;
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageExtractProgress.triggerSync({
-			package: pkgO,
-			total: size,
-			amount: 0
-		});
-
-		const body = createReadStream(archive, {start, end});
-		const decompressor = pkg.getZippedDecompressor();
-		const output = createWriterStream(file);
-
-		const hash = createHash('sha256');
-		(decompressor || body).on('data', data => {
-			hash.update(data);
-		});
-
-		output.on('wrote', () => {
-			// eslint-disable-next-line no-sync
-			this.eventPackageExtractProgress.triggerSync({
-				package: pkgO,
-				total: size,
-				amount: output.bytesWritten
-			});
-		});
-
-		if (decompressor) {
-			await pipe(body, decompressor, output);
-		} else {
-			await pipe(body, output);
-		}
-
-		if (output.bytesWritten !== size) {
-			throw new Error(`Unexpected extract size: ${output.bytesWritten}`);
-		}
-
-		const hashed = hash.digest().toString('hex');
-		if (hashed !== sha256) {
-			throw new Error(
-				`Invalid sha256 hash: ${hashed} expected: ${sha256}`
-			);
-		}
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageExtractAfter.triggerSync({
-			package: pkgO
-		});
-	}
-
-	/**
-	 * Download package.
-	 *
-	 * @param pkg The package.
-	 * @param file Out file.
-	 */
-	protected async _packageDownload(pkg: PackageLike, file: string) {
-		this._assertLoaded();
-		const pkgO = (pkg = this._packageToPackage(pkg));
-
-		const {size, sha256} = pkg;
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageDownloadBefore.triggerSync({
-			package: pkgO
-		});
-
-		const response = await this.fetch(pkg.source, {
-			headers: {
-				...this.headers
-			}
-		});
-		this._assertStatusCode(200, response.status);
-		const contentLength = response.headers.get('content-length');
-		if (contentLength) {
-			this._assertContentLength(size, contentLength);
-		}
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageDownloadProgress.triggerSync({
-			package: pkgO,
-			total: size,
-			amount: 0
-		});
-
-		const {body} = response;
-		const output = createWriterStream(file);
-
-		const hash = createHash('sha256');
-		body.on('data', (data: Buffer) => {
-			hash.update(data);
-		});
-
-		output.on('wrote', () => {
-			// eslint-disable-next-line no-sync
-			this.eventPackageDownloadProgress.triggerSync({
-				package: pkgO,
-				total: size,
-				amount: output.bytesWritten
-			});
-		});
-
-		await pipe(body, output);
-
-		if (output.bytesWritten !== size) {
-			throw new Error(`Unexpected download size: ${output.bytesWritten}`);
-		}
-
-		const hashed = hash.digest().toString('hex');
-		if (hashed !== sha256) {
-			throw new Error(
-				`Invalid sha256 hash: ${hashed} expected: ${sha256}`
-			);
-		}
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageDownloadAfter.triggerSync({
-			package: pkgO
-		});
-	}
-
-	/**
-	 * Stream package out of root package.
-	 *
-	 * @param pkg The package.
-	 * @param file Out file.
-	 */
-	protected async _packageStream(pkg: PackageLike, file: string) {
-		this._assertLoaded();
-		const pkgO = (pkg = this._packageToPackage(pkg));
-		const {parent} = pkg;
-
-		if (!parent || parent.parent) {
-			throw new Error('Can only stream direct children of root packages');
-		}
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageStreamBefore.triggerSync({
-			package: pkgO
-		});
-
-		const {size, sha256} = pkg;
-
-		// Get start and end bytes (end byte is included, so size-1).
-		const [start, sizeC] = pkg.getZippedSlice();
-		const end = start + sizeC - 1;
-
-		const response = await this.fetch(parent.source, {
-			headers: {
-				...this.headers,
-				Range: `bytes=${start}-${end}`
-			}
-		});
-		this._assertStatusCode(206, response.status);
-		const contentLength = response.headers.get('content-length');
-		if (contentLength) {
-			this._assertContentLength(sizeC, contentLength);
-		}
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageStreamProgress.triggerSync({
-			package: pkgO,
-			total: size,
-			amount: 0
-		});
-
-		const {body} = response;
-		const decompressor = pkg.getZippedDecompressor();
-		const output = createWriterStream(file);
-
-		const hash = createHash('sha256');
-		(decompressor || body).on('data', (data: Buffer) => {
-			hash.update(data);
-		});
-
-		output.on('wrote', () => {
-			// eslint-disable-next-line no-sync
-			this.eventPackageStreamProgress.triggerSync({
-				package: pkgO,
-				total: size,
-				amount: output.bytesWritten
-			});
-		});
-
-		if (decompressor) {
-			await pipe(body, decompressor, output);
-		} else {
-			await pipe(body, output);
-		}
-
-		if (output.bytesWritten !== size) {
-			throw new Error(`Unexpected extract size: ${output.bytesWritten}`);
-		}
-
-		const hashed = hash.digest().toString('hex');
-		if (hashed !== sha256) {
-			throw new Error(
-				`Invalid sha256 hash: ${hashed} expected: ${sha256}`
-			);
-		}
-
-		// eslint-disable-next-line no-sync
-		this.eventPackageStreamAfter.triggerSync({
-			package: pkgO
-		});
 	}
 
 	/**
