@@ -6,7 +6,7 @@ import {IPackagesList, IPackagesListPackage, IPackageUpdated} from './types';
 /**
  * Packages object.
  */
-export class Packages extends Object {
+export class Packages {
 	/**
 	 * Packages data.
 	 */
@@ -58,8 +58,6 @@ export class Packages extends Object {
 	 * @param path The path to the packages file.
 	 */
 	constructor(path: string) {
-		super();
-
 		this._path = path;
 	}
 

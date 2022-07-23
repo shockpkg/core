@@ -1,7 +1,7 @@
 /**
  * Event dispatcher.
  */
-export class Dispatcher<T> extends Object {
+export class Dispatcher<T> {
 	/**
 	 * Event context.
 	 */
@@ -18,8 +18,6 @@ export class Dispatcher<T> extends Object {
 	 * @param context Context object.
 	 */
 	constructor(context: any) {
-		super();
-
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		this._context = context;
 	}

@@ -55,7 +55,7 @@ const pipe = promisify(pipeline);
 /**
  * Package manager.
  */
-export class Manager extends Object {
+export class Manager {
 	/**
 	 * The default headers for HTTP requests.
 	 */
@@ -229,8 +229,6 @@ export class Manager extends Object {
 	 * @param path The path, defaults to environment variable or relative.
 	 */
 	constructor(path: string | null = null) {
-		super();
-
 		this._path = this._createPath(path);
 		const lock = this._createLock();
 		lock.eventCompromised.on(() => {

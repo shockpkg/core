@@ -5,7 +5,7 @@ import {Dispatcher} from './dispatcher';
 /**
  * Lock file.
  */
-export class Lock extends Object {
+export class Lock {
 	/**
 	 * Duration at which the lock is considered stale in milliseconds.
 	 * Minimum value of 2000.
@@ -54,8 +54,6 @@ export class Lock extends Object {
 	 * @param path The path to lock.
 	 */
 	constructor(path: string) {
-		super();
-
 		this._path = path;
 	}
 

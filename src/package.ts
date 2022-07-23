@@ -6,7 +6,7 @@ import {IPackagesListPackage} from './types';
 /**
  * Package object.
  */
-export class Package extends Object {
+export class Package {
 	/**
 	 * Package name.
 	 */
@@ -67,8 +67,6 @@ export class Package extends Object {
 		info: Readonly<IPackagesListPackage>,
 		parent: Package | null = null
 	) {
-		super();
-
 		const {zipped} = info;
 		if (parent && !zipped) {
 			throw new Error(`Missing zipped info: ${info.name}`);
