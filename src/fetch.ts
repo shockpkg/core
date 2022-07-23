@@ -42,7 +42,7 @@ export interface IFetchResponse {
 }
 
 /**
- * A node-fetch similar interface requiring only a sebset of features.
+ * A node-fetch similar interface requiring only a subset of features.
  *
  * @param url The URL.
  * @param init Init options.
