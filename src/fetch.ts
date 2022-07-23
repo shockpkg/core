@@ -1,5 +1,9 @@
 import nodeFetch from 'node-fetch';
 
+export interface IFetchRequestHeaders {
+	[header: string]: string;
+}
+
 export interface IFetchRequestInit {
 	//
 	/**
