@@ -1690,7 +1690,7 @@ export class Manager extends Object {
 			package: pkgO
 		});
 
-		const response = await fetch(pkg.source, {
+		const response = await this.fetch(pkg.source, {
 			headers: {
 				...this.headers
 			}
