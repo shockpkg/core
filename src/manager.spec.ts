@@ -1954,6 +1954,124 @@ describe('manager', () => {
 					)
 				);
 			});
+
+			describe('reuse closest: 1', () => {
+				it(
+					'events',
+					managerTestOneWith(
+						JSON.stringify(packages),
+						async manager => {
+							await manager.update();
+
+							await manager.install(packageNested1.name);
+							expect(
+								await managerFileSha256(manager, [
+									packageNested1.name,
+									packageNested1.file
+								])
+							).toBe(packageNested1.sha256);
+
+							const events: IPackageEventLog[] = [];
+							const reset = eventsLogger(manager, events);
+							await manager.install(packageNested.name);
+							expect(events).toEqual([
+								{
+									which: 'install-before',
+									package: 'package-nested'
+								},
+								{
+									which: 'extract-before',
+									package: 'package-nested'
+								},
+								{
+									which: 'extract-progress',
+									package: 'package-nested'
+								},
+								{
+									which: 'extract-progress',
+									package: 'package-nested'
+								},
+								{
+									which: 'extract-after',
+									package: 'package-nested'
+								},
+								{
+									which: 'install-after',
+									package: 'package-nested'
+								}
+							]);
+							reset();
+						}
+					)
+				);
+			});
+
+			describe('reuse closest: 2', () => {
+				it(
+					'events',
+					managerTestOneWith(
+						JSON.stringify(packages),
+						async manager => {
+							await manager.update();
+
+							await manager.install(packageNested2.name);
+							expect(
+								await managerFileSha256(manager, [
+									packageNested2.name,
+									packageNested2.file
+								])
+							).toBe(packageNested2.sha256);
+
+							const events: IPackageEventLog[] = [];
+							const reset = eventsLogger(manager, events);
+							await manager.install(packageNested.name);
+							expect(events).toEqual([
+								{
+									which: 'install-before',
+									package: 'package-nested'
+								},
+								{
+									which: 'extract-before',
+									package: 'package-nested-1'
+								},
+								{
+									which: 'extract-progress',
+									package: 'package-nested-1'
+								},
+								{
+									which: 'extract-progress',
+									package: 'package-nested-1'
+								},
+								{
+									which: 'extract-after',
+									package: 'package-nested-1'
+								},
+								{
+									which: 'extract-before',
+									package: 'package-nested'
+								},
+								{
+									which: 'extract-progress',
+									package: 'package-nested'
+								},
+								{
+									which: 'extract-progress',
+									package: 'package-nested'
+								},
+								{
+									which: 'extract-after',
+									package: 'package-nested'
+								},
+								{
+									which: 'install-after',
+									package: 'package-nested'
+								}
+							]);
+							reset();
+						}
+					)
+				);
+			});
 		});
 
 		describe('outdated', () => {
