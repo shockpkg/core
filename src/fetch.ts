@@ -1,5 +1,3 @@
-import nodeFetch from 'node-fetch';
-
 export interface IFetchRequestHeaders {
 	[header: string]: string;
 }
@@ -51,7 +49,14 @@ export interface IFetchResponse {
  * @returns Response promise.
  */
 export async function fetch(url: string, init?: IFetchRequestInit) {
-	return nodeFetch(url, init) as Promise<IFetchResponse>;
+	const nodeFetch = (await import('node-fetch' as string)) as {
+		default?: unknown;
+	};
+	const fetch = (nodeFetch.default || nodeFetch) as (
+		url: string,
+		init?: IFetchRequestInit
+	) => Promise<IFetchResponse>;
+	return fetch(url, init);
 }
 
 export type IFetch = typeof fetch;
