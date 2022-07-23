@@ -57,7 +57,12 @@ async function babelTarget(
 			(preset[1] as {modules: string | boolean}).modules = modules;
 		}
 	}
-	if (!modules) {
+	if (modules === 'commonjs') {
+		babelOptions.plugins.push([
+			'@babel/plugin-transform-modules-commonjs',
+			{importInterop: 'node'}
+		]);
+	} else if (!modules) {
 		babelOptions.plugins.push([
 			'esm-resolver',
 			{
