@@ -50,7 +50,7 @@ async function babelTarget(
 	dest: string,
 	modules: string | boolean
 ) {
-	const extname = modules ? '.js' : '.mjs';
+	const ext = modules ? '.js' : '.mjs';
 
 	const babelOptions = await babelrc();
 	for (const preset of babelOptions.presets) {
@@ -69,7 +69,7 @@ async function babelTarget(
 		{
 			source: {
 				extensions: [
-					[['.js', '.mjs', '.jsx', '.mjsx', '.ts', '.tsx'], extname]
+					[['.js', '.mjs', '.jsx', '.mjsx', '.ts', '.tsx'], ext]
 				]
 			}
 		}
@@ -93,7 +93,7 @@ async function babelTarget(
 		gulpSourcemaps.init(),
 		gulpBabel(babelOptions as {}),
 		gulpRename(path => {
-			path.extname = extname;
+			path.extname = ext;
 		}),
 		gulpSourcemaps.write('.', {
 			includeContent: true,
@@ -101,7 +101,7 @@ async function babelTarget(
 			destPath: dest
 		}),
 		gulpInsert.transform((code, {path}) => {
-			if (path.endsWith(extname)) {
+			if (path.endsWith(ext)) {
 				return `${code}\n//# sourceMappingURL=${basename(path)}.map\n`;
 			}
 			return code;
