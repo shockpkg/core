@@ -1146,37 +1146,6 @@ export class Manager extends Object {
 	}
 
 	/**
-	 * Assert correct status code.
-	 *
-	 * @param expected Expected status code.
-	 * @param statusCode The actual status code.
-	 */
-	protected _assertStatusCode(expected: number, statusCode: number) {
-		if (statusCode === expected) {
-			return;
-		}
-		throw new Error(
-			`Unexpected status code: ${statusCode} expected: ${expected}`
-		);
-	}
-
-	/**
-	 * Assert correct content length.
-	 *
-	 * @param expected Expected content length, as a number.
-	 * @param contentLength The actual content length as string.
-	 */
-	protected _assertContentLength(expected: number, contentLength: string) {
-		const size = +contentLength;
-		if (size === expected) {
-			return;
-		}
-		throw new Error(
-			`Unexpected content-length: ${contentLength} expected: ${expected}`
-		);
-	}
-
-	/**
 	 * Initialize instance.
 	 */
 	protected async _init() {
@@ -1436,19 +1405,27 @@ export class Manager extends Object {
 					amount: 0
 				});
 
+				const url = srcPkg.source;
 				if (slice) {
 					const [start, size] = slice;
 					if (size > 0) {
-						const response = await this.fetch(srcPkg.source, {
+						const response = await this.fetch(url, {
 							headers: {
 								...this.headers,
 								Range: `bytes=${start}-${start + size - 1}`
 							}
 						});
-						this._assertStatusCode(206, response.status);
+						const {status} = response;
+						if (status !== 206) {
+							throw new Error(
+								`Invalid resume status: ${status}: ${url}`
+							);
+						}
 						const cl = response.headers.get('content-length');
-						if (cl) {
-							this._assertContentLength(size, cl);
+						if (cl && +cl !== size) {
+							throw new Error(
+								`Invalid resume content-length: ${cl}: ${url}`
+							);
 						}
 						input = response.body;
 					} else if (size === 0) {
@@ -1462,10 +1439,17 @@ export class Manager extends Object {
 					const response = await this.fetch(srcPkg.source, {
 						headers: this.headers
 					});
-					this._assertStatusCode(200, response.status);
+					const {status} = response;
+					if (status !== 200) {
+						throw new Error(
+							`Invalid download status: ${status}: ${url}`
+						);
+					}
 					const cl = response.headers.get('content-length');
-					if (cl) {
-						this._assertContentLength(srcPkg.size, cl);
+					if (cl && +cl !== srcPkg.size) {
+						throw new Error(
+							`Invalid download content-length: ${cl}: ${url}`
+						);
 					}
 					input = response.body;
 				}
@@ -1676,7 +1660,8 @@ export class Manager extends Object {
 	protected async _requestPackages() {
 		this._assertActive();
 
-		const response = await this.fetch(this.packagesUrl, {
+		const url = this.packagesUrl;
+		const response = await this.fetch(url, {
 			headers: {
 				...this.headers,
 				// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -1684,8 +1669,10 @@ export class Manager extends Object {
 				Pragma: 'no-cache'
 			}
 		});
-
-		this._assertStatusCode(200, response.status);
+		const {status} = response;
+		if (status !== 200) {
+			throw new Error(`Invalid response status: ${status}: ${url}`);
+		}
 		return response.text();
 	}
 
