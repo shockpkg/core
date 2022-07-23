@@ -1406,14 +1406,6 @@ export class Manager extends Object {
 		const outFile = this._pathToPackage(pkg, pkg.file);
 		const fileTmpBase = this.pathToTemp(pkg.name);
 
-		/**
-		 * Get tmp file name.
-		 *
-		 * @param i File index.
-		 * @returns Fele name.
-		 */
-		const fileTmp = (i: number) => `${fileTmpBase}.${i}.part`;
-
 		const oldFile = (await this._isInstalled(pkg))
 			? await this._packageInstallFile(pkg)
 			: null;
@@ -1432,7 +1424,7 @@ export class Manager extends Object {
 			let tmpFileP = '';
 			let tmpFile = '';
 			for (const p of list) {
-				tmpFile = fileTmp(i++);
+				tmpFile = `${fileTmpBase}.${i++}.part`;
 				const {parent} = p;
 
 				// If streaming from a root package, handle that.
