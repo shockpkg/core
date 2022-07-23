@@ -1642,7 +1642,7 @@ describe('manager', () => {
 							expect(
 								await managerFileSha256(manager, [
 									packageSingle.name,
-									'package-single.bin'
+									packageSingle.file
 								])
 							).toBe(packageSingle.sha256);
 							expect(
@@ -1737,7 +1737,7 @@ describe('manager', () => {
 							expect(
 								await managerFileSha256(manager, [
 									packageNested1.name,
-									'package-nested-1.zip'
+									packageNested1.file
 								])
 							).toBe(packageNested1.sha256);
 							expect(
@@ -1842,7 +1842,7 @@ describe('manager', () => {
 							expect(
 								await managerFileSha256(manager, [
 									packageNested.name,
-									'package-nested.bin'
+									packageNested.file
 								])
 							).toBe(packageNested.sha256);
 							expect(
