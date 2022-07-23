@@ -1,8 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-import stream from 'stream';
-import childProcess from 'child_process';
-import util from 'util';
+import {readFile, rm} from 'fs/promises';
+import {basename} from 'path';
+import {pipeline} from 'stream';
+import {spawn} from 'child_process';
+import {promisify} from 'util';
 
 import gulp from 'gulp';
 import gulpRename from 'gulp-rename';
@@ -11,14 +11,12 @@ import gulpFilter from 'gulp-filter';
 import gulpReplace from 'gulp-replace';
 import gulpSourcemaps from 'gulp-sourcemaps';
 import gulpBabel from 'gulp-babel';
-import del from 'del';
 
-const readFile = util.promisify(fs.readFile);
-const pipeline = util.promisify(stream.pipeline);
+const pipe = promisify(pipeline);
 
 async function exec(cmd: string, args: string[] = []) {
 	const code = await new Promise<number | null>((resolve, reject) => {
-		const p = childProcess.spawn(cmd, args, {
+		const p = spawn(cmd, args, {
 			stdio: 'inherit',
 			shell: true
 		});
@@ -85,7 +83,7 @@ async function babelTarget(
 		["'@NAME@'", JSON.stringify(pkg.name)]
 	].map(([f, r]) => gulpReplace(f, r));
 
-	await pipeline(
+	await pipe(
 		gulp.src(src),
 		filterMeta,
 		...filterMetaReplaces,
@@ -105,7 +103,7 @@ async function babelTarget(
 		gulpInsert.transform((contents, file) => {
 			// Manually append sourcemap comment.
 			if (/\.m?js$/i.test(file.path)) {
-				const base = path.basename(file.path);
+				const base = basename(file.path);
 				return `${contents}\n//# sourceMappingURL=${base}.map\n`;
 			}
 			return contents;
@@ -117,13 +115,7 @@ async function babelTarget(
 // clean
 
 gulp.task('clean', async () => {
-	await del([
-		'npm-debug.log*',
-		'yarn-debug.log*',
-		'yarn-error.log*',
-		'report.*.json',
-		'lib'
-	]);
+	await rm('lib', {recursive: true, force: true});
 });
 
 // lint
