@@ -1351,30 +1351,31 @@ export class Manager extends Object {
 		// Build transforms to pipe the source slice through.
 		let slice: [number, number] | null = null;
 		const transforms: Transform[] = [];
-		let i = 1;
-		for (; i < packages.length; i++) {
-			const p = packages[i];
-			const [ss, sl] = p.getZippedSlice();
-			if (slice) {
-				slice[0] += ss;
-				slice[1] = sl;
-			} else {
-				slice = [ss, sl];
+		{
+			let i = 1;
+			while (i < packages.length) {
+				const p = packages[i++];
+				const [ss, sl] = p.getZippedSlice();
+				if (slice) {
+					slice[0] += ss;
+					slice[1] = sl;
+				} else {
+					slice = [ss, sl];
+				}
+				const d = p.getZippedDecompressor();
+				if (d) {
+					transforms.push(d);
+					break;
+				}
 			}
-			const d = p.getZippedDecompressor();
-			if (d) {
-				transforms.push(d);
-				i++;
-				break;
-			}
-		}
-		for (; i < packages.length; i++) {
-			const p = packages[i];
-			const [ss, sl] = p.getZippedSlice();
-			transforms.push(new StreamSlice(ss, sl));
-			const d = p.getZippedDecompressor();
-			if (d) {
-				transforms.push(d);
+			while (i < packages.length) {
+				const p = packages[i++];
+				const [ss, sl] = p.getZippedSlice();
+				transforms.push(new StreamSlice(ss, sl));
+				const d = p.getZippedDecompressor();
+				if (d) {
+					transforms.push(d);
+				}
 			}
 		}
 
