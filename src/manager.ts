@@ -1470,7 +1470,7 @@ export class Manager extends Object {
 			// eslint-disable-next-line no-sync
 			this.eventPackageInstallCurrent.triggerSync({
 				package: pkg,
-				method: 'slim'
+				method: 'full'
 			});
 			return [];
 		}
