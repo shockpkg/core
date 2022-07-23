@@ -50,7 +50,8 @@ async function babelTarget(
 	dest: string,
 	modules: string | boolean
 ) {
-	// Change module.
+	const extname = modules ? '.js' : '.mjs';
+
 	const babelOptions = await babelrc();
 	for (const preset of babelOptions.presets) {
 		if (preset[0] === '@babel/preset-env') {
@@ -62,21 +63,17 @@ async function babelTarget(
 			'@babel/plugin-transform-modules-commonjs',
 			{importInterop: 'node'}
 		]);
-	} else if (!modules) {
-		babelOptions.plugins.push([
-			'esm-resolver',
-			{
-				source: {
-					extensions: [
-						[
-							['.js', '.mjs', '.jsx', '.mjsx', '.ts', '.tsx'],
-							'.mjs'
-						]
-					]
-				}
-			}
-		]);
 	}
+	babelOptions.plugins.push([
+		'esm-resolver',
+		{
+			source: {
+				extensions: [
+					[['.js', '.mjs', '.jsx', '.mjsx', '.ts', '.tsx'], extname]
+				]
+			}
+		}
+	]);
 
 	// Read the package JSON.
 	const pkg = await packageJson();
@@ -96,7 +93,7 @@ async function babelTarget(
 		gulpSourcemaps.init(),
 		gulpBabel(babelOptions as {}),
 		gulpRename(path => {
-			path.extname = modules ? '.js' : '.mjs';
+			path.extname = extname;
 		}),
 		gulpSourcemaps.write('.', {
 			includeContent: true,
@@ -104,7 +101,7 @@ async function babelTarget(
 			destPath: dest
 		}),
 		gulpInsert.transform((code, {path}) => {
-			if (/\.m?js$/i.test(path)) {
+			if (path.endsWith(extname)) {
 				return `${code}\n//# sourceMappingURL=${basename(path)}.map\n`;
 			}
 			return code;
