@@ -113,7 +113,10 @@ async function babelTarget(
 // clean
 
 gulp.task('clean', async () => {
-	await rm('lib', {recursive: true, force: true});
+	await Promise.all([
+		rm('lib', {recursive: true, force: true}),
+		rm('spec/tmp', {recursive: true, force: true})
+	]);
 });
 
 // lint
