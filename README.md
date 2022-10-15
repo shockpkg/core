@@ -21,18 +21,12 @@ The core package manager library for shockpkg packages.
 ```js
 import {Manager} from '@shockpkg/core';
 
-async function main() {
-	const manager = new Manager();
-	await manager.with(async manager => {
-		await manager.update();
-
-		await manager.install('some-package-name-or-hash');
-	});
-}
-
-main().catch(err => {
-	process.exitCode = 1;
-	console.error(err);
+await new Manager().with(async manager => {
+	const pkg = 'some-package-name-or-hash';
+	await manager.update();
+	await manager.install(pkg);
+	const file = await manager.packageInstallFile(pkg);
+	console.log(file);
 });
 ```
 
