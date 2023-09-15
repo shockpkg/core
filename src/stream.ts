@@ -141,7 +141,7 @@ export class SliceStream extends Transform {
 
 			// Skip over any data before start.
 			if (i < 0) {
-				this._transformed += -i;
+				this._transformed -= i;
 				c = c.subarray(-i);
 			}
 
@@ -167,12 +167,12 @@ export class SliceStream extends Transform {
 
 		// Skip over any data before start.
 		if (i < 0) {
-			this._transformed += -i;
+			this._transformed -= i;
 			c = c.subarray(-i);
 			i = 0;
 		}
 
-		// If check length more than remaining.
+		// If chunk length more than remaining.
 		const r = size - i;
 		if (c.length > r) {
 			this._transformed += r;
