@@ -1,9 +1,9 @@
 import {describe, it, beforeEach, afterEach} from 'node:test';
 import {deepStrictEqual, strictEqual} from 'node:assert';
-import {Readable, pipeline} from 'stream';
-import {join as pathJoin} from 'path';
-import {promisify} from 'util';
-import {rm, mkdir, lstat} from 'fs/promises';
+import {Readable, pipeline} from 'node:stream';
+import {join as pathJoin} from 'node:path';
+import {promisify} from 'node:util';
+import {rm, mkdir, lstat} from 'node:fs/promises';
 
 import {createWriterStream, EmptyStream, SliceStream} from './stream';
 

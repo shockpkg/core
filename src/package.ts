@@ -1,5 +1,5 @@
-import {Transform} from 'stream';
-import {createInflateRaw as zlibCreateInflateRaw} from 'zlib';
+import {Transform} from 'node:stream';
+import {createInflateRaw as zlibCreateInflateRaw} from 'node:zlib';
 
 import {IPackagesListPackage} from './types';
 

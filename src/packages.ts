@@ -1,4 +1,4 @@
-import {access, readFile, writeFile} from 'fs/promises';
+import {access, readFile, writeFile} from 'node:fs/promises';
 
 import {Package} from './package';
 import {IPackagesList, IPackagesListPackage, IPackageUpdated} from './types';

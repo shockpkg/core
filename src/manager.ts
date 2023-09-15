@@ -1,4 +1,4 @@
-import {createReadStream} from 'fs';
+import {createReadStream} from 'node:fs';
 import {
 	access,
 	lstat,
@@ -8,11 +8,11 @@ import {
 	rename,
 	rm,
 	writeFile
-} from 'fs/promises';
-import {join as pathJoin} from 'path';
-import {pipeline, Transform} from 'stream';
-import {promisify} from 'util';
-import {createHash} from 'crypto';
+} from 'node:fs/promises';
+import {join as pathJoin} from 'node:path';
+import {pipeline, Transform} from 'node:stream';
+import {promisify} from 'node:util';
+import {createHash} from 'node:crypto';
 
 import {
 	MAIN_DIR,

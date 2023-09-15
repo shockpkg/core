@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
-import {WriteStream, createWriteStream} from 'fs';
-import {Readable, Transform, TransformCallback} from 'stream';
+import {WriteStream, createWriteStream} from 'node:fs';
+import {Readable, Transform, TransformCallback} from 'node:stream';
 
 /**
  * Extends WriteStream.
