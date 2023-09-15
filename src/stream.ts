@@ -8,9 +8,23 @@ import {Readable, Transform, TransformCallback} from 'node:stream';
  */
 export class WriterStream extends WriteStream {
 	/**
-	 * A flag to hook _write methods only once.
+	 * A flag to hook _write methods only once, ignoring write within write.
 	 */
 	protected _writing = false;
+
+	/**
+	 * WriterStream constructor.
+	 *
+	 * @param path Same as createWriteStream.
+	 * @param options Same as createWriteStream.
+	 */
+	constructor(
+		path: Parameters<typeof createWriteStream>[0],
+		options?: Parameters<typeof createWriteStream>[1]
+	) {
+		// @ts-expect-error Ignore incorrect @types/node types.
+		super(path, options);
+	}
 
 	/**
 	 * @inheritDoc
@@ -43,7 +57,6 @@ export class WriterStream extends WriteStream {
 		}[],
 		callback: (error?: Error | null) => void
 	): void {
-		// Do not hook a write within a write.
 		if (this._writing) {
 			return (super._writev as NonNullable<WriteStream['_writev']>)(
 				chunks,
@@ -60,24 +73,6 @@ export class WriterStream extends WriteStream {
 			}
 		);
 	}
-}
-
-/**
- * Like createWriteStream but for creating WriterStream.
- *
- * @param path Same as createWriteStream.
- * @param options Same as createWriteStream.
- * @returns A WriterStream.
- */
-export function createWriterStream(
-	path: Parameters<typeof createWriteStream>[0],
-	options?: Parameters<typeof createWriteStream>[1]
-): WriterStream {
-	// This nonsense is to work around the incorrect @types/node WriteStream.
-	return new (WriterStream as new (
-		path: Parameters<typeof createWriteStream>[0],
-		options: Parameters<typeof createWriteStream>[1]
-	) => WriterStream)(path, options);
 }
 
 /**

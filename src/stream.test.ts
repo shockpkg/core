@@ -5,7 +5,7 @@ import {pipeline} from 'node:stream/promises';
 import {join as pathJoin} from 'node:path';
 import {rm, mkdir, lstat} from 'node:fs/promises';
 
-import {createWriterStream, EmptyStream, SliceStream} from './stream';
+import {EmptyStream, SliceStream, WriterStream} from './stream';
 
 const tmpPath = './spec/tmp/stream';
 
@@ -39,7 +39,7 @@ void describe('stream', () => {
 			await mkdir(tmpPath, {recursive: true});
 			const file = pathJoin(tmpPath, 'tmp.bin');
 			const reader = new Reader();
-			const writer = createWriterStream(file);
+			const writer = new WriterStream(file);
 			const wrotes: number[] = [];
 			writer.on('wrote', () => {
 				wrotes.push(writer.bytesWritten);

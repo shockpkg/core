@@ -25,7 +25,7 @@ import {
 	TEMP_DIR
 } from './constants';
 import {Dispatcher} from './dispatcher';
-import {createWriterStream, EmptyStream, SliceStream} from './stream';
+import {EmptyStream, SliceStream, WriterStream} from './stream';
 import {Lock} from './lock';
 import {Package} from './package';
 import {Packages} from './packages';
@@ -1374,7 +1374,7 @@ export class Manager {
 			});
 
 			// Create output file, monitoring write progress.
-			const output = createWriterStream(tmpFile);
+			const output = new WriterStream(tmpFile);
 			output.on('wrote', () => {
 				// eslint-disable-next-line no-sync
 				this.eventPackageDownloadProgress.triggerSync({
