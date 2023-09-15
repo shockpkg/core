@@ -35,9 +35,6 @@ import {
 	IPackageDownloadAfter,
 	IPackageDownloadBefore,
 	IPackageDownloadProgress,
-	IPackageExtractAfter,
-	IPackageExtractBefore,
-	IPackageExtractProgress,
 	IPackageInstallAfter,
 	IPackageInstallBefore,
 	IPackageInstallCurrent,
@@ -47,7 +44,7 @@ import {
 	PackageLike
 } from './types';
 import {IFetch, fetch} from './fetch';
-import {arrayFilterAsync, arrayMapAsync, dependSort} from './util';
+import {arrayFilterAsync, arrayMapAsync} from './util';
 import {NAME, VERSION} from './meta';
 
 const pipe = promisify(pipeline);
@@ -110,27 +107,6 @@ export class Manager {
 	public readonly eventPackageDownloadProgress =
 		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageDownloadProgress>(this);
-
-	/**
-	 * Package extract before events.
-	 */
-	public readonly eventPackageExtractBefore =
-		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageExtractBefore>(this);
-
-	/**
-	 * Package extract after events.
-	 */
-	public readonly eventPackageExtractAfter =
-		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageExtractAfter>(this);
-
-	/**
-	 * Package extract progress events.
-	 */
-	public readonly eventPackageExtractProgress =
-		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<IPackageExtractProgress>(this);
 
 	/**
 	 * Package cleanup before events.
@@ -506,17 +482,6 @@ export class Manager {
 	 */
 	public async packageInstallVerify(pkg: PackageLike) {
 		await this._exclusiveAsync(async () => this._packageInstallVerify(pkg));
-	}
-
-	/**
-	 * Packages ordered by dependencies.
-	 *
-	 * @param pkgs Packages list.
-	 * @returns Packages list, sorted order.
-	 */
-	public packagesDependOrdered(pkgs: PackageLike[]) {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() => this._packagesDependOrdered(pkgs));
 	}
 
 	/**
@@ -962,19 +927,6 @@ export class Manager {
 	}
 
 	/**
-	 * Packages ordered by dependencies.
-	 *
-	 * @param pkgs Packages list.
-	 * @returns Packages list, sorted order.
-	 */
-	protected _packagesDependOrdered(pkgs: PackageLike[]) {
-		this._assertLoaded();
-
-		const list = pkgs.map(pkg => this._packageToPackage(pkg));
-		return dependSort(list, pkg => this._packageParents(pkg));
-	}
-
-	/**
 	 * Read package installed receipt.
 	 *
 	 * @param pkg The package.
@@ -1239,13 +1191,15 @@ export class Manager {
 	protected async _installed() {
 		this._assertLoaded();
 
-		const dirList = await this._packagesDirList();
-		const filtered = await arrayFilterAsync(dirList, async entry => {
+		const list: Package[] = [];
+		for (const entry of await this._packagesDirList()) {
 			const pkg = this._packageByName(entry);
-			const installed = pkg && (await this._isInstalled(pkg));
-			return installed;
-		});
-		return this._packagesDependOrdered(filtered);
+			// eslint-disable-next-line no-await-in-loop
+			if (pkg && (await this._isInstalled(pkg))) {
+				list.push(pkg);
+			}
+		}
+		return list;
 	}
 
 	/**
@@ -1256,12 +1210,15 @@ export class Manager {
 	protected async _outdated() {
 		this._assertLoaded();
 
-		const dirList = await this._packagesDirList();
-		const filtered = await arrayFilterAsync(dirList, async entry => {
+		const list: Package[] = [];
+		for (const entry of await this._packagesDirList()) {
 			const pkg = this._packageByName(entry);
-			return pkg && !(await this._isCurrent(pkg));
-		});
-		return this._packagesDependOrdered(filtered);
+			// eslint-disable-next-line no-await-in-loop
+			if (pkg && !(await this._isCurrent(pkg))) {
+				list.push(pkg);
+			}
+		}
+		return list;
 	}
 
 	/**
@@ -1300,14 +1257,8 @@ export class Manager {
 
 		// Find the closest current installed parent, if any.
 		const packages: Package[] = [pkg];
-		let hasCurrent = false;
 		for (let p = pkg.parent; p; p = p.parent) {
 			packages.push(p);
-			// eslint-disable-next-line no-await-in-loop
-			if (await this._isCurrent(p)) {
-				hasCurrent = true;
-				break;
-			}
 		}
 		packages.reverse();
 		const [srcPkg] = packages;
@@ -1357,98 +1308,63 @@ export class Manager {
 		try {
 			// Read from installed file of from a URL.
 			let input: NodeJS.ReadableStream;
-			if (hasCurrent) {
-				// eslint-disable-next-line no-sync
-				this.eventPackageExtractBefore.triggerSync({
-					package: pkgO
-				});
+			// eslint-disable-next-line no-sync
+			this.eventPackageDownloadBefore.triggerSync({
+				package: pkgO
+			});
 
-				// eslint-disable-next-line no-sync
-				this.eventPackageExtractProgress.triggerSync({
-					package: pkgO,
-					total: pkgO.size,
-					amount: 0
-				});
+			// eslint-disable-next-line no-sync
+			this.eventPackageDownloadProgress.triggerSync({
+				package: pkgO,
+				total: pkgO.size,
+				amount: 0
+			});
 
-				const srcFile = this._pathToPackage(srcPkg, srcPkg.file);
-				if (slice) {
-					const [start, size] = slice;
-					if (size > 0) {
-						input = createReadStream(srcFile, {
-							start,
-							end: start + size - 1
-						});
-					} else if (size === 0) {
-						input = new EmptyStream();
-					} else {
-						throw new Error(
-							`Cannot extract negative size: ${size}`
-						);
-					}
-				} else {
-					input = createReadStream(srcFile);
-				}
-			} else {
-				// eslint-disable-next-line no-sync
-				this.eventPackageDownloadBefore.triggerSync({
-					package: pkgO
-				});
-
-				// eslint-disable-next-line no-sync
-				this.eventPackageDownloadProgress.triggerSync({
-					package: pkgO,
-					total: pkgO.size,
-					amount: 0
-				});
-
-				const url = srcPkg.source;
-				if (slice) {
-					const [start, size] = slice;
-					if (size > 0) {
-						const response = await this.fetch(url, {
-							headers: {
-								...this.headers,
-								Range: `bytes=${start}-${start + size - 1}`
-							}
-						});
-						const {status} = response;
-						if (status !== 206) {
-							throw new Error(
-								`Invalid resume status: ${status}: ${url}`
-							);
+			const url = srcPkg.source;
+			if (slice) {
+				const [start, size] = slice;
+				if (size > 0) {
+					const response = await this.fetch(url, {
+						headers: {
+							...this.headers,
+							Range: `bytes=${start}-${start + size - 1}`
 						}
-						const cl = response.headers.get('content-length');
-						if (cl && +cl !== size) {
-							throw new Error(
-								`Invalid resume content-length: ${cl}: ${url}`
-							);
-						}
-						input = response.body;
-					} else if (size === 0) {
-						input = new EmptyStream();
-					} else {
-						throw new Error(
-							`Cannot download negative size: ${size}`
-						);
-					}
-				} else {
-					const response = await this.fetch(srcPkg.source, {
-						headers: this.headers
 					});
 					const {status} = response;
-					if (status !== 200) {
+					if (status !== 206) {
 						throw new Error(
-							`Invalid download status: ${status}: ${url}`
+							`Invalid resume status: ${status}: ${url}`
 						);
 					}
 					const cl = response.headers.get('content-length');
-					if (cl && +cl !== srcPkg.size) {
+					if (cl && +cl !== size) {
 						throw new Error(
-							`Invalid download content-length: ${cl}: ${url}`
+							`Invalid resume content-length: ${cl}: ${url}`
 						);
 					}
 					input = response.body;
+				} else if (size === 0) {
+					input = new EmptyStream();
+				} else {
+					throw new Error(`Cannot download negative size: ${size}`);
 				}
+			} else {
+				const response = await this.fetch(url, {
+					headers: this.headers
+				});
+				const {status} = response;
+				if (status !== 200) {
+					throw new Error(
+						`Invalid download status: ${status}: ${url}`
+					);
+				}
+				const cl = response.headers.get('content-length');
+				if (cl && +cl !== srcPkg.size) {
+					throw new Error(
+						`Invalid download content-length: ${cl}: ${url}`
+					);
+				}
+				input = response.body;
 			}
 
 			// Hash the last readable stream to verify package.
@@ -1463,21 +1379,12 @@ export class Manager {
 			// Create output file, monitoring write progress.
 			const output = createWriterStream(tmpFile);
 			output.on('wrote', () => {
-				if (hasCurrent) {
-					// eslint-disable-next-line no-sync
-					this.eventPackageExtractProgress.triggerSync({
-						package: pkgO,
-						total: pkgO.size,
-						amount: output.bytesWritten
-					});
-				} else {
-					// eslint-disable-next-line no-sync
-					this.eventPackageDownloadProgress.triggerSync({
-						package: pkgO,
-						total: pkgO.size,
-						amount: output.bytesWritten
-					});
-				}
+				// eslint-disable-next-line no-sync
+				this.eventPackageDownloadProgress.triggerSync({
+					package: pkgO,
+					total: pkgO.size,
+					amount: output.bytesWritten
+				});
 			});
 
 			// Pipe all the streams through the pipeline.
@@ -1499,17 +1406,10 @@ export class Manager {
 				throw new Error(`Invalid sha256 hash: ${hashed}`);
 			}
 
-			if (hasCurrent) {
-				// eslint-disable-next-line no-sync
-				this.eventPackageExtractAfter.triggerSync({
-					package: pkgO
-				});
-			} else {
-				// eslint-disable-next-line no-sync
-				this.eventPackageDownloadAfter.triggerSync({
-					package: pkgO
-				});
-			}
+			// eslint-disable-next-line no-sync
+			this.eventPackageDownloadAfter.triggerSync({
+				package: pkgO
+			});
 
 			// Move the final file into place and write package file.
 			// Write the package receipt last, means successful install.
@@ -1538,7 +1438,7 @@ export class Manager {
 	protected async _installMulti(pkgs: PackageLike[]) {
 		this._assertLoaded();
 
-		const list = this._packagesDependOrdered(pkgs);
+		const list = pkgs.map(pkg => this._packageToPackage(pkg));
 		return (await arrayMapAsync(list, async pkg => ({
 			package: pkg,
 			install: await this._install(pkg)

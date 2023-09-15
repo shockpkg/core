@@ -13,7 +13,7 @@ import express from 'express';
 
 import {Manager} from './manager';
 import {Package} from './package';
-import {IPackageDownloadProgress, IPackageExtractProgress} from './types';
+import {IPackageDownloadProgress} from './types';
 import {createServer} from './util.spec';
 
 const pipe = promisify(pipeline);
@@ -578,7 +578,6 @@ function testMethodSync(
  */
 function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 	let prevDownloadProgress: IPackageDownloadProgress | null = null;
-	let prevExtractProgress: IPackageExtractProgress | null = null;
 
 	const add = (o: IPackageEventLog) => {
 		events.push(o);
@@ -654,47 +653,8 @@ function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 		});
 	});
 
-	manager.eventPackageExtractBefore.on(event => {
-		add({
-			which: 'extract-before',
-			package: event.package.name
-		});
-	});
-	manager.eventPackageExtractProgress.on(event => {
-		const start = event.amount === 0;
-		const end = event.amount === event.total;
-
-		if (event.amount > event.total) {
-			throw new Error('Extract progress: Over amount');
-		}
-		if (prevExtractProgress && !start) {
-			if (event.total !== prevExtractProgress.total) {
-				throw new Error('Extract progress: Total changed');
-			}
-			if (event.amount <= prevExtractProgress.amount) {
-				throw new Error('Extract progress: No progress');
-			}
-		}
-
-		// Only add first and last progress.
-		if (start || end) {
-			add({
-				which: 'extract-progress',
-				package: event.package.name
-			});
-		}
-		prevExtractProgress = event;
-	});
-	manager.eventPackageExtractAfter.on(event => {
-		add({
-			which: 'extract-after',
-			package: event.package.name
-		});
-	});
-
 	return () => {
 		prevDownloadProgress = null;
-		prevExtractProgress = null;
 		events.splice(0, events.length);
 	};
 }
@@ -1561,58 +1521,6 @@ void describe('manager', () => {
 			);
 		});
 
-		void describe('packagesDependOrdered', () => {
-			// eslint-disable-next-line no-sync
-			testMethodSync(manager => manager.packagesDependOrdered([]));
-
-			void describe('return', () => {
-				void it(
-					'full',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
-
-							const list = [
-								packageNested2.name,
-								packageNested1.name,
-								packageNested.name
-							];
-							const listRev = list.slice(0).reverse();
-
-							const ordered =
-								manager.packagesDependOrdered(listRev);
-
-							const orderedStrs = ordered.map(p => p.name);
-							deepStrictEqual(orderedStrs, list);
-						}
-					)
-				);
-
-				void it(
-					'skip',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
-
-							const list = [
-								packageNested2.name,
-								packageNested.name
-							];
-							const listRev = list.slice(0).reverse();
-
-							const ordered =
-								manager.packagesDependOrdered(listRev);
-
-							const orderedStrs = ordered.map(p => p.name);
-							deepStrictEqual(orderedStrs, list);
-						}
-					)
-				);
-			});
-		});
-
 		void describe('install', () => {
 			testMethodAsync(async manager =>
 				manager.install(packageSingle.name)
@@ -1967,19 +1875,19 @@ void describe('manager', () => {
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-before',
+									which: 'download-before',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-progress',
+									which: 'download-progress',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-progress',
+									which: 'download-progress',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-after',
+									which: 'download-after',
 									package: 'package-nested'
 								},
 								{
@@ -2019,19 +1927,19 @@ void describe('manager', () => {
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-before',
+									which: 'download-before',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-progress',
+									which: 'download-progress',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-progress',
+									which: 'download-progress',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-after',
+									which: 'download-after',
 									package: 'package-nested'
 								},
 								{
@@ -2081,19 +1989,19 @@ void describe('manager', () => {
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-before',
+									which: 'download-before',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-progress',
+									which: 'download-progress',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-progress',
+									which: 'download-progress',
 									package: 'package-nested'
 								},
 								{
-									which: 'extract-after',
+									which: 'download-after',
 									package: 'package-nested'
 								},
 								{

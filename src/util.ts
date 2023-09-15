@@ -37,29 +37,3 @@ export async function arrayMapAsync<T, U>(
 	}
 	return r;
 }
-
-/**
- * Sort entries on dependencies listed for each entry.
- * Sorts the array in-place.
- *
- * @param list The array to sort.
- * @param deps Get the list of dependencies for each entry.
- * @returns Sorted array.
- */
-export function dependSort<T>(list: T[], deps: (entry: T) => T[]) {
-	const m = new Map<T, Set<T>>();
-	for (const entry of list) {
-		m.set(entry, new Set(deps(entry)));
-	}
-	return list.sort((a, b) => {
-		const aDeps = m.get(a) as Set<T>;
-		if (aDeps.has(b)) {
-			return 1;
-		}
-		const bDeps = m.get(b) as Set<T>;
-		if (bDeps.has(a)) {
-			return -1;
-		}
-		return 0;
-	});
-}
