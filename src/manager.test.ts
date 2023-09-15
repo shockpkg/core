@@ -20,7 +20,7 @@ const pipe = promisify(pipeline);
 
 const strReverse = (s: string) => s.split('').reverse().join('');
 
-const tmpPath = './spec/manager';
+const tmpPath = './spec/tmp/manager';
 
 const unknownDirEmpty = 'unknown-dir-empty';
 
