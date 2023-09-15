@@ -5,8 +5,7 @@ import {describe, it, beforeEach, afterEach} from 'node:test';
 import {deepStrictEqual, ok, strictEqual} from 'node:assert';
 import {createReadStream} from 'node:fs';
 import {lstat, mkdir, rm, writeFile} from 'node:fs/promises';
-import {pipeline} from 'node:stream';
-import {promisify} from 'node:util';
+import {pipeline} from 'node:stream/promises';
 import {createHash} from 'node:crypto';
 import {Server} from 'node:http';
 
@@ -15,8 +14,6 @@ import express from 'express';
 import {Manager} from './manager';
 import {Package} from './package';
 import {IPackageDownloadProgress} from './types';
-
-const pipe = promisify(pipeline);
 
 const strReverse = (s: string) => s.split('').reverse().join('');
 
@@ -414,7 +411,7 @@ async function managerFileSha256(manager: ManagerTest, path: string[]) {
 	hash.on('finish', () => {
 		hashsum = hash.read() as string;
 	});
-	await pipe(stream, hash);
+	await pipeline(stream, hash);
 	return hashsum;
 }
 

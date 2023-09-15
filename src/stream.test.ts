@@ -1,13 +1,11 @@
 import {describe, it, beforeEach, afterEach} from 'node:test';
 import {deepStrictEqual, strictEqual} from 'node:assert';
-import {Readable, pipeline} from 'node:stream';
+import {Readable} from 'node:stream';
+import {pipeline} from 'node:stream/promises';
 import {join as pathJoin} from 'node:path';
-import {promisify} from 'node:util';
 import {rm, mkdir, lstat} from 'node:fs/promises';
 
 import {createWriterStream, EmptyStream, SliceStream} from './stream';
-
-const pipe = promisify(pipeline);
 
 const tmpPath = './spec/tmp/stream';
 
@@ -46,7 +44,7 @@ void describe('stream', () => {
 			writer.on('wrote', () => {
 				wrotes.push(writer.bytesWritten);
 			});
-			await pipe(reader, writer);
+			await pipeline(reader, writer);
 			strictEqual((await lstat(file)).size, 5 * MB);
 			deepStrictEqual(wrotes, [MB, 2 * MB, 3 * MB, 4 * MB, 5 * MB]);
 		});
@@ -60,7 +58,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			deepStrictEqual(datas, [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]);
 		});
 
@@ -71,7 +69,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			deepStrictEqual(datas, []);
 		});
 
@@ -82,7 +80,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			deepStrictEqual(datas, []);
 		});
 
@@ -93,7 +91,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			deepStrictEqual(datas, [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]);
 		});
 
@@ -104,7 +102,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			deepStrictEqual(datas, [[0xff], [0, 1, 2, 3, 4, 5, 6, 7, 8]]);
 		});
 
@@ -115,7 +113,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push([...data]);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			deepStrictEqual(datas, [[0xfc, 0xfd, 0xfe, 0xff]]);
 		});
 
@@ -126,7 +124,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			strictEqual(datas.length, 3);
 			strictEqual(datas[0].length, 0.5 * MB);
 			strictEqual(datas[1].length, MB);
@@ -140,7 +138,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			strictEqual(datas.length, 1);
 			strictEqual(datas[0].length, MB);
 		});
@@ -152,7 +150,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			strictEqual(datas.length, 2);
 			strictEqual(datas[0].length, 1);
 			strictEqual(datas[1].length, MB);
@@ -165,7 +163,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			strictEqual(datas.length, 1);
 			strictEqual(datas[0].length, MB - 1);
 		});
@@ -177,7 +175,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			strictEqual(datas.length, 1);
 			strictEqual(datas[0].length, 0.5 * MB);
 		});
@@ -189,7 +187,7 @@ void describe('stream', () => {
 			transform.on('data', (data: Buffer) => {
 				datas.push(data);
 			});
-			await pipe(reader, transform);
+			await pipeline(reader, transform);
 			strictEqual(datas.length, 5);
 			strictEqual(datas[0].length, 0.5 * MB);
 			strictEqual(datas[1].length, MB);

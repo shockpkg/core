@@ -10,8 +10,8 @@ import {
 	writeFile
 } from 'node:fs/promises';
 import {join as pathJoin} from 'node:path';
-import {pipeline, Transform} from 'node:stream';
-import {promisify} from 'node:util';
+import {Transform} from 'node:stream';
+import {pipeline} from 'node:stream/promises';
 import {createHash} from 'node:crypto';
 
 import {
@@ -45,8 +45,6 @@ import {
 } from './types';
 import {IFetch, fetch} from './fetch';
 import {NAME, VERSION} from './meta';
-
-const pipe = promisify(pipeline);
 
 /**
  * Package manager.
@@ -850,7 +848,7 @@ export class Manager {
 		hash.on('finish', () => {
 			hashsum = hash.read() as string;
 		});
-		await pipe(stream, hash);
+		await pipeline(stream, hash);
 
 		if (hashsum !== sha256) {
 			throw new Error(`Invalid sha256 hash: ${hashsum}`);
@@ -1388,7 +1386,7 @@ export class Manager {
 
 			// Pipe all the streams through the pipeline.
 			// Work around types failing on variable args.
-			await (pipe as (...args: unknown[]) => Promise<void>)(
+			await (pipeline as (...args: unknown[]) => Promise<void>)(
 				input,
 				...transforms,
 				output
