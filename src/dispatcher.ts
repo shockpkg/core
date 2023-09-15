@@ -5,19 +5,19 @@ export class Dispatcher<T> {
 	/**
 	 * Event context.
 	 */
-	protected readonly _context: any;
+	protected readonly _context: unknown;
 
 	/**
 	 * Event handlers.
 	 */
-	protected readonly _handlers = new Set<(event: T) => any>();
+	protected readonly _handlers = new Set<(event: T) => unknown>();
 
 	/**
 	 * Event dispatcher constructor.
 	 *
 	 * @param context Context object.
 	 */
-	constructor(context: any) {
+	constructor(context: unknown) {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		this._context = context;
 	}
@@ -27,7 +27,7 @@ export class Dispatcher<T> {
 	 *
 	 * @param handler Event handler.
 	 */
-	public on(handler: (event: T) => any) {
+	public on(handler: (event: T) => unknown) {
 		this._handlers.add(handler);
 	}
 
@@ -36,7 +36,7 @@ export class Dispatcher<T> {
 	 *
 	 * @param handler Event handler.
 	 */
-	public off(handler: (event: T) => any) {
+	public off(handler: (event: T) => unknown) {
 		this._handlers.delete(handler);
 	}
 

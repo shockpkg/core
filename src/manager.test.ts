@@ -1,11 +1,13 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable max-nested-callbacks */
 
-import {createReadStream} from 'fs';
-import {lstat, mkdir, rm, writeFile} from 'fs/promises';
-import {pipeline} from 'stream';
-import {promisify} from 'util';
-import {createHash} from 'crypto';
+import {describe, it, beforeEach, afterEach} from 'node:test';
+import {deepStrictEqual, ok, strictEqual} from 'node:assert';
+import {createReadStream} from 'node:fs';
+import {lstat, mkdir, rm, writeFile} from 'node:fs/promises';
+import {pipeline} from 'node:stream';
+import {promisify} from 'node:util';
+import {createHash} from 'node:crypto';
 
 import express from 'express';
 
@@ -18,7 +20,7 @@ const pipe = promisify(pipeline);
 
 const strReverse = (s: string) => s.split('').reverse().join('');
 
-const tmpPath = './spec/tmp';
+const tmpPath = './spec/manager';
 
 const unknownDirEmpty = 'unknown-dir-empty';
 
@@ -173,7 +175,7 @@ class ManagerTest extends Manager {
 	 *
 	 * @param func Test function.
 	 */
-	public async $testExclusiveAsync(func: (self: this) => Promise<any>) {
+	public async $testExclusiveAsync(func: (self: this) => Promise<unknown>) {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const err = await this._exclusiveAsync(async () => {
 			try {
@@ -184,9 +186,9 @@ class ManagerTest extends Manager {
 			}
 			throw new Error('Failed to get error');
 		});
-		expect(err).toBeTruthy();
+		ok(err);
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		expect(err.message).toBe('Already running exclusive method');
+		strictEqual(err.message, 'Already running exclusive method');
 	}
 
 	/**
@@ -194,7 +196,7 @@ class ManagerTest extends Manager {
 	 *
 	 * @param func Test function.
 	 */
-	public $testExclusiveSync(func: (self: this) => any) {
+	public $testExclusiveSync(func: (self: this) => unknown) {
 		// eslint-disable-next-line no-sync, @typescript-eslint/no-unsafe-assignment
 		const err = this._exclusiveSync(() => {
 			try {
@@ -205,9 +207,9 @@ class ManagerTest extends Manager {
 			}
 			throw new Error('Failed to get error');
 		});
-		expect(err).toBeTruthy();
+		ok(err);
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		expect(err.message).toBe('Already running exclusive method');
+		strictEqual(err.message, 'Already running exclusive method');
 	}
 }
 
@@ -217,7 +219,7 @@ class ManagerTest extends Manager {
  * @param p Promise object.
  * @returns The error or undefined.
  */
-async function promiseError(p: Promise<any>) {
+async function promiseError(p: Promise<unknown>) {
 	try {
 		await p;
 	} catch (err) {
@@ -283,7 +285,7 @@ async function managerEnsureDirs(manager: ManagerTest, dirs: string[][]) {
 async function managerWritePackageMeta(
 	manager: ManagerTest,
 	pkg: string,
-	info: any
+	info: unknown
 ) {
 	const f = manager.pathTo(pkg, manager.metaDir, manager.packageFile);
 	await mkdir(manager.pathTo(pkg, manager.metaDir), {recursive: true});
@@ -393,7 +395,7 @@ function managerTest(
  */
 function managerTestOne(
 	packages: string | null,
-	func: (manager: ManagerTest) => Promise<any>
+	func: (manager: ManagerTest) => Promise<unknown>
 ) {
 	return managerTest(packages, async ManagerTest => {
 		await func(new ManagerTest(tmpPath));
@@ -409,7 +411,7 @@ function managerTestOne(
  */
 function managerTestOneWith(
 	packages: string | null,
-	func: (manager: ManagerTest) => Promise<any>
+	func: (manager: ManagerTest) => Promise<unknown>
 ) {
 	return managerTestOne(packages, async manager => {
 		await manager.with(async manager => {
@@ -425,14 +427,14 @@ function managerTestOneWith(
  * @returns Spec handler.
  */
 function managerTestNotActiveAsync(
-	func: (manager: ManagerTest) => Promise<any>
+	func: (manager: ManagerTest) => Promise<unknown>
 ) {
 	return managerTestOne(null, async manager => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const err = await promiseError(func(manager));
-		expect(err).toBeTruthy();
+		ok(err);
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		expect(err.message).toBe('Instance uninitialized');
+		strictEqual(err.message, 'Instance uninitialized');
 	});
 }
 
@@ -442,19 +444,19 @@ function managerTestNotActiveAsync(
  * @param func Test function.
  * @returns Spec handler.
  */
-function managerTestNotActiveSync(func: (manager: ManagerTest) => any) {
+function managerTestNotActiveSync(func: (manager: ManagerTest) => unknown) {
 	// eslint-disable-next-line @typescript-eslint/require-await
 	return managerTestOne(null, async manager => {
-		let err: any = null;
+		let err: Error | null = null;
 		try {
 			func(manager);
 		} catch (ex) {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			err = ex;
 		}
-		expect(err).toBeTruthy();
+		ok(err);
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		expect(err.message).toBe('Instance uninitialized');
+		strictEqual(err.message, 'Instance uninitialized');
 	});
 }
 
@@ -465,14 +467,14 @@ function managerTestNotActiveSync(func: (manager: ManagerTest) => any) {
  * @returns Spec handler.
  */
 function managerTestNotLoadedAsync(
-	func: (manager: ManagerTest) => Promise<any>
+	func: (manager: ManagerTest) => Promise<unknown>
 ) {
 	return managerTestOneWith(null, async manager => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const err = await promiseError(func(manager));
-		expect(err).toBeTruthy();
+		ok(err);
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		expect(err.message).toBe('Packages list not loaded');
+		strictEqual(err.message, 'Packages list not loaded');
 	});
 }
 
@@ -482,19 +484,19 @@ function managerTestNotLoadedAsync(
  * @param func Test function.
  * @returns Spec handler.
  */
-function managerTestNotLoadedSync(func: (manager: ManagerTest) => any) {
+function managerTestNotLoadedSync(func: (manager: ManagerTest) => unknown) {
 	// eslint-disable-next-line @typescript-eslint/require-await
 	return managerTestOneWith(null, async manager => {
-		let err: any = null;
+		let err: Error | null = null;
 		try {
 			func(manager);
 		} catch (ex) {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			err = ex;
 		}
-		expect(err).toBeTruthy();
+		ok(err);
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		expect(err.message).toBe('Packages list not loaded');
+		strictEqual(err.message, 'Packages list not loaded');
 	});
 }
 
@@ -505,7 +507,7 @@ function managerTestNotLoadedSync(func: (manager: ManagerTest) => any) {
  * @returns Spec handler.
  */
 function managerTestExclusiveAsync(
-	func: (manager: ManagerTest) => Promise<any>
+	func: (manager: ManagerTest) => Promise<unknown>
 ) {
 	return managerTestOneWith(null, async manager => {
 		await manager.$testExclusiveAsync(func);
@@ -518,7 +520,7 @@ function managerTestExclusiveAsync(
  * @param func Test function.
  * @returns Spec handler.
  */
-function managerTestExclusiveSync(func: (manager: ManagerTest) => any) {
+function managerTestExclusiveSync(func: (manager: ManagerTest) => unknown) {
 	// eslint-disable-next-line @typescript-eslint/require-await
 	return managerTestOneWith(null, async manager => {
 		// eslint-disable-next-line no-sync
@@ -533,15 +535,15 @@ function managerTestExclusiveSync(func: (manager: ManagerTest) => any) {
  * @param loaded Require loaded.
  */
 function testMethodAsync(
-	func: (manager: ManagerTest) => Promise<any>,
+	func: (manager: ManagerTest) => Promise<unknown>,
 	loaded = true
 ) {
-	it('exclusive', managerTestExclusiveAsync(func));
+	void it('exclusive', managerTestExclusiveAsync(func));
 
-	it('not active', managerTestNotActiveAsync(func));
+	void it('not active', managerTestNotActiveAsync(func));
 
 	if (loaded) {
-		it('not loaded', managerTestNotLoadedAsync(func));
+		void it('not loaded', managerTestNotLoadedAsync(func));
 	}
 }
 
@@ -551,16 +553,19 @@ function testMethodAsync(
  * @param func Function to test method.
  * @param loaded Require loaded.
  */
-function testMethodSync(func: (manager: ManagerTest) => any, loaded = true) {
+function testMethodSync(
+	func: (manager: ManagerTest) => unknown,
+	loaded = true
+) {
 	// eslint-disable-next-line no-sync
-	it('exclusive', managerTestExclusiveSync(func));
+	void it('exclusive', managerTestExclusiveSync(func));
 
 	// eslint-disable-next-line no-sync
-	it('not active', managerTestNotActiveSync(func));
+	void it('not active', managerTestNotActiveSync(func));
 
 	if (loaded) {
 		// eslint-disable-next-line no-sync
-		it('not loaded', managerTestNotLoadedSync(func));
+		void it('not loaded', managerTestNotLoadedSync(func));
 	}
 }
 
@@ -694,18 +699,18 @@ function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 	};
 }
 
-describe('manager', () => {
-	describe('Manager', () => {
-		beforeEach(async () => {
+void describe('manager', () => {
+	void describe('Manager', () => {
+		void beforeEach(async () => {
 			await rm(tmpPath, {recursive: true, force: true});
 		});
 
-		afterEach(async () => {
+		void afterEach(async () => {
 			await rm(tmpPath, {recursive: true, force: true});
 		});
 
-		describe('init + destroy', () => {
-			it(
+		void describe('init + destroy', () => {
+			void it(
 				'simple',
 				managerTestOne(null, async manager => {
 					await manager.init();
@@ -713,33 +718,33 @@ describe('manager', () => {
 				})
 			);
 
-			it(
+			void it(
 				'init once',
 				managerTestOne(null, async manager => {
 					await manager.init();
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const err = await promiseError(manager.init());
-					expect(err).toBeTruthy();
+					ok(err);
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					expect(err.message).toBe('Instance initialized');
+					strictEqual(err.message, 'Instance initialized');
 					await manager.destroy();
 				})
 			);
 
-			it(
+			void it(
 				'destroy once',
 				managerTestOne(null, async manager => {
 					await manager.init();
 					await manager.destroy();
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const err = await promiseError(manager.destroy());
-					expect(err).toBeTruthy();
+					ok(err);
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					expect(err.message).toBe('Instance uninitialized');
+					strictEqual(err.message, 'Instance uninitialized');
 				})
 			);
 
-			it(
+			void it(
 				'init exclusive',
 				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.$testExclusiveAsync(async () => {
@@ -748,7 +753,7 @@ describe('manager', () => {
 				})
 			);
 
-			it(
+			void it(
 				'destroy exclusive',
 				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.init();
@@ -759,7 +764,7 @@ describe('manager', () => {
 				})
 			);
 
-			it(
+			void it(
 				'init destroy 2x',
 				managerTest(null, async ManagerTest => {
 					const manager1 = new ManagerTest(tmpPath);
@@ -772,7 +777,7 @@ describe('manager', () => {
 				})
 			);
 
-			it(
+			void it(
 				'init locked',
 				managerTest(null, async ManagerTest => {
 					const manager1 = new ManagerTest(tmpPath);
@@ -781,13 +786,13 @@ describe('manager', () => {
 					await manager1.init();
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const err = await promiseError(manager2.init());
-					expect(err).toBeTruthy();
+					ok(err);
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					expect(err.message).toBe('Lock file is already being held');
+					strictEqual(err.message, 'Lock file is already being held');
 				})
 			);
 
-			it(
+			void it(
 				'init destroy 2x reuse',
 				managerTest(null, async ManagerTest => {
 					const manager = new ManagerTest(tmpPath);
@@ -799,115 +804,118 @@ describe('manager', () => {
 			);
 		});
 
-		describe('with', () => {
-			it(
+		void describe('with', () => {
+			void it(
 				'active',
 				managerTestOne(null, async manager => {
-					expect(manager.active).toBe(false);
+					strictEqual(manager.active, false);
 					await manager.with(manager => {
-						expect(manager.active).toBe(true);
+						strictEqual(manager.active, true);
 					});
-					expect(manager.active).toBe(false);
+					strictEqual(manager.active, false);
 				})
 			);
 
-			it(
+			void it(
 				'reuse',
 				managerTestOne(null, async manager => {
-					expect(manager.active).toBe(false);
+					strictEqual(manager.active, false);
 					await manager.with(manager => {
-						expect(manager.active).toBe(true);
+						strictEqual(manager.active, true);
 					});
 					await manager.with(manager => {
-						expect(manager.active).toBe(true);
+						strictEqual(manager.active, true);
 					});
-					expect(manager.active).toBe(false);
+					strictEqual(manager.active, false);
 				})
 			);
 
-			it(
+			void it(
 				'throws',
 				managerTestOne(null, async manager => {
-					expect(manager.active).toBe(false);
+					strictEqual(manager.active, false);
 					const thrown = new Error('With throws');
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const err = await promiseError(
 						manager.with(manager => {
-							expect(manager.active).toBe(true);
+							strictEqual(manager.active, true);
 							throw thrown;
 						})
 					);
-					expect(err).toBe(thrown);
-					expect(manager.active).toBe(false);
+					strictEqual(err, thrown);
+					strictEqual(manager.active, false);
 				})
 			);
 
-			it(
+			void it(
 				'directory',
 				managerTestOne(null, async manager => {
 					await manager.with(async manager => {
-						expect(manager.active).toBe(true);
+						strictEqual(manager.active, true);
 
 						const statTmpPath = await lstat(tmpPath);
-						expect(statTmpPath.isDirectory()).toBe(true);
+						strictEqual(statTmpPath.isDirectory(), true);
 
 						const statMetaDir = await lstat(manager.pathMeta);
-						expect(statMetaDir.isDirectory()).toBe(true);
+						strictEqual(statMetaDir.isDirectory(), true);
 					});
 
 					const statTmpPath = await lstat(tmpPath);
-					expect(statTmpPath.isDirectory()).toBe(true);
+					strictEqual(statTmpPath.isDirectory(), true);
 
 					const statMetaDir = await lstat(manager.pathMeta);
-					expect(statMetaDir.isDirectory()).toBe(true);
+					strictEqual(statMetaDir.isDirectory(), true);
 				})
 			);
 		});
 
-		describe('update', () => {
+		void describe('update', () => {
 			testMethodAsync(async manager => manager.update(), false);
 
-			it(
+			void it(
 				'loaded',
 				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.init();
-					expect(manager.loaded).toBe(false);
+					strictEqual(manager.loaded, false);
 					await manager.update();
-					expect(manager.loaded).toBe(true);
+					strictEqual(manager.loaded, true);
 				})
 			);
 
-			it(
+			void it(
 				'load from disk',
 				managerTest(JSON.stringify(packages), async ManagerTest => {
 					const manager1 = new ManagerTest(tmpPath);
 					await manager1.with(async manager => {
-						expect(manager.loaded).toBe(false);
+						strictEqual(manager.loaded, false);
 						await manager.update();
-						expect(manager.loaded).toBe(true);
+						strictEqual(manager.loaded, true);
 					});
 
 					const manager2 = new ManagerTest(tmpPath);
 					await manager2.with(manager => {
-						expect(manager.loaded).toBe(true);
+						strictEqual(manager.loaded, true);
 					});
 				})
 			);
 
-			describe('return', () => {
-				const writePackage = async (manager: Manager, obj: any) => {
+			void describe('return', () => {
+				const writePackage = async (manager: Manager, obj: unknown) => {
 					const jsonFile = manager.pathToMeta(manager.packagesFile);
 					await mkdir(manager.pathToMeta(), {recursive: true});
 					await writeFile(jsonFile, JSON.stringify(obj, null, '\t'));
 				};
 
-				it(
+				void it(
 					'added',
 					managerTestOne(JSON.stringify(packages), async manager => {
 						const mod = packagesCopy();
 						mod.packages = mod.packages
 							// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-							.filter((p: any) => p.name !== packageMulti.name);
+							.filter(
+								(p: {name: string}) =>
+									p.name !== packageMulti.name
+							);
 
 						await writePackage(manager, mod);
 
@@ -915,17 +923,20 @@ describe('manager', () => {
 							manager.update()
 						);
 
-						expect(report.updated).toEqual([]);
-						expect(report.added.map(p => p.name)).toEqual([
-							'package-multi',
-							'package-multi-a',
-							'package-multi-b'
-						]);
-						expect(report.removed).toEqual([]);
+						deepStrictEqual(report.updated, []);
+						deepStrictEqual(
+							report.added.map(p => p.name),
+							[
+								'package-multi',
+								'package-multi-a',
+								'package-multi-b'
+							]
+						);
+						deepStrictEqual(report.removed, []);
 					})
 				);
 
-				it(
+				void it(
 					'removed',
 					managerTestOne(JSON.stringify(packages), async manager => {
 						const mod = packagesCopy();
@@ -937,16 +948,16 @@ describe('manager', () => {
 							manager.update()
 						);
 
-						expect(report.updated).toEqual([]);
-						expect(report.added).toEqual([]);
-						expect(report.removed.map(p => p.name)).toEqual([
-							packageObsoleteA.name,
-							packageObsoleteB.name
-						]);
+						deepStrictEqual(report.updated, []);
+						deepStrictEqual(report.added, []);
+						deepStrictEqual(
+							report.removed.map(p => p.name),
+							[packageObsoleteA.name, packageObsoleteB.name]
+						);
 					})
 				);
 
-				it(
+				void it(
 					'updated: file',
 					managerTestOne(JSON.stringify(packages), async manager => {
 						const mod = packagesCopy();
@@ -958,15 +969,16 @@ describe('manager', () => {
 							manager.update()
 						);
 
-						expect(report.updated.map(p => p.name)).toEqual([
-							pkg.name
-						]);
-						expect(report.added).toEqual([]);
-						expect(report.removed).toEqual([]);
+						deepStrictEqual(
+							report.updated.map(p => p.name),
+							[pkg.name]
+						);
+						deepStrictEqual(report.added, []);
+						deepStrictEqual(report.removed, []);
 					})
 				);
 
-				it(
+				void it(
 					'updated: size',
 					managerTestOne(JSON.stringify(packages), async manager => {
 						const mod = packagesCopy();
@@ -978,15 +990,16 @@ describe('manager', () => {
 							manager.update()
 						);
 
-						expect(report.updated.map(p => p.name)).toEqual([
-							pkg.name
-						]);
-						expect(report.added).toEqual([]);
-						expect(report.removed).toEqual([]);
+						deepStrictEqual(
+							report.updated.map(p => p.name),
+							[pkg.name]
+						);
+						deepStrictEqual(report.added, []);
+						deepStrictEqual(report.removed, []);
 					})
 				);
 
-				it(
+				void it(
 					'updated: sha256',
 					managerTestOne(JSON.stringify(packages), async manager => {
 						const mod = packagesCopy();
@@ -998,15 +1011,16 @@ describe('manager', () => {
 							manager.update()
 						);
 
-						expect(report.updated.map(p => p.name)).toEqual([
-							pkg.name
-						]);
-						expect(report.added).toEqual([]);
-						expect(report.removed).toEqual([]);
+						deepStrictEqual(
+							report.updated.map(p => p.name),
+							[pkg.name]
+						);
+						deepStrictEqual(report.added, []);
+						deepStrictEqual(report.removed, []);
 					})
 				);
 
-				it(
+				void it(
 					'ignored: source',
 					managerTestOne(JSON.stringify(packages), async manager => {
 						const mod = packagesCopy();
@@ -1018,13 +1032,13 @@ describe('manager', () => {
 							manager.update()
 						);
 
-						expect(report.updated).toEqual([]);
-						expect(report.added).toEqual([]);
-						expect(report.removed).toEqual([]);
+						deepStrictEqual(report.updated, []);
+						deepStrictEqual(report.added, []);
+						deepStrictEqual(report.removed, []);
 					})
 				);
 
-				it(
+				void it(
 					'old format',
 					managerTestOne(JSON.stringify(packages), async manager => {
 						const mod = packagesCopy();
@@ -1039,8 +1053,9 @@ describe('manager', () => {
 							manager => manager.loaded
 						);
 
-						expect(loaded).toBeFalse();
-						expect(errorMessage).toEqual(
+						ok(!loaded);
+						strictEqual(
+							errorMessage,
 							'Invalid format version minor: 1.0'
 						);
 					})
@@ -1048,8 +1063,8 @@ describe('manager', () => {
 			});
 		});
 
-		describe('packageItter', () => {
-			it(
+		void describe('packageItter', () => {
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1066,138 +1081,130 @@ describe('manager', () => {
 
 					const listed = [...manager.packageItter()].map(p => p.name);
 
-					expect(listed).toEqual(expected);
+					deepStrictEqual(listed, expected);
 				})
 			);
 		});
 
-		describe('packageByName', () => {
+		void describe('packageByName', () => {
 			// eslint-disable-next-line no-sync
 			testMethodSync(manager =>
 				manager.packageByName(packageSingle.name)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					expect(
-						manager.packageByName(packageObsoleteA.name)
-					).toBeNull();
+					strictEqual(
+						manager.packageByName(packageObsoleteA.name),
+						null
+					);
 
-					expect(
-						manager.packageByName(packageSingle.name)
-					).toBeTruthy();
+					ok(manager.packageByName(packageSingle.name));
 				})
 			);
 		});
 
-		describe('packageBySha256', () => {
+		void describe('packageBySha256', () => {
 			// eslint-disable-next-line no-sync
 			testMethodSync(manager =>
 				manager.packageBySha256(packageSingle.sha256)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					expect(
-						manager.packageBySha256(packageSingleMetaBad.sha256)
-					).toBeNull();
+					strictEqual(
+						manager.packageBySha256(packageSingleMetaBad.sha256),
+						null
+					);
 
-					expect(
-						manager.packageBySha256(packageSingle.sha256)
-					).toBeTruthy();
+					ok(manager.packageBySha256(packageSingle.sha256));
 				})
 			);
 		});
 
-		describe('packageBySha1', () => {
+		void describe('packageBySha1', () => {
 			// eslint-disable-next-line no-sync
 			testMethodSync(manager =>
 				manager.packageBySha1(packageSingle.sha1)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					expect(
-						manager.packageBySha1(packageSingleMetaBad.sha1)
-					).toBeNull();
+					strictEqual(
+						manager.packageBySha1(packageSingleMetaBad.sha1),
+						null
+					);
 
-					expect(
-						manager.packageBySha1(packageSingle.sha1)
-					).toBeTruthy();
+					ok(manager.packageBySha1(packageSingle.sha1));
 				})
 			);
 		});
 
-		describe('packageByMd5', () => {
+		void describe('packageByMd5', () => {
 			// eslint-disable-next-line no-sync
 			testMethodSync(manager => manager.packageByMd5(packageSingle.md5));
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					expect(
-						manager.packageByMd5(packageSingleMetaBad.md5)
-					).toBeNull();
+					strictEqual(
+						manager.packageByMd5(packageSingleMetaBad.md5),
+						null
+					);
 
-					expect(
-						manager.packageByMd5(packageSingle.md5)
-					).toBeTruthy();
+					ok(manager.packageByMd5(packageSingle.md5));
 				})
 			);
 		});
 
-		describe('packageByUnique', () => {
+		void describe('packageByUnique', () => {
 			// eslint-disable-next-line no-sync
 			testMethodSync(manager =>
 				manager.packageByUnique(packageSingle.name)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					expect(
-						manager.packageByUnique(packageObsoleteA.name)
-					).toBeNull();
-					expect(
-						manager.packageByUnique(packageSingleMetaBad.sha256)
-					).toBeNull();
-					expect(
-						manager.packageByUnique(packageSingleMetaBad.sha1)
-					).toBeNull();
-					expect(
-						manager.packageByUnique(packageSingleMetaBad.md5)
-					).toBeNull();
+					strictEqual(
+						manager.packageByUnique(packageObsoleteA.name),
+						null
+					);
+					strictEqual(
+						manager.packageByUnique(packageSingleMetaBad.sha256),
+						null
+					);
+					strictEqual(
+						manager.packageByUnique(packageSingleMetaBad.sha1),
+						null
+					);
+					strictEqual(
+						manager.packageByUnique(packageSingleMetaBad.md5),
+						null
+					);
 
-					expect(
-						manager.packageByUnique(packageSingle.name)
-					).toBeTruthy();
-					expect(
-						manager.packageByUnique(packageSingle.sha256)
-					).toBeTruthy();
-					expect(
-						manager.packageByUnique(packageSingle.sha1)
-					).toBeTruthy();
-					expect(
-						manager.packageByUnique(packageSingle.md5)
-					).toBeTruthy();
+					ok(manager.packageByUnique(packageSingle.name));
+					ok(manager.packageByUnique(packageSingle.sha256));
+					ok(manager.packageByUnique(packageSingle.sha1));
+					ok(manager.packageByUnique(packageSingle.md5));
 				})
 			);
 		});
 
-		describe('packageIsMember', () => {
+		void describe('packageIsMember', () => {
 			const packageSingleFake = new Package(packageSingle);
 
 			// eslint-disable-next-line no-sync
@@ -1205,21 +1212,23 @@ describe('manager', () => {
 				manager.packageIsMember(packageSingleFake)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					expect(manager.packageIsMember(packageSingleFake)).toBe(
+					strictEqual(
+						manager.packageIsMember(packageSingleFake),
 						false
 					);
 
 					const packageSingleReal = manager.packageByName(
 						packageSingle.name
 					);
-					expect(packageSingleReal).toBeTruthy();
+					ok(packageSingleReal);
 					if (packageSingleReal) {
-						expect(manager.packageIsMember(packageSingleReal)).toBe(
+						strictEqual(
+							manager.packageIsMember(packageSingleReal),
 							true
 						);
 					}
@@ -1227,12 +1236,12 @@ describe('manager', () => {
 			);
 		});
 
-		describe('isObsolete', () => {
+		void describe('isObsolete', () => {
 			testMethodAsync(async manager =>
 				manager.isObsolete(packageSingle.name)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1244,28 +1253,32 @@ describe('manager', () => {
 						[packageObsoleteB.name, manager.metaDir]
 					]);
 
-					expect(await manager.isObsolete(unknownDirEmpty)).toBe(
+					strictEqual(
+						await manager.isObsolete(unknownDirEmpty),
 						false
 					);
-					expect(await manager.isObsolete(packageSingle.name)).toBe(
+					strictEqual(
+						await manager.isObsolete(packageSingle.name),
 						false
 					);
-					expect(
-						await manager.isObsolete(packageObsoleteA.name)
-					).toBe(true);
-					expect(
-						await manager.isObsolete(packageObsoleteB.name)
-					).toBe(true);
+					strictEqual(
+						await manager.isObsolete(packageObsoleteA.name),
+						true
+					);
+					strictEqual(
+						await manager.isObsolete(packageObsoleteB.name),
+						true
+					);
 				})
 			);
 		});
 
-		describe('isInstalled', () => {
+		void describe('isInstalled', () => {
 			testMethodAsync(async manager =>
 				manager.isInstalled(packageSingle.name)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1281,22 +1294,24 @@ describe('manager', () => {
 						packageMultiMeta
 					);
 
-					expect(await manager.isInstalled(packageSingle.name)).toBe(
+					strictEqual(
+						await manager.isInstalled(packageSingle.name),
 						true
 					);
-					expect(await manager.isInstalled(packageMulti.name)).toBe(
+					strictEqual(
+						await manager.isInstalled(packageMulti.name),
 						true
 					);
 				})
 			);
 		});
 
-		describe('isCurrent', () => {
+		void describe('isCurrent', () => {
 			testMethodAsync(async manager =>
 				manager.isCurrent(packageSingle.name)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1312,20 +1327,22 @@ describe('manager', () => {
 						packageMultiMeta
 					);
 
-					expect(await manager.isCurrent(packageSingle.name)).toBe(
+					strictEqual(
+						await manager.isCurrent(packageSingle.name),
 						false
 					);
-					expect(await manager.isCurrent(packageMulti.name)).toBe(
+					strictEqual(
+						await manager.isCurrent(packageMulti.name),
 						true
 					);
 				})
 			);
 		});
 
-		describe('obsolete', () => {
+		void describe('obsolete', () => {
 			testMethodAsync(async manager => manager.obsolete());
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1340,7 +1357,7 @@ describe('manager', () => {
 					const obsolete = await manager.obsolete();
 
 					const obsoleteSorted = [...obsolete].sort();
-					expect(obsoleteSorted).toEqual([
+					deepStrictEqual(obsoleteSorted, [
 						packageObsoleteA.name,
 						packageObsoleteB.name
 					]);
@@ -1348,10 +1365,10 @@ describe('manager', () => {
 			);
 		});
 
-		describe('cleanup', () => {
+		void describe('cleanup', () => {
 			testMethodAsync(async manager => manager.cleanup());
 
-			it(
+			void it(
 				'files',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1369,22 +1386,30 @@ describe('manager', () => {
 
 					await manager.cleanup();
 
-					expect(
-						await managerDirExists(manager, [unknownDirEmpty])
-					).toBe(true);
-					expect(
-						await managerDirExists(manager, [packageSingle.name])
-					).toBe(true);
-					expect(
-						await managerDirExists(manager, [packageObsoleteA.name])
-					).toBe(false);
-					expect(
-						await managerDirExists(manager, [packageObsoleteB.name])
-					).toBe(false);
+					strictEqual(
+						await managerDirExists(manager, [unknownDirEmpty]),
+						true
+					);
+					strictEqual(
+						await managerDirExists(manager, [packageSingle.name]),
+						true
+					);
+					strictEqual(
+						await managerDirExists(manager, [
+							packageObsoleteA.name
+						]),
+						false
+					);
+					strictEqual(
+						await managerDirExists(manager, [
+							packageObsoleteB.name
+						]),
+						false
+					);
 				})
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1403,7 +1428,7 @@ describe('manager', () => {
 					const a = await manager.cleanup();
 					const b = await manager.cleanup();
 
-					expect(a).toEqual([
+					deepStrictEqual(a, [
 						{
 							package: packageObsoleteA.name,
 							removed: true
@@ -1413,11 +1438,11 @@ describe('manager', () => {
 							removed: true
 						}
 					]);
-					expect(b).toEqual([]);
+					deepStrictEqual(b, []);
 				})
 			);
 
-			it(
+			void it(
 				'events',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1437,7 +1462,7 @@ describe('manager', () => {
 					const reset = eventsLogger(manager, events);
 
 					await manager.cleanup();
-					expect(events).toEqual([
+					deepStrictEqual(events, [
 						{
 							which: 'cleanup-before',
 							package: packageObsoleteA.name
@@ -1458,17 +1483,17 @@ describe('manager', () => {
 
 					reset();
 					await manager.cleanup();
-					expect(events).toEqual([]);
+					deepStrictEqual(events, []);
 				})
 			);
 		});
 
-		describe('remove', () => {
+		void describe('remove', () => {
 			testMethodAsync(async manager =>
 				manager.remove(packageSingle.name)
 			);
 
-			it(
+			void it(
 				'files',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1485,22 +1510,30 @@ describe('manager', () => {
 					await manager.remove(packageObsoleteA.name);
 					await manager.remove(packageObsoleteB.name);
 
-					expect(
-						await managerDirExists(manager, [unknownDirEmpty])
-					).toBe(false);
-					expect(
-						await managerDirExists(manager, [packageSingle.name])
-					).toBe(false);
-					expect(
-						await managerDirExists(manager, [packageObsoleteA.name])
-					).toBe(false);
-					expect(
-						await managerDirExists(manager, [packageObsoleteB.name])
-					).toBe(false);
+					strictEqual(
+						await managerDirExists(manager, [unknownDirEmpty]),
+						false
+					);
+					strictEqual(
+						await managerDirExists(manager, [packageSingle.name]),
+						false
+					);
+					strictEqual(
+						await managerDirExists(manager, [
+							packageObsoleteA.name
+						]),
+						false
+					);
+					strictEqual(
+						await managerDirExists(manager, [
+							packageObsoleteB.name
+						]),
+						false
+					);
 				})
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -1518,22 +1551,22 @@ describe('manager', () => {
 					const c1 = await manager.remove(packageObsoleteA.name);
 					const c2 = await manager.remove(packageObsoleteA.name);
 
-					expect(a1).toBe(true);
-					expect(a2).toBe(false);
-					expect(b1).toBe(true);
-					expect(b2).toBe(false);
-					expect(c1).toBe(true);
-					expect(c2).toBe(false);
+					strictEqual(a1, true);
+					strictEqual(a2, false);
+					strictEqual(b1, true);
+					strictEqual(b2, false);
+					strictEqual(c1, true);
+					strictEqual(c2, false);
 				})
 			);
 		});
 
-		describe('packagesDependOrdered', () => {
+		void describe('packagesDependOrdered', () => {
 			// eslint-disable-next-line no-sync
 			testMethodSync(manager => manager.packagesDependOrdered([]));
 
-			describe('return', () => {
-				it(
+			void describe('return', () => {
+				void it(
 					'full',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1551,12 +1584,12 @@ describe('manager', () => {
 								manager.packagesDependOrdered(listRev);
 
 							const orderedStrs = ordered.map(p => p.name);
-							expect(orderedStrs).toEqual(list);
+							deepStrictEqual(orderedStrs, list);
 						}
 					)
 				);
 
-				it(
+				void it(
 					'skip',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1573,20 +1606,20 @@ describe('manager', () => {
 								manager.packagesDependOrdered(listRev);
 
 							const orderedStrs = ordered.map(p => p.name);
-							expect(orderedStrs).toEqual(list);
+							deepStrictEqual(orderedStrs, list);
 						}
 					)
 				);
 			});
 		});
 
-		describe('install', () => {
+		void describe('install', () => {
 			testMethodAsync(async manager =>
 				manager.install(packageSingle.name)
 			);
 
-			describe('nested level: 0', () => {
-				it(
+			void describe('nested level: 0', () => {
+				void it(
 					'files',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1595,24 +1628,26 @@ describe('manager', () => {
 
 							await manager.install(packageSingle.name);
 
-							expect(
+							strictEqual(
 								await managerFileSha256(manager, [
 									packageSingle.name,
 									packageSingle.file
-								])
-							).toBe(packageSingle.sha256);
-							expect(
+								]),
+								packageSingle.sha256
+							);
+							strictEqual(
 								await managerFileExists(manager, [
 									packageSingle.name,
 									manager.metaDir,
 									manager.packageFile
-								])
-							).toBe(true);
+								]),
+								true
+							);
 						}
 					)
 				);
 
-				it(
+				void it(
 					'return',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1623,13 +1658,13 @@ describe('manager', () => {
 							const b = await manager.install(packageSingle.name);
 
 							const aValues = a.map(p => p.name);
-							expect(aValues).toEqual([packageSingle.name]);
-							expect(b).toEqual([]);
+							deepStrictEqual(aValues, [packageSingle.name]);
+							deepStrictEqual(b, []);
 						}
 					)
 				);
 
-				it(
+				void it(
 					'events',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1640,7 +1675,7 @@ describe('manager', () => {
 							const reset = eventsLogger(manager, events);
 
 							await manager.install(packageSingle.name);
-							expect(events).toEqual([
+							deepStrictEqual(events, [
 								{
 									which: 'install-before',
 									package: 'package-single'
@@ -1669,7 +1704,7 @@ describe('manager', () => {
 
 							reset();
 							await manager.install(packageSingle.name);
-							expect(events).toEqual([
+							deepStrictEqual(events, [
 								{
 									which: 'install-current',
 									package: 'package-single'
@@ -1680,8 +1715,8 @@ describe('manager', () => {
 				);
 			});
 
-			describe('nested level: 1', () => {
-				it(
+			void describe('nested level: 1', () => {
+				void it(
 					'files',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1690,30 +1725,33 @@ describe('manager', () => {
 
 							await manager.install(packageNested1.name);
 
-							expect(
+							strictEqual(
 								await managerFileSha256(manager, [
 									packageNested1.name,
 									packageNested1.file
-								])
-							).toBe(packageNested1.sha256);
-							expect(
+								]),
+								packageNested1.sha256
+							);
+							strictEqual(
 								await managerFileExists(manager, [
 									packageNested1.name,
 									manager.metaDir,
 									manager.packageFile
-								])
-							).toBe(true);
+								]),
+								true
+							);
 
-							expect(
+							strictEqual(
 								await managerDirExists(manager, [
 									packageNested2.name
-								])
-							).toBe(false);
+								]),
+								false
+							);
 						}
 					)
 				);
 
-				it(
+				void it(
 					'return',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1728,16 +1766,16 @@ describe('manager', () => {
 							);
 
 							const aValues = a.map(p => p.name);
-							expect(aValues).toEqual([
+							deepStrictEqual(aValues, [
 								packageNested2.name,
 								packageNested1.name
 							]);
-							expect(b).toEqual([]);
+							deepStrictEqual(b, []);
 						}
 					)
 				);
 
-				it(
+				void it(
 					'events',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1748,7 +1786,7 @@ describe('manager', () => {
 							const reset = eventsLogger(manager, events);
 
 							await manager.install(packageNested1.name);
-							expect(events).toEqual([
+							deepStrictEqual(events, [
 								{
 									which: 'install-before',
 									package: 'package-nested-1'
@@ -1777,7 +1815,7 @@ describe('manager', () => {
 
 							reset();
 							await manager.install(packageNested1.name);
-							expect(events).toEqual([
+							deepStrictEqual(events, [
 								{
 									which: 'install-current',
 									package: 'package-nested-1'
@@ -1788,8 +1826,8 @@ describe('manager', () => {
 				);
 			});
 
-			describe('nested level: 2', () => {
-				it(
+			void describe('nested level: 2', () => {
+				void it(
 					'files',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1798,36 +1836,40 @@ describe('manager', () => {
 
 							await manager.install(packageNested.name);
 
-							expect(
+							strictEqual(
 								await managerFileSha256(manager, [
 									packageNested.name,
 									packageNested.file
-								])
-							).toBe(packageNested.sha256);
-							expect(
+								]),
+								packageNested.sha256
+							);
+							strictEqual(
 								await managerFileExists(manager, [
 									packageNested.name,
 									manager.metaDir,
 									manager.packageFile
-								])
-							).toBe(true);
+								]),
+								true
+							);
 
-							expect(
+							strictEqual(
 								await managerDirExists(manager, [
 									packageNested1.name
-								])
-							).toBe(false);
+								]),
+								false
+							);
 
-							expect(
+							strictEqual(
 								await managerDirExists(manager, [
 									packageNested2.name
-								])
-							).toBe(false);
+								]),
+								false
+							);
 						}
 					)
 				);
 
-				it(
+				void it(
 					'return',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1838,17 +1880,17 @@ describe('manager', () => {
 							const b = await manager.install(packageNested.name);
 
 							const aValues = a.map(p => p.name);
-							expect(aValues).toEqual([
+							deepStrictEqual(aValues, [
 								packageNested2.name,
 								packageNested1.name,
 								packageNested.name
 							]);
-							expect(b).toEqual([]);
+							deepStrictEqual(b, []);
 						}
 					)
 				);
 
-				it(
+				void it(
 					'events',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1859,7 +1901,7 @@ describe('manager', () => {
 							const reset = eventsLogger(manager, events);
 
 							await manager.install(packageNested.name);
-							expect(events).toEqual([
+							deepStrictEqual(events, [
 								{
 									which: 'install-before',
 									package: 'package-nested'
@@ -1888,7 +1930,7 @@ describe('manager', () => {
 
 							reset();
 							await manager.install(packageNested.name);
-							expect(events).toEqual([
+							deepStrictEqual(events, [
 								{
 									which: 'install-current',
 									package: 'package-nested'
@@ -1899,8 +1941,8 @@ describe('manager', () => {
 				);
 			});
 
-			describe('reuse closest: 1', () => {
-				it(
+			void describe('reuse closest: 1', () => {
+				void it(
 					'events',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1908,17 +1950,18 @@ describe('manager', () => {
 							await manager.update();
 
 							await manager.install(packageNested1.name);
-							expect(
+							strictEqual(
 								await managerFileSha256(manager, [
 									packageNested1.name,
 									packageNested1.file
-								])
-							).toBe(packageNested1.sha256);
+								]),
+								packageNested1.sha256
+							);
 
 							const events: IPackageEventLog[] = [];
 							const reset = eventsLogger(manager, events);
 							await manager.install(packageNested.name);
-							expect(events).toEqual([
+							deepStrictEqual(events, [
 								{
 									which: 'install-before',
 									package: 'package-nested'
@@ -1950,8 +1993,8 @@ describe('manager', () => {
 				);
 			});
 
-			describe('reuse closest: 2', () => {
-				it(
+			void describe('reuse closest: 2', () => {
+				void it(
 					'events',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -1959,17 +2002,18 @@ describe('manager', () => {
 							await manager.update();
 
 							await manager.install(packageNested2.name);
-							expect(
+							strictEqual(
 								await managerFileSha256(manager, [
 									packageNested2.name,
 									packageNested2.file
-								])
-							).toBe(packageNested2.sha256);
+								]),
+								packageNested2.sha256
+							);
 
 							const events: IPackageEventLog[] = [];
 							const reset = eventsLogger(manager, events);
 							await manager.install(packageNested.name);
-							expect(events).toEqual([
+							deepStrictEqual(events, [
 								{
 									which: 'install-before',
 									package: 'package-nested'
@@ -2001,8 +2045,8 @@ describe('manager', () => {
 				);
 			});
 
-			describe('reuse closest: 2, outdated 1', () => {
-				it(
+			void describe('reuse closest: 2, outdated 1', () => {
+				void it(
 					'events',
 					managerTestOneWith(
 						JSON.stringify(packages),
@@ -2010,26 +2054,28 @@ describe('manager', () => {
 							await manager.update();
 
 							await manager.install(packageNested2.name);
-							expect(
+							strictEqual(
 								await managerFileSha256(manager, [
 									packageNested2.name,
 									packageNested2.file
-								])
-							).toBe(packageNested2.sha256);
+								]),
+								packageNested2.sha256
+							);
 
 							await managerWritePackageMeta(
 								manager,
 								packageNested1MetaBad.name,
 								packageNested1MetaBad
 							);
-							expect(
-								(await manager.outdated()).map(p => p.name)
-							).toEqual(['package-nested-1']);
+							deepStrictEqual(
+								(await manager.outdated()).map(p => p.name),
+								['package-nested-1']
+							);
 
 							const events: IPackageEventLog[] = [];
 							const reset = eventsLogger(manager, events);
 							await manager.install(packageNested.name);
-							expect(events).toEqual([
+							deepStrictEqual(events, [
 								{
 									which: 'install-before',
 									package: 'package-nested'
@@ -2057,19 +2103,20 @@ describe('manager', () => {
 							]);
 							reset();
 
-							expect(
-								(await manager.outdated()).map(p => p.name)
-							).toEqual(['package-nested-1']);
+							deepStrictEqual(
+								(await manager.outdated()).map(p => p.name),
+								['package-nested-1']
+							);
 						}
 					)
 				);
 			});
 		});
 
-		describe('outdated', () => {
+		void describe('outdated', () => {
 			testMethodAsync(async manager => manager.outdated());
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2085,15 +2132,15 @@ describe('manager', () => {
 					const list = await manager.outdated();
 
 					const listNames = list.map(pkg => pkg.name);
-					expect(listNames).toEqual([packageNested1.name]);
+					deepStrictEqual(listNames, [packageNested1.name]);
 				})
 			);
 		});
 
-		describe('upgrade', () => {
+		void describe('upgrade', () => {
 			testMethodAsync(async manager => manager.upgrade());
 
-			it(
+			void it(
 				'files',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2108,16 +2155,18 @@ describe('manager', () => {
 
 					await manager.upgrade();
 
-					expect(await manager.isCurrent(packageNested1.name)).toBe(
+					strictEqual(
+						await manager.isCurrent(packageNested1.name),
 						true
 					);
-					expect(await manager.isInstalled(packageNested2.name)).toBe(
+					strictEqual(
+						await manager.isInstalled(packageNested2.name),
 						false
 					);
 				})
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2137,17 +2186,17 @@ describe('manager', () => {
 						name: p.package.name,
 						install: p.install.map(p => p.name)
 					}));
-					expect(aValues).toEqual([
+					deepStrictEqual(aValues, [
 						{
 							name: packageNested1.name,
 							install: [packageNested2.name, packageNested1.name]
 						}
 					]);
-					expect(b).toEqual([]);
+					deepStrictEqual(b, []);
 				})
 			);
 
-			it(
+			void it(
 				'events',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2164,7 +2213,7 @@ describe('manager', () => {
 					const reset = eventsLogger(manager, events);
 
 					await manager.upgrade();
-					expect(events).toEqual([
+					deepStrictEqual(events, [
 						{
 							which: 'install-before',
 							package: 'package-nested-1'
@@ -2193,15 +2242,15 @@ describe('manager', () => {
 
 					reset();
 					await manager.upgrade();
-					expect(events).toEqual([]);
+					deepStrictEqual(events, []);
 				})
 			);
 		});
 
-		describe('installed', () => {
+		void describe('installed', () => {
 			testMethodAsync(async manager => manager.installed());
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2215,7 +2264,7 @@ describe('manager', () => {
 					);
 
 					const list = (await manager.installed()).map(s => s.name);
-					expect(list).toEqual([
+					deepStrictEqual(list, [
 						packageNested1.name,
 						packageSingle.name
 					]);
@@ -2223,12 +2272,12 @@ describe('manager', () => {
 			);
 		});
 
-		describe('packageInstallReceipt', () => {
+		void describe('packageInstallReceipt', () => {
 			testMethodAsync(async manager =>
 				manager.packageInstallReceipt(packageSingle.name)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2249,27 +2298,28 @@ describe('manager', () => {
 						packageNested1MetaBad.name
 					);
 
-					expect(receipt.name).toBe(packageSingle.name);
-					expect(receipt.file).toBe(packageSingle.file);
-					expect(receipt.size).toBe(packageSingle.size);
-					expect(receipt.sha256).toBe(packageSingle.sha256);
+					strictEqual(receipt.name, packageSingle.name);
+					strictEqual(receipt.file, packageSingle.file);
+					strictEqual(receipt.size, packageSingle.size);
+					strictEqual(receipt.sha256, packageSingle.sha256);
 
-					expect(receiptBad.name).toBe(packageNested1MetaBad.name);
-					expect(receiptBad.file).toBe(packageNested1MetaBad.file);
-					expect(receiptBad.size).toBe(packageNested1MetaBad.size);
-					expect(receiptBad.sha256).toBe(
+					strictEqual(receiptBad.name, packageNested1MetaBad.name);
+					strictEqual(receiptBad.file, packageNested1MetaBad.file);
+					strictEqual(receiptBad.size, packageNested1MetaBad.size);
+					strictEqual(
+						receiptBad.sha256,
 						packageNested1MetaBad.sha256
 					);
 				})
 			);
 		});
 
-		describe('packageInstallFile', () => {
+		void describe('packageInstallFile', () => {
 			testMethodAsync(async manager =>
 				manager.packageInstallFile(packageSingle.name)
 			);
 
-			it(
+			void it(
 				'return',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2298,19 +2348,19 @@ describe('manager', () => {
 						packageNested1MetaBad.file
 					);
 
-					expect(filePath).toBe(filePathExpected);
+					strictEqual(filePath, filePathExpected);
 
-					expect(filePathBad).toBe(filePathBadExpected);
+					strictEqual(filePathBad, filePathBadExpected);
 				})
 			);
 		});
 
-		describe('packageInstallFile', () => {
+		void describe('packageInstallFile', () => {
 			testMethodAsync(async manager =>
 				manager.packageInstallVerify(packageSingle.name)
 			);
 
-			it(
+			void it(
 				'installed',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2319,11 +2369,11 @@ describe('manager', () => {
 
 					await manager.packageInstallVerify(packageSingle.name);
 
-					expect(true).toBe(true);
+					strictEqual(true, true);
 				})
 			);
 
-			it(
+			void it(
 				'not installed',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2334,13 +2384,14 @@ describe('manager', () => {
 					);
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					expect(error.message).toBe(
+					strictEqual(
+						(error as Error).message,
 						`Package is not installed: ${packageSingle.name}`
 					);
 				})
 			);
 
-			it(
+			void it(
 				'bad size',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2360,11 +2411,11 @@ describe('manager', () => {
 					);
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					expect(error.message).toBe(`Invalid file size: ${size}`);
+					strictEqual(error.message, `Invalid file size: ${size}`);
 				})
 			);
 
-			it(
+			void it(
 				'bad sha256',
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
@@ -2385,7 +2436,7 @@ describe('manager', () => {
 					);
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					expect(error.message).toBe(`Invalid sha256 hash: ${hash}`);
+					strictEqual(error.message, `Invalid sha256 hash: ${hash}`);
 				})
 			);
 		});

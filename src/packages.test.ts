@@ -1,6 +1,8 @@
 /* eslint-disable max-nested-callbacks */
 
-import {access, mkdir, rm, writeFile} from 'fs/promises';
+import {describe, it, beforeEach, afterEach} from 'node:test';
+import {deepStrictEqual, ok, strictEqual, throws} from 'node:assert';
+import {access, mkdir, rm, writeFile} from 'node:fs/promises';
 
 import {Packages} from './packages';
 
@@ -45,7 +47,7 @@ function dummyMd5(prefix: string) {
 	return prefix + stringRepeat('0', 32 - prefix.length);
 }
 
-const tmpPath = './spec/tmp';
+const tmpPath = './spec/tmp/packages';
 
 const tmpPathPackages = `${tmpPath}/packages.json`;
 
@@ -200,7 +202,7 @@ const dummyPackagesFormatMinorOver = {
  * @param p Promise object.
  * @returns The error or undefined.
  */
-async function getPromiseError(p: Promise<any>) {
+async function getPromiseError(p: Promise<unknown>) {
 	try {
 		await p;
 	} catch (err) {
@@ -211,124 +213,126 @@ async function getPromiseError(p: Promise<any>) {
 	return undefined;
 }
 
-describe('packages', () => {
-	describe('Packages', () => {
-		beforeEach(async () => {
+void describe('packages', () => {
+	void describe('Packages', () => {
+		void beforeEach(async () => {
 			await rm(tmpPath, {recursive: true, force: true});
 			await mkdir(tmpPath, {recursive: true});
 		});
 
-		afterEach(async () => {
+		void afterEach(async () => {
 			await rm(tmpPath, {recursive: true, force: true});
 		});
 
-		describe('update', () => {
-			it('valid', () => {
+		void describe('update', () => {
+			void it('valid', () => {
 				const packages = new Packages(tmpPathPackages);
 
-				expect(packages.loaded).toBe(false);
+				strictEqual(packages.loaded, false);
 
 				packages.update(JSON.stringify(dummyPackages));
 
-				expect(packages.loaded).toBe(true);
+				strictEqual(packages.loaded, true);
 			});
 
-			it('duplicate name', () => {
+			void it('duplicate name', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesDuplicateName);
 
-				expect(() => {
+				throws(() => {
 					packages.update(json);
-				}).toThrow();
+				});
 
-				expect(packages.loaded).toBe(false);
+				strictEqual(packages.loaded, false);
 			});
 
-			it('duplicate hash', () => {
+			void it('duplicate hash', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesDuplicateHash);
 
-				expect(() => {
+				throws(() => {
 					packages.update(json);
-				}).toThrow();
+				});
 
-				expect(packages.loaded).toBe(false);
+				strictEqual(packages.loaded, false);
 			});
 
-			it('format major under', () => {
+			void it('format major under', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesFormatMajorUnder);
 
-				expect(() => {
+				throws(() => {
 					packages.update(json);
-				}).toThrow();
+				});
 
-				expect(packages.loaded).toBe(false);
+				strictEqual(packages.loaded, false);
 			});
 
-			it('format major over', () => {
+			void it('format major over', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesFormatMajorOver);
 
-				expect(() => {
+				throws(() => {
 					packages.update(json);
-				}).toThrow();
+				});
 
-				expect(packages.loaded).toBe(false);
+				strictEqual(packages.loaded, false);
 			});
 
-			it('format minor under', () => {
+			void it('format minor under', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesFormatMinorUnder);
 
-				expect(() => {
+				throws(() => {
 					packages.update(json);
-				}).toThrow();
+				});
 
-				expect(packages.loaded).toBe(false);
+				strictEqual(packages.loaded, false);
 			});
 
-			it('format minor over', () => {
+			void it('format minor over', () => {
 				const packages = new Packages(tmpPathPackages);
 				const json = JSON.stringify(dummyPackagesFormatMinorOver);
 
-				expect(() => {
+				throws(() => {
 					packages.update(json);
-				}).toThrow();
+				});
 
-				expect(packages.loaded).toBe(false);
+				strictEqual(packages.loaded, false);
 			});
 		});
 
-		it('write', async () => {
+		void it('write', async () => {
 			const packages = new Packages(tmpPathPackages);
 
-			expect(
+			strictEqual(
 				await access(tmpPathPackages).then(
 					() => true,
 					() => false
-				)
-			).toBe(false);
+				),
+				false
+			);
 
 			packages.update(JSON.stringify(dummyPackages));
 			await packages.write();
 
-			expect(
+			strictEqual(
 				await access(tmpPathPackages).then(
 					() => true,
 					() => false
-				)
-			).toBe(true);
+				),
+				true
+			);
 		});
 
-		it('read', async () => {
+		void it('read', async () => {
 			const packages = new Packages(tmpPathPackages);
 
-			expect(packages.loaded).toBe(false);
+			strictEqual(packages.loaded, false);
 
-			expect(await getPromiseError(packages.read())).toBeTruthy();
+			ok(await getPromiseError(packages.read()));
 
-			expect(packages.loaded).toBe(false);
+			strictEqual(packages.loaded, false);
 
 			await writeFile(
 				tmpPathPackages,
@@ -337,43 +341,43 @@ describe('packages', () => {
 
 			await packages.read();
 
-			expect(packages.loaded).toBe(true);
+			strictEqual(packages.loaded, true);
 		});
 
-		it('exists', async () => {
+		void it('exists', async () => {
 			const packages = new Packages(tmpPathPackages);
 
-			expect(await packages.exists()).toBe(false);
+			strictEqual(await packages.exists(), false);
 
 			await writeFile(
 				tmpPathPackages,
 				JSON.stringify(dummyPackages, null, '\t')
 			);
 
-			expect(await packages.exists()).toBe(true);
+			strictEqual(await packages.exists(), true);
 		});
 
-		it('readIfExists', async () => {
+		void it('readIfExists', async () => {
 			const packages = new Packages(tmpPathPackages);
 
-			expect(packages.loaded).toBe(false);
+			strictEqual(packages.loaded, false);
 
-			expect(await packages.readIfExists()).toBe(false);
+			strictEqual(await packages.readIfExists(), false);
 
-			expect(packages.loaded).toBe(false);
+			strictEqual(packages.loaded, false);
 
 			await writeFile(
 				tmpPathPackages,
 				JSON.stringify(dummyPackages, null, '\t')
 			);
 
-			expect(await packages.readIfExists()).toBe(true);
+			strictEqual(await packages.readIfExists(), true);
 
-			expect(packages.loaded).toBe(true);
+			strictEqual(packages.loaded, true);
 		});
 
-		describe('itter', () => {
-			it('parent', () => {
+		void describe('itter', () => {
+			void it('parent', () => {
 				const packages = new Packages(tmpPathPackages);
 				packages.update(JSON.stringify(dummyPackages));
 
@@ -381,9 +385,9 @@ describe('packages', () => {
 					const root = entry.name.split('-').length === 2;
 
 					if (root) {
-						expect(entry.parent).toBeNull();
+						strictEqual(entry.parent, null);
 					} else {
-						expect(entry.parent).toBeTruthy();
+						ok(entry.parent);
 					}
 
 					const parentNameExpected = entry.name
@@ -391,12 +395,12 @@ describe('packages', () => {
 						.slice(0, -1)
 						.join('-');
 					if (entry.parent) {
-						expect(entry.parent.name).toBe(parentNameExpected);
+						strictEqual(entry.parent.name, parentNameExpected);
 					}
 				}
 			});
 
-			it('order', () => {
+			void it('order', () => {
 				const packages = new Packages(tmpPathPackages);
 				packages.update(JSON.stringify(dummyPackages));
 
@@ -405,7 +409,7 @@ describe('packages', () => {
 					names.push(pkg.name);
 				}
 
-				expect(names).toEqual([
+				deepStrictEqual(names, [
 					'package-a',
 					'package-b',
 					'package-b-a',

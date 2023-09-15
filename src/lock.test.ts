@@ -1,8 +1,10 @@
-import {mkdir, rm} from 'fs/promises';
+import {describe, it, beforeEach, afterEach} from 'node:test';
+import {ok, strictEqual} from 'node:assert';
+import {mkdir, rm} from 'node:fs/promises';
 
 import {Lock} from './lock';
 
-const tmpPath = './spec/tmp';
+const tmpPath = './spec/tmp/lock';
 const tmpPathDir = `${tmpPath}/dir`;
 
 /**
@@ -20,7 +22,7 @@ async function sleep(ms: number) {
  * @param p Promise object.
  * @returns The error or undefined.
  */
-async function getPromiseError(p: Promise<any>) {
+async function getPromiseError(p: Promise<unknown>) {
 	try {
 		await p;
 	} catch (err) {
@@ -31,72 +33,72 @@ async function getPromiseError(p: Promise<any>) {
 	return undefined;
 }
 
-describe('lock', () => {
-	describe('Lock', () => {
-		beforeEach(async () => {
+void describe('lock', () => {
+	void describe('Lock', () => {
+		void beforeEach(async () => {
 			await rm(tmpPath, {recursive: true, force: true});
 			await mkdir(tmpPathDir, {recursive: true});
 		});
 
-		afterEach(async () => {
+		void afterEach(async () => {
 			await rm(tmpPath, {recursive: true, force: true});
 		});
 
-		it('normal', async () => {
+		void it('normal', async () => {
 			const lock = new Lock(tmpPathDir);
 
-			expect(lock.held).toBe(false);
-			expect(await lock.check()).toBe(false);
+			strictEqual(lock.held, false);
+			strictEqual(await lock.check(), false);
 
 			await lock.aquire();
 
-			expect(lock.held).toBe(true);
-			expect(await lock.check()).toBe(true);
+			strictEqual(lock.held, true);
+			strictEqual(await lock.check(), true);
 
 			await lock.release();
 
-			expect(lock.held).toBe(false);
-			expect(await lock.check()).toBe(false);
+			strictEqual(lock.held, false);
+			strictEqual(await lock.check(), false);
 		});
 
-		it('other held', async () => {
+		void it('other held', async () => {
 			const lockA = new Lock(tmpPathDir);
 			const lockB = new Lock(tmpPathDir);
 
-			expect(lockA.held).toBe(false);
-			expect(lockB.held).toBe(false);
-			expect(await lockA.check()).toBe(false);
-			expect(await lockB.check()).toBe(false);
+			strictEqual(lockA.held, false);
+			strictEqual(lockB.held, false);
+			strictEqual(await lockA.check(), false);
+			strictEqual(await lockB.check(), false);
 
 			await lockA.aquire();
 
-			expect(lockA.held).toBe(true);
-			expect(lockB.held).toBe(false);
-			expect(await lockA.check()).toBe(true);
-			expect(await lockB.check()).toBe(true);
+			strictEqual(lockA.held, true);
+			strictEqual(lockB.held, false);
+			strictEqual(await lockA.check(), true);
+			strictEqual(await lockB.check(), true);
 
-			expect(await getPromiseError(lockB.aquire())).toBeTruthy();
+			ok(await getPromiseError(lockB.aquire()));
 
 			await lockA.release();
 
-			expect(lockA.held).toBe(false);
-			expect(lockB.held).toBe(false);
-			expect(await lockA.check()).toBe(false);
-			expect(await lockB.check()).toBe(false);
+			strictEqual(lockA.held, false);
+			strictEqual(lockB.held, false);
+			strictEqual(await lockA.check(), false);
+			strictEqual(await lockB.check(), false);
 
 			await lockB.aquire();
 
-			expect(lockA.held).toBe(false);
-			expect(lockB.held).toBe(true);
-			expect(await lockA.check()).toBe(true);
-			expect(await lockB.check()).toBe(true);
+			strictEqual(lockA.held, false);
+			strictEqual(lockB.held, true);
+			strictEqual(await lockA.check(), true);
+			strictEqual(await lockB.check(), true);
 
-			expect(await getPromiseError(lockA.aquire())).toBeTruthy();
+			ok(await getPromiseError(lockA.aquire()));
 
 			await lockB.release();
 		});
 
-		it('compromised', async () => {
+		void it('compromised', async () => {
 			const lock = new Lock(tmpPathDir);
 			lock.stale = 4000;
 			lock.update = 2000;
@@ -117,7 +119,7 @@ describe('lock', () => {
 				await sleep(0);
 			}
 
-			expect(error).toBeTruthy();
+			ok(error);
 		});
 	});
 });

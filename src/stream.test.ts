@@ -1,3 +1,5 @@
+import {describe, it, beforeEach, afterEach} from 'node:test';
+import {deepStrictEqual, strictEqual} from 'node:assert';
 import {Readable, pipeline} from 'stream';
 import {join as pathJoin} from 'path';
 import {promisify} from 'util';
@@ -7,7 +9,7 @@ import {createWriterStream, EmptyStream, SliceStream} from './stream';
 
 const pipe = promisify(pipeline);
 
-const tmpPath = './spec/tmp';
+const tmpPath = './spec/tmp/stream';
 
 const MB = 1024 * 1024;
 
@@ -25,17 +27,17 @@ class Reader extends Readable {
 	}
 }
 
-describe('stream', () => {
-	describe('createWriterStream', () => {
-		beforeEach(async () => {
+void describe('stream', () => {
+	void describe('createWriterStream', () => {
+		void beforeEach(async () => {
 			await rm(tmpPath, {recursive: true, force: true});
 		});
 
-		afterEach(async () => {
+		void afterEach(async () => {
 			await rm(tmpPath, {recursive: true, force: true});
 		});
 
-		it('wrote', async () => {
+		void it('wrote', async () => {
 			await mkdir(tmpPath, {recursive: true});
 			const file = pathJoin(tmpPath, 'tmp.bin');
 			const reader = new Reader();
@@ -45,13 +47,13 @@ describe('stream', () => {
 				wrotes.push(writer.bytesWritten);
 			});
 			await pipe(reader, writer);
-			expect((await lstat(file)).size).toBe(5 * MB);
-			expect(wrotes).toEqual([MB, 2 * MB, 3 * MB, 4 * MB, 5 * MB]);
+			strictEqual((await lstat(file)).size, 5 * MB);
+			deepStrictEqual(wrotes, [MB, 2 * MB, 3 * MB, 4 * MB, 5 * MB]);
 		});
 	});
 
-	describe('SliceStream', () => {
-		it('2MB - 10b', async () => {
+	void describe('SliceStream', () => {
+		void it('2MB - 10b', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(2 * MB, 10);
 			const datas: number[][] = [];
@@ -59,10 +61,10 @@ describe('stream', () => {
 				datas.push([...data]);
 			});
 			await pipe(reader, transform);
-			expect(datas).toEqual([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]);
+			deepStrictEqual(datas, [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]]);
 		});
 
-		it('2MB - 0b', async () => {
+		void it('2MB - 0b', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(2 * MB, 0);
 			const datas: number[][] = [];
@@ -70,10 +72,10 @@ describe('stream', () => {
 				datas.push([...data]);
 			});
 			await pipe(reader, transform);
-			expect(datas).toEqual([]);
+			deepStrictEqual(datas, []);
 		});
 
-		it('2MB+1 - 0b', async () => {
+		void it('2MB+1 - 0b', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(2 * MB + 1, 0);
 			const datas: number[][] = [];
@@ -81,10 +83,10 @@ describe('stream', () => {
 				datas.push([...data]);
 			});
 			await pipe(reader, transform);
-			expect(datas).toEqual([]);
+			deepStrictEqual(datas, []);
 		});
 
-		it('2MB+1 - 10b', async () => {
+		void it('2MB+1 - 10b', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(2 * MB + 1, 10);
 			const datas: number[][] = [];
@@ -92,10 +94,10 @@ describe('stream', () => {
 				datas.push([...data]);
 			});
 			await pipe(reader, transform);
-			expect(datas).toEqual([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]);
+			deepStrictEqual(datas, [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]);
 		});
 
-		it('2MB-1 - 10b', async () => {
+		void it('2MB-1 - 10b', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(2 * MB - 1, 10);
 			const datas: number[][] = [];
@@ -103,10 +105,10 @@ describe('stream', () => {
 				datas.push([...data]);
 			});
 			await pipe(reader, transform);
-			expect(datas).toEqual([[0xff], [0, 1, 2, 3, 4, 5, 6, 7, 8]]);
+			deepStrictEqual(datas, [[0xff], [0, 1, 2, 3, 4, 5, 6, 7, 8]]);
 		});
 
-		it('2MB-4 - 4b', async () => {
+		void it('2MB-4 - 4b', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(2 * MB - 4, 4);
 			const datas: number[][] = [];
@@ -114,10 +116,10 @@ describe('stream', () => {
 				datas.push([...data]);
 			});
 			await pipe(reader, transform);
-			expect(datas).toEqual([[0xfc, 0xfd, 0xfe, 0xff]]);
+			deepStrictEqual(datas, [[0xfc, 0xfd, 0xfe, 0xff]]);
 		});
 
-		it('1.5MB - 2MB', async () => {
+		void it('1.5MB - 2MB', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(1.5 * MB, 2 * MB);
 			const datas: Buffer[] = [];
@@ -125,13 +127,13 @@ describe('stream', () => {
 				datas.push(data);
 			});
 			await pipe(reader, transform);
-			expect(datas.length).toBe(3);
-			expect(datas[0].length).toBe(0.5 * MB);
-			expect(datas[1].length).toBe(MB);
-			expect(datas[2].length).toBe(0.5 * MB);
+			strictEqual(datas.length, 3);
+			strictEqual(datas[0].length, 0.5 * MB);
+			strictEqual(datas[1].length, MB);
+			strictEqual(datas[2].length, 0.5 * MB);
 		});
 
-		it('4MB - -1', async () => {
+		void it('4MB - -1', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(4 * MB, -1);
 			const datas: Buffer[] = [];
@@ -139,11 +141,11 @@ describe('stream', () => {
 				datas.push(data);
 			});
 			await pipe(reader, transform);
-			expect(datas.length).toBe(1);
-			expect(datas[0].length).toBe(MB);
+			strictEqual(datas.length, 1);
+			strictEqual(datas[0].length, MB);
 		});
 
-		it('4MB-1 - -1', async () => {
+		void it('4MB-1 - -1', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(4 * MB - 1, -1);
 			const datas: Buffer[] = [];
@@ -151,12 +153,12 @@ describe('stream', () => {
 				datas.push(data);
 			});
 			await pipe(reader, transform);
-			expect(datas.length).toBe(2);
-			expect(datas[0].length).toBe(1);
-			expect(datas[1].length).toBe(MB);
+			strictEqual(datas.length, 2);
+			strictEqual(datas[0].length, 1);
+			strictEqual(datas[1].length, MB);
 		});
 
-		it('4MB+1 - -1', async () => {
+		void it('4MB+1 - -1', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(4 * MB + 1, -1);
 			const datas: Buffer[] = [];
@@ -164,11 +166,11 @@ describe('stream', () => {
 				datas.push(data);
 			});
 			await pipe(reader, transform);
-			expect(datas.length).toBe(1);
-			expect(datas[0].length).toBe(MB - 1);
+			strictEqual(datas.length, 1);
+			strictEqual(datas[0].length, MB - 1);
 		});
 
-		it('4.5MB - -1', async () => {
+		void it('4.5MB - -1', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(4.5 * MB, -1);
 			const datas: Buffer[] = [];
@@ -176,11 +178,11 @@ describe('stream', () => {
 				datas.push(data);
 			});
 			await pipe(reader, transform);
-			expect(datas.length).toBe(1);
-			expect(datas[0].length).toBe(0.5 * MB);
+			strictEqual(datas.length, 1);
+			strictEqual(datas[0].length, 0.5 * MB);
 		});
 
-		it('0.5MB - -1', async () => {
+		void it('0.5MB - -1', async () => {
 			const reader = new Reader();
 			const transform = new SliceStream(0.5 * MB, -1);
 			const datas: Buffer[] = [];
@@ -188,17 +190,17 @@ describe('stream', () => {
 				datas.push(data);
 			});
 			await pipe(reader, transform);
-			expect(datas.length).toBe(5);
-			expect(datas[0].length).toBe(0.5 * MB);
-			expect(datas[1].length).toBe(MB);
-			expect(datas[2].length).toBe(MB);
-			expect(datas[3].length).toBe(MB);
-			expect(datas[4].length).toBe(MB);
+			strictEqual(datas.length, 5);
+			strictEqual(datas[0].length, 0.5 * MB);
+			strictEqual(datas[1].length, MB);
+			strictEqual(datas[2].length, MB);
+			strictEqual(datas[3].length, MB);
+			strictEqual(datas[4].length, MB);
 		});
 	});
 
-	describe('EmptyStream', () => {
-		it('no data', async () => {
+	void describe('EmptyStream', () => {
+		void it('no data', async () => {
 			let datas = 0;
 			await new Promise((resolve, reject) => {
 				const s = new EmptyStream();
@@ -208,7 +210,7 @@ describe('stream', () => {
 				s.once('close', resolve);
 				s.once('error', reject);
 			});
-			expect(datas).toBe(0);
+			strictEqual(datas, 0);
 		});
 	});
 });

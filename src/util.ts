@@ -7,7 +7,7 @@
  */
 export async function arrayFilterAsync<T>(
 	list: Readonly<T[]>,
-	filter: (entry: T) => Promise<any>
+	filter: (entry: T) => Promise<unknown>
 ) {
 	const r: T[] = [];
 	for (const entry of list) {

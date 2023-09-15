@@ -17,7 +17,7 @@ export class WriterStream extends WriteStream {
 	 */
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public _write(
-		chunk: any,
+		chunk: unknown,
 		encoding: BufferEncoding,
 		callback: (error?: Error | null | undefined) => void
 	): void {
@@ -38,7 +38,7 @@ export class WriterStream extends WriteStream {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public _writev(
 		chunks: {
-			chunk: any;
+			chunk: unknown;
 			encoding: BufferEncoding;
 		}[],
 		callback: (error?: Error | null) => void
@@ -117,7 +117,7 @@ export class SliceStream extends Transform {
 	 */
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public _transform(
-		chunk: any,
+		chunk: unknown,
 		encoding: BufferEncoding,
 		callback: TransformCallback
 	): void {
