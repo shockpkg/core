@@ -551,16 +551,6 @@ export class Manager {
 	}
 
 	/**
-	 * Install multiple packages, higher dependencies first.
-	 *
-	 * @param pkgs Packages list.
-	 * @returns Installed list.
-	 */
-	public async installMulti(pkgs: PackageLike[]) {
-		return this._exclusiveAsync(async () => this._installMulti(pkgs));
-	}
-
-	/**
 	 * Remove package.
 	 *
 	 * @param pkg The package.
@@ -1227,7 +1217,15 @@ export class Manager {
 		this._assertLoaded();
 
 		const outdated = await this._outdated();
-		return this._installMulti(outdated);
+		const list: IPackageInstalled[] = [];
+		for (const pkg of outdated) {
+			list.push({
+				package: pkg,
+				// eslint-disable-next-line no-await-in-loop
+				install: await this._install(pkg)
+			});
+		}
+		return list;
 	}
 
 	/**
@@ -1424,27 +1422,6 @@ export class Manager {
 		});
 
 		return packages;
-	}
-
-	/**
-	 * Install multiple package, higher dependencies first.
-	 *
-	 * @param pkgs Packages list.
-	 * @returns Installed list.
-	 */
-	protected async _installMulti(pkgs: PackageLike[]) {
-		this._assertLoaded();
-
-		const packages = pkgs.map(pkg => this._packageToPackage(pkg));
-		const list: IPackageInstalled[] = [];
-		for (const pkg of packages) {
-			list.push({
-				package: pkg,
-				// eslint-disable-next-line no-await-in-loop
-				install: await this._install(pkg)
-			});
-		}
-		return list;
 	}
 
 	/**
