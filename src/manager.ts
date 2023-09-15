@@ -44,7 +44,6 @@ import {
 	PackageLike
 } from './types';
 import {IFetch, fetch} from './fetch';
-import {arrayFilterAsync, arrayMapAsync} from './util';
 import {NAME, VERSION} from './meta';
 
 const pipe = promisify(pipeline);
@@ -1192,7 +1191,7 @@ export class Manager {
 		this._assertLoaded();
 
 		const list: Package[] = [];
-		for (const entry of await this._packagesDirList()) {
+		for await (const entry of this._packageDirectories()) {
 			const pkg = this._packageByName(entry);
 			// eslint-disable-next-line no-await-in-loop
 			if (pkg && (await this._isInstalled(pkg))) {
@@ -1211,7 +1210,7 @@ export class Manager {
 		this._assertLoaded();
 
 		const list: Package[] = [];
-		for (const entry of await this._packagesDirList()) {
+		for await (const entry of this._packageDirectories()) {
 			const pkg = this._packageByName(entry);
 			// eslint-disable-next-line no-await-in-loop
 			if (pkg && !(await this._isCurrent(pkg))) {
@@ -1438,11 +1437,16 @@ export class Manager {
 	protected async _installMulti(pkgs: PackageLike[]) {
 		this._assertLoaded();
 
-		const list = pkgs.map(pkg => this._packageToPackage(pkg));
-		return (await arrayMapAsync(list, async pkg => ({
-			package: pkg,
-			install: await this._install(pkg)
-		}))) as IPackageInstalled[];
+		const packages = pkgs.map(pkg => this._packageToPackage(pkg));
+		const list: IPackageInstalled[] = [];
+		for (const pkg of packages) {
+			list.push({
+				package: pkg,
+				// eslint-disable-next-line no-await-in-loop
+				install: await this._install(pkg)
+			});
+		}
+		return list;
 	}
 
 	/**
@@ -1490,10 +1494,13 @@ export class Manager {
 	protected async _obsolete() {
 		this._assertLoaded();
 
-		const dirList = await this._packagesDirList();
-		return arrayFilterAsync(dirList, async entry =>
-			this._isObsolete(entry)
-		);
+		const list: string[] = [];
+		for await (const entry of this._packageDirectories()) {
+			if (await this._isObsolete(entry)) {
+				list.push(entry);
+			}
+		}
+		return list;
 	}
 
 	/**
@@ -1509,12 +1516,14 @@ export class Manager {
 
 		// Remove the obsolete packages.
 		const obsolete = await this._obsolete();
-		return (await arrayMapAsync(obsolete, async pkg => {
+		const list: IPackageRemovedObsolete[] = [];
+		for (const pkg of obsolete) {
 			// eslint-disable-next-line no-sync
 			this.eventPackageCleanupBefore.triggerSync({
 				package: pkg
 			});
 
+			// eslint-disable-next-line no-await-in-loop
 			const removed = await this._remove(pkg);
 
 			// eslint-disable-next-line no-sync
@@ -1522,11 +1531,12 @@ export class Manager {
 				package: pkg,
 				removed
 			});
-			return {
+			list.push({
 				package: pkg,
 				removed
-			};
-		})) as IPackageRemovedObsolete[];
+			});
+		}
+		return list;
 	}
 
 	/**
@@ -1534,18 +1544,21 @@ export class Manager {
 	 * Only those directories with the meta directory are returned.
 	 * Dot directories are also always skipped.
 	 *
-	 * @returns List of all recognized package directories.
+	 * @yields The recognized package directories.
 	 */
-	protected async _packagesDirList() {
+	protected async *_packageDirectories() {
 		this._assertLoaded();
 
 		const dirList = (await readdir(this.path, {withFileTypes: true}))
 			.filter(e => !e.name.startsWith('.') && e.isDirectory())
 			.map(e => e.name)
 			.sort();
-		return arrayFilterAsync(dirList, async entry =>
-			this._packageMetaDirExists(entry)
-		);
+		for (const entry of dirList) {
+			// eslint-disable-next-line no-await-in-loop
+			if (await this._packageMetaDirExists(entry)) {
+				yield entry;
+			}
+		}
 	}
 
 	/**

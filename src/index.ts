@@ -1,7 +1,6 @@
 export * from './meta';
 export * from './types';
 export * from './constants';
-export * from './util';
 export * from './dispatcher';
 export * from './stream';
 export * from './lock';
