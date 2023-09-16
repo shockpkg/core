@@ -807,21 +807,6 @@ void describe('manager', () => {
 			);
 
 			void it(
-				'init locked',
-				managerTest(null, async ManagerTest => {
-					const manager1 = new ManagerTest(tmpPath);
-					const manager2 = new ManagerTest(tmpPath);
-
-					await manager1.init();
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-					const err = await promiseError(manager2.init());
-					ok(err);
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					strictEqual(err.message, 'Lock file is already being held');
-				})
-			);
-
-			void it(
 				'init destroy 2x reuse',
 				managerTest(null, async ManagerTest => {
 					const manager = new ManagerTest(tmpPath);

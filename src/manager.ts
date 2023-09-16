@@ -27,7 +27,6 @@ import {
 } from './constants';
 import {Dispatcher} from './dispatcher';
 import {EmptyStream, SliceStream, WriterStream} from './stream';
-import {Lock} from './lock';
 import {Package} from './package';
 import {Packages} from './packages';
 import {
@@ -183,11 +182,6 @@ export class Manager {
 	protected readonly _path: string;
 
 	/**
-	 * Lock file instance.
-	 */
-	protected readonly _lock: Lock;
-
-	/**
 	 * Packages instance.
 	 */
 	protected readonly _packages: Packages;
@@ -199,11 +193,6 @@ export class Manager {
 	 */
 	constructor(path: string | null = null) {
 		this._path = this._createPath(path);
-		const lock = this._createLock();
-		lock.eventCompromised.on(() => {
-			// Do nothing, instead fail on next assert call.
-		});
-		this._lock = lock;
 		this._packagesUrl = this._createPackagesUrl(this._packagesUrl);
 		this._packages = this._createPackages();
 	}
@@ -287,15 +276,6 @@ export class Manager {
 	 */
 	public get loaded() {
 		return this._packages.loaded;
-	}
-
-	/**
-	 * The lock file compromised.
-	 *
-	 * @returns Is compromised.
-	 */
-	public get lockCompromised() {
-		return this._lock.compromised;
 	}
 
 	/**
@@ -1010,15 +990,6 @@ export class Manager {
 	}
 
 	/**
-	 * Assert instance lock was not compromised.
-	 */
-	protected _assertLockNotCompromised() {
-		if (this.lockCompromised) {
-			throw new Error('Instance lock file compromised');
-		}
-	}
-
-	/**
 	 * Assert instance is active.
 	 * Implies inited, not-destroyed, and lock-not-compromised assertions.
 	 */
@@ -1026,7 +997,6 @@ export class Manager {
 		// Check everything is active in order they should report failure.
 		this._assertInited();
 		this._assertNotDestroyed();
-		this._assertLockNotCompromised();
 	}
 
 	/**
@@ -1067,7 +1037,6 @@ export class Manager {
 		this._assertNotInited();
 
 		await this._ensureDirs();
-		await this._lock.aquire();
 		try {
 			await this._packages.readIfExists();
 		} catch (err) {
@@ -1082,15 +1051,11 @@ export class Manager {
 	/**
 	 * Destroy instance.
 	 */
+	// eslint-disable-next-line @typescript-eslint/require-await
 	protected async _destroy() {
 		// Destroy should always work only once if instance was inited.
 		this._assertInited();
 		this._assertNotDestroyed();
-
-		// Lock may have been compromised, only release if currently held.
-		if (this._lock.held) {
-			await this._lock.release();
-		}
 
 		this._destroyed = true;
 		this._inited = false;
@@ -1576,15 +1541,6 @@ export class Manager {
 	protected _createPackagesUrl(defaultUrl: string) {
 		// eslint-disable-next-line no-process-env
 		return process.env[this._packagesUrlEnv] || defaultUrl;
-	}
-
-	/**
-	 * Create the Lock instance.
-	 *
-	 * @returns Lock instance.
-	 */
-	protected _createLock() {
-		return new Lock(this.pathMeta);
 	}
 
 	/**
