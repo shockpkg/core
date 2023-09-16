@@ -1,7 +1,8 @@
-import {access, readFile, writeFile} from 'node:fs/promises';
+import {access, readFile, rename, writeFile} from 'node:fs/promises';
 
 import {Package} from './package';
 import {IPackagesList, IPackagesListPackage, IPackageUpdated} from './types';
+import {PART_EXT} from './constants';
 
 /**
  * Packages object.
@@ -181,10 +182,10 @@ export class Packages {
 		if (!this._packagesList) {
 			throw new Error('Cannot write unloaded list');
 		}
-		await writeFile(
-			this.path,
-			JSON.stringify(this._packagesList, null, '\t')
-		);
+		const out = this.path;
+		const prt = `${out}${PART_EXT}`;
+		await writeFile(prt, JSON.stringify(this._packagesList, null, '\t'));
+		await rename(prt, out);
 	}
 
 	/**
@@ -193,11 +194,15 @@ export class Packages {
 	 * @returns Did exist.
 	 */
 	public async readIfExists() {
-		if (await this.exists()) {
+		try {
 			await this.read();
-			return true;
+		} catch (err) {
+			if (err && (err as {code: string}).code === 'ENOENT') {
+				return false;
+			}
+			throw err;
 		}
-		return false;
+		return true;
 	}
 
 	/**
