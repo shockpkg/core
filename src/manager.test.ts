@@ -242,7 +242,7 @@ async function promiseError(p: Promise<unknown>) {
 export async function createServer() {
 	const protocol = 'http:';
 	const hostname = '127.0.0.1';
-	let errors = false;
+	let error: unknown = null;
 
 	const app = express();
 	let host = '';
@@ -250,26 +250,21 @@ export async function createServer() {
 	const server = await new Promise<Server>((resolve, reject) => {
 		let inited = false;
 		app.on('error', err => {
-			errors = true;
-			if (inited) {
-				// eslint-disable-next-line no-console
-				console.error(err);
-				return;
+			error = error || err;
+			if (!inited) {
+				inited = true;
+				reject(err);
 			}
-			inited = true;
-			reject(err);
 		});
 		const server = app.listen(0, () => {
-			if (inited) {
-				return;
+			if (!inited) {
+				inited = true;
+				resolve(server);
 			}
-			inited = true;
-			resolve(server);
 		});
 	});
 
 	const address = server.address();
-	// eslint-disable-next-line no-nested-ternary
 	let port = null;
 	if (typeof address === 'string') {
 		port = Number(address.split('//')[1].split('/')[0].split(':').pop());
@@ -277,8 +272,7 @@ export async function createServer() {
 		({port} = address);
 	}
 	if (!port) {
-		// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-		throw new Error(`Failed to get port from ${address}`);
+		throw new Error('Failed to get port');
 	}
 	host = `${hostname}:${port}`;
 	const url = `${protocol}//${host}`;
@@ -290,8 +284,8 @@ export async function createServer() {
 				resolve();
 			});
 		});
-		if (errors) {
-			throw new Error('Server throw errors while serving requests');
+		if (error) {
+			throw error;
 		}
 	};
 
@@ -316,13 +310,9 @@ export async function createServer() {
 async function createServerManager(packages: string) {
 	const server = await createServer();
 	server.app.get('/packages.json', (req, res) => {
-		// eslint-disable-next-line no-use-before-define
 		const reqHost = req.headers.host || server.host;
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const data = JSON.parse(packages);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+		const data = JSON.parse(packages) as {packages: {source: string}[]};
 		for (const pkg of data.packages || []) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
 			pkg.source = `${server.protocol}//${reqHost}${pkg.source}`;
 		}
 		res.setHeader('Content-Type', 'application/json; charset=utf-8');
