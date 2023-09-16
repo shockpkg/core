@@ -1040,8 +1040,7 @@ export class Manager {
 		try {
 			await this._packages.readIfExists();
 		} catch (err) {
-			// eslint-disable-next-line no-sync
-			this.eventPackageListError.triggerSync(err as Error);
+			this.eventPackageListError.trigger(err as Error);
 		}
 
 		this._inited = true;
@@ -1183,8 +1182,7 @@ export class Manager {
 		// If current version is installed, skip.
 		const installed = await this._isCurrent(pkg);
 		if (installed) {
-			// eslint-disable-next-line no-sync
-			this.eventPackageInstallCurrent.triggerSync({
+			this.eventPackageInstallCurrent.trigger({
 				package: pkg
 			});
 			return [];
@@ -1230,8 +1228,7 @@ export class Manager {
 			}
 		}
 
-		// eslint-disable-next-line no-sync
-		this.eventPackageInstallBefore.triggerSync({
+		this.eventPackageInstallBefore.trigger({
 			package: pkg
 		});
 
@@ -1246,13 +1243,11 @@ export class Manager {
 		try {
 			// Read from installed file of from a URL.
 			let input: NodeJS.ReadableStream;
-			// eslint-disable-next-line no-sync
-			this.eventPackageDownloadBefore.triggerSync({
+			this.eventPackageDownloadBefore.trigger({
 				package: pkgO
 			});
 
-			// eslint-disable-next-line no-sync
-			this.eventPackageDownloadProgress.triggerSync({
+			this.eventPackageDownloadProgress.trigger({
 				package: pkgO,
 				total: pkgO.size,
 				amount: 0
@@ -1317,8 +1312,7 @@ export class Manager {
 			// Create output file, monitoring write progress.
 			const output = new WriterStream(tmpFile);
 			output.on('wrote', () => {
-				// eslint-disable-next-line no-sync
-				this.eventPackageDownloadProgress.triggerSync({
+				this.eventPackageDownloadProgress.trigger({
 					package: pkgO,
 					total: pkgO.size,
 					amount: output.bytesWritten
@@ -1344,8 +1338,7 @@ export class Manager {
 				throw new Error(`Invalid sha256 hash: ${hashed}`);
 			}
 
-			// eslint-disable-next-line no-sync
-			this.eventPackageDownloadAfter.triggerSync({
+			this.eventPackageDownloadAfter.trigger({
 				package: pkgO
 			});
 
@@ -1360,8 +1353,7 @@ export class Manager {
 			await rm(tmpDir, {recursive: true, force: true});
 		}
 
-		// eslint-disable-next-line no-sync
-		this.eventPackageInstallAfter.triggerSync({
+		this.eventPackageInstallAfter.trigger({
 			package: pkg
 		});
 
@@ -1437,16 +1429,14 @@ export class Manager {
 
 			// eslint-disable-next-line no-await-in-loop
 			if (await this._isObsolete(pkg)) {
-				// eslint-disable-next-line no-sync
-				this.eventPackageCleanupBefore.triggerSync({
+				this.eventPackageCleanupBefore.trigger({
 					package: pkg
 				});
 
 				// eslint-disable-next-line no-await-in-loop
 				const removed = await this._remove(pkg);
 
-				// eslint-disable-next-line no-sync
-				this.eventPackageCleanupAfter.triggerSync({
+				this.eventPackageCleanupAfter.trigger({
 					package: pkg,
 					removed
 				});

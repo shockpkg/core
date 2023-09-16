@@ -46,7 +46,7 @@ export class Dispatcher<T> {
 	 * @param event Event data.
 	 * @returns Handler count.
 	 */
-	public triggerSync(event: T) {
+	public trigger(event: T) {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const self = this._context;
 		let i = 0;
@@ -55,47 +55,5 @@ export class Dispatcher<T> {
 			i++;
 		}
 		return i;
-	}
-
-	/**
-	 * Trigger, async.
-	 *
-	 * @param event Event data.
-	 * @returns Handler count.
-	 */
-	public async triggerAsync(event: T) {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const self = this._context;
-		let i = 0;
-		for (const cb of this._handlers) {
-			// eslint-disable-next-line no-await-in-loop
-			await cb.call(self, event);
-			i++;
-		}
-		return i;
-	}
-
-	/**
-	 * Trigger or throw, sync.
-	 *
-	 * @param event Event data.
-	 */
-	public triggerOrThrowSync(event: T) {
-		// eslint-disable-next-line no-sync
-		if (!this.triggerSync(event)) {
-			throw event;
-		}
-	}
-
-	/**
-	 * Trigger or throw, sync.
-	 *
-	 * @param event Event data.
-	 * @returns Handler count.
-	 */
-	public async triggerOrThrowAsync(event: T) {
-		if (!(await this.triggerAsync(event))) {
-			throw event;
-		}
 	}
 }
