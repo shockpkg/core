@@ -285,6 +285,7 @@ export async function createServer() {
 
 	const close = async () => {
 		await new Promise<void>(resolve => {
+			server.closeIdleConnections();
 			server.close(() => {
 				resolve();
 			});
