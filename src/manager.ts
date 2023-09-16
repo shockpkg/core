@@ -610,16 +610,6 @@ export class Manager {
 	}
 
 	/**
-	 * Join path on the temp folder path.
-	 *
-	 * @param parts Path parts.
-	 * @returns Joined path.
-	 */
-	public pathToTemp(...parts: string[]) {
-		return this.pathToMeta(this.tempDir, ...parts);
-	}
-
-	/**
 	 * Join path on package base path.
 	 *
 	 * @param pkg The package.
@@ -1295,10 +1285,13 @@ export class Manager {
 		});
 
 		const outFile = this._pathToPackage(pkg, pkg.file);
-		const tmpFile = this.pathToTemp(`${pkg.name}${PART_EXT}`);
+		const tmpDir = this._pathToPackageMeta(pkg, this.tempDir);
+		const tmpFile = pathJoin(tmpDir, `${pkg.sha256}${PART_EXT}`);
+		const metaFile = this._pathToPackageMeta(pkg, this.packageFile);
 
 		// Create temporary directory, cleanup on failure.
-		await this._tempDirEnsure(true);
+		await rm(tmpDir, {recursive: true, force: true});
+		await mkdir(tmpDir, {recursive: true});
 		try {
 			// Read from installed file of from a URL.
 			let input: NodeJS.ReadableStream;
@@ -1408,11 +1401,12 @@ export class Manager {
 			// Move the final file into place and write package file.
 			// Write the package receipt last, means successful install.
 			await this._packageDirsEnsure(pkg);
+			await rm(metaFile, {force: true});
 			await rm(outFile, {force: true});
 			await rename(tmpFile, outFile);
 			await this._packageMetaReceiptWrite(pkg);
 		} finally {
-			await this._tempDirRemove();
+			await rm(tmpDir, {recursive: true, force: true});
 		}
 
 		// eslint-disable-next-line no-sync
@@ -1476,37 +1470,40 @@ export class Manager {
 	}
 
 	/**
-	 * Cleanup all obsolete packages.
+	 * Cleanup all obsolete packages and any incomplete downloads.
 	 *
 	 * @returns Lists of removed packages.
 	 */
 	protected async _cleanup() {
 		this._assertLoaded();
 
-		// Remove the temporary directory if present.
-		await this._tempDirRemove();
-
-		// Remove the obsolete packages.
-		const obsolete = await this._obsolete();
 		const list: IPackageRemovedObsolete[] = [];
-		for (const pkg of obsolete) {
-			// eslint-disable-next-line no-sync
-			this.eventPackageCleanupBefore.triggerSync({
-				package: pkg
-			});
+		for (const pkg of await this._packageDirectories()) {
+			// Remove any temporary directory if present.
+			const tmpDir = this._pathToPackageMeta(pkg, this.tempDir);
+			// eslint-disable-next-line no-await-in-loop
+			await rm(tmpDir, {recursive: true, force: true});
 
 			// eslint-disable-next-line no-await-in-loop
-			const removed = await this._remove(pkg);
+			if (await this._isObsolete(pkg)) {
+				// eslint-disable-next-line no-sync
+				this.eventPackageCleanupBefore.triggerSync({
+					package: pkg
+				});
 
-			// eslint-disable-next-line no-sync
-			this.eventPackageCleanupAfter.triggerSync({
-				package: pkg,
-				removed
-			});
-			list.push({
-				package: pkg,
-				removed
-			});
+				// eslint-disable-next-line no-await-in-loop
+				const removed = await this._remove(pkg);
+
+				// eslint-disable-next-line no-sync
+				this.eventPackageCleanupAfter.triggerSync({
+					package: pkg,
+					removed
+				});
+				list.push({
+					package: pkg,
+					removed
+				});
+			}
 		}
 		return list;
 	}
@@ -1570,25 +1567,6 @@ export class Manager {
 	protected async _ensureDirs() {
 		await mkdir(this.path, {recursive: true});
 		await mkdir(this.pathMeta, {recursive: true});
-	}
-
-	/**
-	 * Ensure temp directory exists.
-	 *
-	 * @param clean Clean existing.
-	 */
-	protected async _tempDirEnsure(clean = false) {
-		if (clean) {
-			await this._tempDirRemove();
-		}
-		await mkdir(this.pathToTemp(), {recursive: true});
-	}
-
-	/**
-	 * Ensure temp directory removed.
-	 */
-	protected async _tempDirRemove() {
-		await rm(this.pathToTemp(), {recursive: true, force: true});
 	}
 
 	/**
