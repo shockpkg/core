@@ -1277,10 +1277,18 @@ void describe('manager', () => {
 
 					await managerEnsureDirs(manager, [
 						[unknownDirEmpty],
-						[packageSingle.name, manager.metaDir],
-						[packageObsoleteA.name, manager.metaDir],
-						[packageObsoleteB.name, manager.metaDir]
+						[packageSingle.name, manager.metaDir]
 					]);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteA.name,
+						packageObsoleteA
+					);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteB.name,
+						packageObsoleteB
+					);
 
 					strictEqual(
 						await manager.isObsolete(unknownDirEmpty),
@@ -1378,10 +1386,18 @@ void describe('manager', () => {
 
 					await managerEnsureDirs(manager, [
 						[unknownDirEmpty],
-						[packageSingle.name, manager.metaDir],
-						[packageObsoleteA.name, manager.metaDir],
-						[packageObsoleteB.name, manager.metaDir]
+						[packageSingle.name, manager.metaDir]
 					]);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteA.name,
+						packageObsoleteA
+					);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteB.name,
+						packageObsoleteB
+					);
 
 					const obsolete = await manager.obsolete();
 
@@ -1402,11 +1418,17 @@ void describe('manager', () => {
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					await managerEnsureDirs(manager, [
-						[unknownDirEmpty],
-						[packageObsoleteA.name, manager.metaDir],
-						[packageObsoleteB.name, manager.metaDir]
-					]);
+					await managerEnsureDirs(manager, [[unknownDirEmpty]]);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteA.name,
+						packageObsoleteA
+					);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteB.name,
+						packageObsoleteB
+					);
 					await managerWritePackageMeta(
 						manager,
 						packageSingleMetaBad.name,
@@ -1443,11 +1465,17 @@ void describe('manager', () => {
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					await managerEnsureDirs(manager, [
-						[unknownDirEmpty],
-						[packageObsoleteA.name, manager.metaDir],
-						[packageObsoleteB.name, manager.metaDir]
-					]);
+					await managerEnsureDirs(manager, [[unknownDirEmpty]]);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteA.name,
+						packageObsoleteA
+					);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteB.name,
+						packageObsoleteB
+					);
 					await managerWritePackageMeta(
 						manager,
 						packageSingleMetaBad.name,
@@ -1476,11 +1504,17 @@ void describe('manager', () => {
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					await managerEnsureDirs(manager, [
-						[unknownDirEmpty],
-						[packageObsoleteA.name, manager.metaDir],
-						[packageObsoleteB.name, manager.metaDir]
-					]);
+					await managerEnsureDirs(manager, [[unknownDirEmpty]]);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteA.name,
+						packageObsoleteA
+					);
+					await managerWritePackageMeta(
+						manager,
+						packageObsoleteB.name,
+						packageObsoleteB
+					);
 					await managerWritePackageMeta(
 						manager,
 						packageSingleMetaBad.name,

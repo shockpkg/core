@@ -935,6 +935,23 @@ export class Manager {
 	}
 
 	/**
+	 * Check if package install receipt exists.
+	 *
+	 * @param pkg The package.
+	 * @returns True if the meta directory path, else false.
+	 */
+	protected async _packageMetaReceiptExists(pkg: PackageLike) {
+		this._assertLoaded();
+
+		const name = this._packageToName(pkg, false);
+		const pkgf = this._pathToPackageMeta(name, this.packageFile);
+		return access(pkgf).then(
+			() => true,
+			() => false
+		);
+	}
+
+	/**
 	 * Write package installed receipt.
 	 *
 	 * @param pkg The package.
@@ -945,9 +962,11 @@ export class Manager {
 
 		const name = this._packageToName(pkg);
 		const pkgf = this._pathToPackageMeta(name, this.packageFile);
+		const pkgfTmp = `${pkgf}.part`;
 
 		const receipt = await this._packageMetaReceiptFromPackage(pkg);
-		await writeFile(pkgf, JSON.stringify(receipt, null, '\t'));
+		await writeFile(pkgfTmp, JSON.stringify(receipt, null, '\t'));
+		await rename(pkgfTmp, pkgf);
 	}
 
 	/**
@@ -969,22 +988,6 @@ export class Manager {
 			source: pkg.source
 		};
 		return r;
-	}
-
-	/**
-	 * Check if package meta directory exists.
-	 *
-	 * @param pkg The package.
-	 * @returns True if the meta directory path, else false.
-	 */
-	protected async _packageMetaDirExists(pkg: PackageLike) {
-		this._assertLoaded();
-
-		const dir = this._pathToPackageMeta(pkg);
-		return access(dir).then(
-			() => true,
-			() => false
-		);
 	}
 
 	/**
@@ -1138,12 +1141,13 @@ export class Manager {
 		this._assertLoaded();
 		pkg = this._packageToPackage(pkg);
 
-		try {
-			await this._packageMetaReceiptRead(pkg);
-		} catch (err) {
-			return false;
-		}
-		return true;
+		const name = this._packageToName(pkg, false);
+		const pkgf = this._pathToPackageMeta(name, this.packageFile);
+
+		return access(pkgf).then(
+			() => true,
+			() => false
+		);
 	}
 
 	/**
@@ -1179,7 +1183,7 @@ export class Manager {
 		this._assertLoaded();
 
 		const list: Package[] = [];
-		for await (const entry of this._packageDirectories()) {
+		for (const entry of await this._packageDirectories()) {
 			const pkg = this._packageByName(entry);
 			// eslint-disable-next-line no-await-in-loop
 			if (pkg && (await this._isInstalled(pkg))) {
@@ -1198,7 +1202,7 @@ export class Manager {
 		this._assertLoaded();
 
 		const list: Package[] = [];
-		for await (const entry of this._packageDirectories()) {
+		for (const entry of await this._packageDirectories()) {
 			const pkg = this._packageByName(entry);
 			// eslint-disable-next-line no-await-in-loop
 			if (pkg && !(await this._isCurrent(pkg))) {
@@ -1455,10 +1459,7 @@ export class Manager {
 	protected async _isObsolete(pkg: string) {
 		this._assertLoaded();
 
-		const r =
-			!this._packageByName(pkg) &&
-			(await this._packageMetaDirExists(pkg));
-		return r;
+		return !this._packageByName(pkg) && this._packageMetaReceiptExists(pkg);
 	}
 
 	/**
@@ -1470,7 +1471,8 @@ export class Manager {
 		this._assertLoaded();
 
 		const list: string[] = [];
-		for await (const entry of this._packageDirectories()) {
+		for (const entry of await this._packageDirectories()) {
+			// eslint-disable-next-line no-await-in-loop
 			if (await this._isObsolete(entry)) {
 				list.push(entry);
 			}
@@ -1515,25 +1517,17 @@ export class Manager {
 	}
 
 	/**
-	 * List all packages in the directory.
-	 * Only those directories with the meta directory are returned.
-	 * Dot directories are also always skipped.
+	 * List directories under package manger control.
 	 *
-	 * @yields The recognized package directories.
+	 * @returns The recognized package directories.
 	 */
-	protected async *_packageDirectories() {
+	protected async _packageDirectories() {
 		this._assertLoaded();
 
-		const dirList = (await readdir(this.path, {withFileTypes: true}))
+		return (await readdir(this.path, {withFileTypes: true}))
 			.filter(e => !e.name.startsWith('.') && e.isDirectory())
 			.map(e => e.name)
 			.sort();
-		for (const entry of dirList) {
-			// eslint-disable-next-line no-await-in-loop
-			if (await this._packageMetaDirExists(entry)) {
-				yield entry;
-			}
-		}
 	}
 
 	/**
