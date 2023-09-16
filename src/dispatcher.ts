@@ -40,7 +40,7 @@ export class Dispatcher<T> {
 	}
 
 	/**
-	 * Trigger, sync.
+	 * Trigger handlers.
 	 *
 	 * @param event Event data.
 	 * @returns Handler count.
