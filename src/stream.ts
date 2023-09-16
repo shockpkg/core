@@ -33,7 +33,7 @@ export class WriterStream extends WriteStream {
 	public _write(
 		chunk: unknown,
 		encoding: BufferEncoding,
-		callback: (error?: Error | null | undefined) => void
+		callback: (error?: Error | null) => void
 	): void {
 		if (this._writing) {
 			return super._write(chunk, encoding, callback);
