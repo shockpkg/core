@@ -1141,13 +1141,7 @@ export class Manager {
 		this._assertLoaded();
 		pkg = this._packageToPackage(pkg);
 
-		const name = this._packageToName(pkg, false);
-		const pkgf = this._pathToPackageMeta(name, this.packageFile);
-
-		return access(pkgf).then(
-			() => true,
-			() => false
-		);
+		return this._packageMetaReceiptExists(pkg);
 	}
 
 	/**
