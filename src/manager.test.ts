@@ -324,7 +324,8 @@ async function createServerManager(packages: string) {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-template-expressions
 			pkg.source = `${server.protocol}//${reqHost}${pkg.source}`;
 		}
-		res.send(JSON.stringify(data, null, '\t'));
+		res.setHeader('Content-Type', 'application/json; charset=utf-8');
+		res.end(JSON.stringify(data, null, '\t'));
 	});
 	server.app.use('/packages', express.static('spec/fixtures/packages'));
 	return server;
