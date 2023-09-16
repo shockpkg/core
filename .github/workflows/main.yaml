@@ -7,8 +7,7 @@ jobs:
     strategy:
       matrix:
         config:
-          # TODO: Enable once lock file is removed.
-          # - node-version: '18.12.0' # LTS
+          - node-version: '18.12.0' # LTS
 
           - node-version: '18.17.1' # LTS (current)
             CODE_CHECK: 1

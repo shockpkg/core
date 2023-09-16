@@ -1,7 +1,7 @@
 /* eslint-disable max-classes-per-file */
 /* eslint-disable max-nested-callbacks */
 
-import {describe, it, beforeEach, afterEach} from 'node:test';
+import {describe, it} from 'node:test';
 import {deepStrictEqual, ok, strictEqual} from 'node:assert';
 import {createReadStream} from 'node:fs';
 import {lstat, mkdir, rm, writeFile} from 'node:fs/promises';
@@ -15,9 +15,17 @@ import {Manager} from './manager';
 import {Package} from './package';
 import {IPackageDownloadProgress} from './types';
 
-const strReverse = (s: string) => s.split('').reverse().join('');
+const withTemp = (i => async (func: (path: string) => Promise<unknown>) => {
+	const path = `./spec/tmp/manager/${i++}`;
+	await rm(path, {recursive: true, force: true});
+	try {
+		await func(path);
+	} finally {
+		await rm(path, {recursive: true, force: true});
+	}
+})(0);
 
-const tmpPath = './spec/tmp/manager';
+const strReverse = (s: string) => s.split('').reverse().join('');
 
 const unknownDirEmpty = 'unknown-dir-empty';
 
@@ -424,7 +432,7 @@ async function managerFileSha256(manager: ManagerTest, path: string[]) {
  */
 function managerTest(
 	packages: string | null,
-	func: (Manager: typeof ManagerTest) => Promise<void>
+	func: (Manager: typeof ManagerTest, path: string) => Promise<void>
 ) {
 	return async () => {
 		const localServer =
@@ -446,7 +454,9 @@ function managerTest(
 		}
 
 		try {
-			await func(ManagerTestLocal);
+			await withTemp(async path => {
+				await func(ManagerTestLocal, path);
+			});
 		} finally {
 			if (localServer) {
 				await localServer.close();
@@ -466,8 +476,8 @@ function managerTestOne(
 	packages: string | null,
 	func: (manager: ManagerTest) => Promise<unknown>
 ) {
-	return managerTest(packages, async ManagerTest => {
-		await func(new ManagerTest(tmpPath));
+	return managerTest(packages, async (ManagerTest, path) => {
+		await func(new ManagerTest(path));
 	});
 }
 
@@ -730,14 +740,6 @@ function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 
 void describe('manager', () => {
 	void describe('Manager', () => {
-		void beforeEach(async () => {
-			await rm(tmpPath, {recursive: true, force: true});
-		});
-
-		void afterEach(async () => {
-			await rm(tmpPath, {recursive: true, force: true});
-		});
-
 		void describe('init + destroy', () => {
 			void it(
 				'simple',
@@ -795,12 +797,12 @@ void describe('manager', () => {
 
 			void it(
 				'init destroy 2x',
-				managerTest(null, async ManagerTest => {
-					const manager1 = new ManagerTest(tmpPath);
+				managerTest(null, async (ManagerTest, path) => {
+					const manager1 = new ManagerTest(path);
 					await manager1.init();
 					await manager1.destroy();
 
-					const manager2 = new ManagerTest(tmpPath);
+					const manager2 = new ManagerTest(path);
 					await manager2.init();
 					await manager2.destroy();
 				})
@@ -808,12 +810,12 @@ void describe('manager', () => {
 
 			void it(
 				'init destroy 2x reuse',
-				managerTest(null, async ManagerTest => {
-					const manager = new ManagerTest(tmpPath);
+				managerTest(null, async (ManagerTest, path) => {
+					const manager = new ManagerTest(path);
 					await manager.init();
 					await manager.destroy();
 					await manager.init();
-					// await manager.destroy();
+					await manager.destroy();
 				})
 			);
 		});
@@ -867,14 +869,14 @@ void describe('manager', () => {
 					await manager.with(async manager => {
 						strictEqual(manager.active, true);
 
-						const statTmpPath = await lstat(tmpPath);
+						const statTmpPath = await lstat(manager.path);
 						strictEqual(statTmpPath.isDirectory(), true);
 
 						const statMetaDir = await lstat(manager.pathMeta);
 						strictEqual(statMetaDir.isDirectory(), true);
 					});
 
-					const statTmpPath = await lstat(tmpPath);
+					const statTmpPath = await lstat(manager.path);
 					strictEqual(statTmpPath.isDirectory(), true);
 
 					const statMetaDir = await lstat(manager.pathMeta);
@@ -898,19 +900,22 @@ void describe('manager', () => {
 
 			void it(
 				'load from disk',
-				managerTest(JSON.stringify(packages), async ManagerTest => {
-					const manager1 = new ManagerTest(tmpPath);
-					await manager1.with(async manager => {
-						strictEqual(manager.loaded, false);
-						await manager.update();
-						strictEqual(manager.loaded, true);
-					});
+				managerTest(
+					JSON.stringify(packages),
+					async (ManagerTest, path) => {
+						const manager1 = new ManagerTest(path);
+						await manager1.with(async manager => {
+							strictEqual(manager.loaded, false);
+							await manager.update();
+							strictEqual(manager.loaded, true);
+						});
 
-					const manager2 = new ManagerTest(tmpPath);
-					await manager2.with(manager => {
-						strictEqual(manager.loaded, true);
-					});
-				})
+						const manager2 = new ManagerTest(path);
+						await manager2.with(manager => {
+							strictEqual(manager.loaded, true);
+						});
+					}
+				)
 			);
 
 			void describe('return', () => {

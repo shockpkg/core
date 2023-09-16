@@ -1,4 +1,6 @@
-import {describe, it, beforeEach, afterEach} from 'node:test';
+/* eslint-disable max-nested-callbacks */
+
+import {describe, it} from 'node:test';
 import {deepStrictEqual, strictEqual} from 'node:assert';
 import {Readable} from 'node:stream';
 import {pipeline} from 'node:stream/promises';
@@ -7,7 +9,15 @@ import {rm, mkdir, lstat} from 'node:fs/promises';
 
 import {EmptyStream, SliceStream, WriterStream} from './stream';
 
-const tmpPath = './spec/tmp/stream';
+const withTemp = (i => async (func: (dir: string) => unknown) => {
+	const dir = `./spec/tmp/stream/${i++}`;
+	await rm(dir, {recursive: true, force: true});
+	try {
+		await func(dir);
+	} finally {
+		await rm(dir, {recursive: true, force: true});
+	}
+})(0);
 
 const MB = 1024 * 1024;
 
@@ -27,26 +37,20 @@ class Reader extends Readable {
 
 void describe('stream', () => {
 	void describe('createWriterStream', () => {
-		void beforeEach(async () => {
-			await rm(tmpPath, {recursive: true, force: true});
-		});
-
-		void afterEach(async () => {
-			await rm(tmpPath, {recursive: true, force: true});
-		});
-
 		void it('wrote', async () => {
-			await mkdir(tmpPath, {recursive: true});
-			const file = pathJoin(tmpPath, 'tmp.bin');
-			const reader = new Reader();
-			const writer = new WriterStream(file);
-			const wrotes: number[] = [];
-			writer.on('wrote', () => {
-				wrotes.push(writer.bytesWritten);
+			await withTemp(async dir => {
+				await mkdir(dir, {recursive: true});
+				const file = pathJoin(dir, 'tmp.bin');
+				const reader = new Reader();
+				const writer = new WriterStream(file);
+				const wrotes: number[] = [];
+				writer.on('wrote', () => {
+					wrotes.push(writer.bytesWritten);
+				});
+				await pipeline(reader, writer);
+				strictEqual((await lstat(file)).size, 5 * MB);
+				deepStrictEqual(wrotes, [MB, 2 * MB, 3 * MB, 4 * MB, 5 * MB]);
 			});
-			await pipeline(reader, writer);
-			strictEqual((await lstat(file)).size, 5 * MB);
-			deepStrictEqual(wrotes, [MB, 2 * MB, 3 * MB, 4 * MB, 5 * MB]);
 		});
 	});
 

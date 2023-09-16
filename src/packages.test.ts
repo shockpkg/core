@@ -1,10 +1,22 @@
 /* eslint-disable max-nested-callbacks */
 
-import {describe, it, beforeEach, afterEach} from 'node:test';
+import {describe, it} from 'node:test';
 import {deepStrictEqual, ok, strictEqual, throws} from 'node:assert';
 import {access, mkdir, rm, writeFile} from 'node:fs/promises';
 
 import {Packages} from './packages';
+
+const withTemp = (i => async (func: (file: string, dir: string) => unknown) => {
+	const dir = `./spec/tmp/packages/${i++}`;
+	const file = `${dir}/packages.json`;
+	await rm(dir, {recursive: true, force: true});
+	try {
+		await mkdir(dir, {recursive: true});
+		await func(file, dir);
+	} finally {
+		await rm(dir, {recursive: true, force: true});
+	}
+})(0);
 
 /**
  * String repeat.
@@ -46,10 +58,6 @@ function dummySha1(prefix: string) {
 function dummyMd5(prefix: string) {
 	return prefix + stringRepeat('0', 32 - prefix.length);
 }
-
-const tmpPath = './spec/tmp/packages';
-
-const tmpPathPackages = `${tmpPath}/packages.json`;
 
 const dummyPackages = {
 	format: '1.2',
@@ -215,209 +223,226 @@ async function getPromiseError(p: Promise<unknown>) {
 
 void describe('packages', () => {
 	void describe('Packages', () => {
-		void beforeEach(async () => {
-			await rm(tmpPath, {recursive: true, force: true});
-			await mkdir(tmpPath, {recursive: true});
-		});
-
-		void afterEach(async () => {
-			await rm(tmpPath, {recursive: true, force: true});
-		});
-
 		void describe('update', () => {
-			void it('valid', () => {
-				const packages = new Packages(tmpPathPackages);
+			void it('valid', async () => {
+				await withTemp(file => {
+					const packages = new Packages(file);
 
-				strictEqual(packages.loaded, false);
+					strictEqual(packages.loaded, false);
 
-				packages.update(JSON.stringify(dummyPackages));
+					packages.update(JSON.stringify(dummyPackages));
 
-				strictEqual(packages.loaded, true);
+					strictEqual(packages.loaded, true);
+				});
 			});
 
-			void it('duplicate name', () => {
-				const packages = new Packages(tmpPathPackages);
-				const json = JSON.stringify(dummyPackagesDuplicateName);
+			void it('duplicate name', async () => {
+				await withTemp(file => {
+					const packages = new Packages(file);
+					const json = JSON.stringify(dummyPackagesDuplicateName);
 
-				throws(() => {
-					packages.update(json);
+					throws(() => {
+						packages.update(json);
+					});
+
+					strictEqual(packages.loaded, false);
 				});
-
-				strictEqual(packages.loaded, false);
 			});
 
-			void it('duplicate hash', () => {
-				const packages = new Packages(tmpPathPackages);
-				const json = JSON.stringify(dummyPackagesDuplicateHash);
+			void it('duplicate hash', async () => {
+				await withTemp(file => {
+					const packages = new Packages(file);
+					const json = JSON.stringify(dummyPackagesDuplicateHash);
 
-				throws(() => {
-					packages.update(json);
+					throws(() => {
+						packages.update(json);
+					});
+
+					strictEqual(packages.loaded, false);
 				});
-
-				strictEqual(packages.loaded, false);
 			});
 
-			void it('format major under', () => {
-				const packages = new Packages(tmpPathPackages);
-				const json = JSON.stringify(dummyPackagesFormatMajorUnder);
+			void it('format major under', async () => {
+				await withTemp(file => {
+					const packages = new Packages(file);
+					const json = JSON.stringify(dummyPackagesFormatMajorUnder);
 
-				throws(() => {
-					packages.update(json);
+					throws(() => {
+						packages.update(json);
+					});
+
+					strictEqual(packages.loaded, false);
 				});
-
-				strictEqual(packages.loaded, false);
 			});
 
-			void it('format major over', () => {
-				const packages = new Packages(tmpPathPackages);
-				const json = JSON.stringify(dummyPackagesFormatMajorOver);
+			void it('format major over', async () => {
+				await withTemp(file => {
+					const packages = new Packages(file);
+					const json = JSON.stringify(dummyPackagesFormatMajorOver);
 
-				throws(() => {
-					packages.update(json);
+					throws(() => {
+						packages.update(json);
+					});
+
+					strictEqual(packages.loaded, false);
 				});
-
-				strictEqual(packages.loaded, false);
 			});
 
-			void it('format minor under', () => {
-				const packages = new Packages(tmpPathPackages);
-				const json = JSON.stringify(dummyPackagesFormatMinorUnder);
+			void it('format minor under', async () => {
+				await withTemp(file => {
+					const packages = new Packages(file);
+					const json = JSON.stringify(dummyPackagesFormatMinorUnder);
 
-				throws(() => {
-					packages.update(json);
+					throws(() => {
+						packages.update(json);
+					});
+
+					strictEqual(packages.loaded, false);
 				});
-
-				strictEqual(packages.loaded, false);
 			});
 
-			void it('format minor over', () => {
-				const packages = new Packages(tmpPathPackages);
-				const json = JSON.stringify(dummyPackagesFormatMinorOver);
+			void it('format minor over', async () => {
+				await withTemp(file => {
+					const packages = new Packages(file);
+					const json = JSON.stringify(dummyPackagesFormatMinorOver);
 
-				throws(() => {
-					packages.update(json);
+					throws(() => {
+						packages.update(json);
+					});
+
+					strictEqual(packages.loaded, false);
 				});
-
-				strictEqual(packages.loaded, false);
 			});
 		});
 
 		void it('write', async () => {
-			const packages = new Packages(tmpPathPackages);
+			await withTemp(async file => {
+				const packages = new Packages(file);
 
-			strictEqual(
-				await access(tmpPathPackages).then(
-					() => true,
-					() => false
-				),
-				false
-			);
+				strictEqual(
+					await access(file).then(
+						() => true,
+						() => false
+					),
+					false
+				);
 
-			packages.update(JSON.stringify(dummyPackages));
-			await packages.write();
+				packages.update(JSON.stringify(dummyPackages));
+				await packages.write();
 
-			strictEqual(
-				await access(tmpPathPackages).then(
-					() => true,
-					() => false
-				),
-				true
-			);
+				strictEqual(
+					await access(file).then(
+						() => true,
+						() => false
+					),
+					true
+				);
+			});
 		});
 
 		void it('read', async () => {
-			const packages = new Packages(tmpPathPackages);
+			await withTemp(async file => {
+				const packages = new Packages(file);
 
-			strictEqual(packages.loaded, false);
+				strictEqual(packages.loaded, false);
 
-			ok(await getPromiseError(packages.read()));
+				ok(await getPromiseError(packages.read()));
 
-			strictEqual(packages.loaded, false);
+				strictEqual(packages.loaded, false);
 
-			await writeFile(
-				tmpPathPackages,
-				JSON.stringify(dummyPackages, null, '\t')
-			);
+				await writeFile(
+					file,
+					JSON.stringify(dummyPackages, null, '\t')
+				);
 
-			await packages.read();
+				await packages.read();
 
-			strictEqual(packages.loaded, true);
+				strictEqual(packages.loaded, true);
+			});
 		});
 
 		void it('exists', async () => {
-			const packages = new Packages(tmpPathPackages);
+			await withTemp(async file => {
+				const packages = new Packages(file);
 
-			strictEqual(await packages.exists(), false);
+				strictEqual(await packages.exists(), false);
 
-			await writeFile(
-				tmpPathPackages,
-				JSON.stringify(dummyPackages, null, '\t')
-			);
+				await writeFile(
+					file,
+					JSON.stringify(dummyPackages, null, '\t')
+				);
 
-			strictEqual(await packages.exists(), true);
+				strictEqual(await packages.exists(), true);
+			});
 		});
 
 		void it('readIfExists', async () => {
-			const packages = new Packages(tmpPathPackages);
+			await withTemp(async file => {
+				const packages = new Packages(file);
 
-			strictEqual(packages.loaded, false);
+				strictEqual(packages.loaded, false);
 
-			strictEqual(await packages.readIfExists(), false);
+				strictEqual(await packages.readIfExists(), false);
 
-			strictEqual(packages.loaded, false);
+				strictEqual(packages.loaded, false);
 
-			await writeFile(
-				tmpPathPackages,
-				JSON.stringify(dummyPackages, null, '\t')
-			);
+				await writeFile(
+					file,
+					JSON.stringify(dummyPackages, null, '\t')
+				);
 
-			strictEqual(await packages.readIfExists(), true);
+				strictEqual(await packages.readIfExists(), true);
 
-			strictEqual(packages.loaded, true);
+				strictEqual(packages.loaded, true);
+			});
 		});
 
 		void describe('itter', () => {
-			void it('parent', () => {
-				const packages = new Packages(tmpPathPackages);
-				packages.update(JSON.stringify(dummyPackages));
+			void it('parent', async () => {
+				await withTemp(file => {
+					const packages = new Packages(file);
+					packages.update(JSON.stringify(dummyPackages));
 
-				for (const entry of packages.itter()) {
-					const root = entry.name.split('-').length === 2;
+					for (const entry of packages.itter()) {
+						const root = entry.name.split('-').length === 2;
 
-					if (root) {
-						strictEqual(entry.parent, null);
-					} else {
-						ok(entry.parent);
+						if (root) {
+							strictEqual(entry.parent, null);
+						} else {
+							ok(entry.parent);
+						}
+
+						const parentNameExpected = entry.name
+							.split('-')
+							.slice(0, -1)
+							.join('-');
+						if (entry.parent) {
+							strictEqual(entry.parent.name, parentNameExpected);
+						}
 					}
-
-					const parentNameExpected = entry.name
-						.split('-')
-						.slice(0, -1)
-						.join('-');
-					if (entry.parent) {
-						strictEqual(entry.parent.name, parentNameExpected);
-					}
-				}
+				});
 			});
 
-			void it('order', () => {
-				const packages = new Packages(tmpPathPackages);
-				packages.update(JSON.stringify(dummyPackages));
+			void it('order', async () => {
+				await withTemp(file => {
+					const packages = new Packages(file);
+					packages.update(JSON.stringify(dummyPackages));
 
-				const names = [];
-				for (const pkg of packages.itter()) {
-					names.push(pkg.name);
-				}
+					const names = [];
+					for (const pkg of packages.itter()) {
+						names.push(pkg.name);
+					}
 
-				deepStrictEqual(names, [
-					'package-a',
-					'package-b',
-					'package-b-a',
-					'package-b-a-a',
-					'package-b-a-b',
-					'package-b-b',
-					'package-c'
-				]);
+					deepStrictEqual(names, [
+						'package-a',
+						'package-b',
+						'package-b-a',
+						'package-b-a-a',
+						'package-b-a-b',
+						'package-b-b',
+						'package-c'
+					]);
+				});
 			});
 		});
 	});
