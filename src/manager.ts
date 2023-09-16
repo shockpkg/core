@@ -10,7 +10,8 @@ import {
 	writeFile
 } from 'node:fs/promises';
 import {join as pathJoin} from 'node:path';
-import {Transform} from 'node:stream';
+import {Readable, Transform} from 'node:stream';
+import {ReadableStream} from 'node:stream/web';
 import {pipeline} from 'node:stream/promises';
 import {createHash} from 'node:crypto';
 
@@ -30,6 +31,7 @@ import {EmptyStream, SliceStream, WriterStream} from './stream';
 import {Package} from './package';
 import {Packages} from './packages';
 import {
+	IFetch,
 	IPackageCleanupAfter,
 	IPackageCleanupBefore,
 	IPackageDownloadAfter,
@@ -43,7 +45,6 @@ import {
 	IPackageRemovedObsolete,
 	PackageLike
 } from './types';
-import {IFetch, fetch} from './fetch';
 import {NAME, VERSION} from './meta';
 
 /**
@@ -59,9 +60,11 @@ export class Manager {
 	};
 
 	/**
-	 * A node-fetch similar interface requiring only a sebset of features.
+	 * A fetch-like interface requiring only a sebset of features.
 	 */
-	public fetch: IFetch = fetch;
+	public fetch: IFetch | null =
+		// @ts-expect-error Missing declaraion
+		typeof fetch === 'undefined' ? null : (fetch as IFetch);
 
 	/**
 	 * Package install before events.
@@ -1031,6 +1034,19 @@ export class Manager {
 	}
 
 	/**
+	 * Assert and get fetch-like function if set.
+	 *
+	 * @returns The fetch-like function.
+	 */
+	protected _assertFetch(): IFetch {
+		const {fetch} = this;
+		if (!fetch) {
+			throw new Error('Default fetch not available');
+		}
+		return fetch;
+	}
+
+	/**
 	 * Initialize instance.
 	 */
 	protected async _init() {
@@ -1178,6 +1194,7 @@ export class Manager {
 	protected async _install(pkg: PackageLike) {
 		this._assertLoaded();
 		const pkgO = (pkg = this._packageToPackage(pkg));
+		const fetch = this._assertFetch();
 
 		// If current version is installed, skip.
 		const installed = await this._isCurrent(pkg);
@@ -1257,7 +1274,7 @@ export class Manager {
 			if (slice) {
 				const [start, size] = slice;
 				if (size > 0) {
-					const response = await this.fetch(url, {
+					const response = await fetch(url, {
 						headers: {
 							...this.headers,
 							Range: `bytes=${start}-${start + size - 1}`
@@ -1275,14 +1292,19 @@ export class Manager {
 							`Invalid resume content-length: ${cl}: ${url}`
 						);
 					}
-					input = response.body;
+					const {body} = response;
+					try {
+						input = Readable.fromWeb(body as ReadableStream);
+					} catch (err) {
+						input = body as NodeJS.ReadableStream;
+					}
 				} else if (size === 0) {
 					input = new EmptyStream();
 				} else {
 					throw new Error(`Cannot download negative size: ${size}`);
 				}
 			} else {
-				const response = await this.fetch(url, {
+				const response = await fetch(url, {
 					headers: this.headers
 				});
 				const {status} = response;
@@ -1297,7 +1319,12 @@ export class Manager {
 						`Invalid download content-length: ${cl}: ${url}`
 					);
 				}
-				input = response.body;
+				const {body} = response;
+				try {
+					input = Readable.fromWeb(body as ReadableStream);
+				} catch (err) {
+					input = body as NodeJS.ReadableStream;
+				}
 			}
 
 			// Hash the last readable stream to verify package.
@@ -1470,9 +1497,10 @@ export class Manager {
 	 */
 	protected async _requestPackages() {
 		this._assertActive();
+		const fetch = this._assertFetch();
 
 		const url = this.packagesUrl;
-		const response = await this.fetch(url, {
+		const response = await fetch(url, {
 			headers: {
 				...this.headers,
 				// eslint-disable-next-line @typescript-eslint/naming-convention
