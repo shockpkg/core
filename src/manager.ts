@@ -153,11 +153,6 @@ export class Manager {
 	protected readonly _metaDir: string = META_DIR;
 
 	/**
-	 * Temp directory.
-	 */
-	protected readonly _tempDir: string = TEMP_DIR;
-
-	/**
 	 * Path environment variable name.
 	 */
 	protected readonly _pathEnv: string = PATH_ENV;
@@ -265,15 +260,6 @@ export class Manager {
 	 */
 	public get metaDir() {
 		return this._metaDir;
-	}
-
-	/**
-	 * Temp directory.
-	 *
-	 * @returns The directory.
-	 */
-	public get tempDir() {
-		return this._tempDir;
 	}
 
 	/**
@@ -1285,7 +1271,7 @@ export class Manager {
 		});
 
 		const outFile = this._pathToPackage(pkg, pkg.file);
-		const tmpDir = this._pathToPackageMeta(pkg, this.tempDir);
+		const tmpDir = this._pathToPackageMeta(pkg, TEMP_DIR);
 		const tmpFile = pathJoin(tmpDir, `${pkg.sha256}${PART_EXT}`);
 		const metaFile = this._pathToPackageMeta(pkg, this.packageFile);
 
@@ -1480,7 +1466,7 @@ export class Manager {
 		const list: IPackageRemovedObsolete[] = [];
 		for (const pkg of await this._packageDirectories()) {
 			// Remove any temporary directory if present.
-			const tmpDir = this._pathToPackageMeta(pkg, this.tempDir);
+			const tmpDir = this._pathToPackageMeta(pkg, TEMP_DIR);
 			// eslint-disable-next-line no-await-in-loop
 			await rm(tmpDir, {recursive: true, force: true});
 
