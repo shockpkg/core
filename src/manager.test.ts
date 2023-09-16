@@ -181,19 +181,16 @@ class ManagerTest extends Manager {
 	 * @param func Test function.
 	 */
 	public async $testExclusiveAsync(func: (self: this) => Promise<unknown>) {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const err = await this._exclusiveAsync(async () => {
 			try {
 				await func.call(this, this);
 			} catch (err) {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-				return err;
+				return err as unknown;
 			}
 			throw new Error('Failed to get error');
 		});
 		ok(err);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		strictEqual(err.message, 'Already running exclusive method');
+		strictEqual((err as Error).message, 'Already running exclusive method');
 	}
 
 	/**
@@ -202,19 +199,17 @@ class ManagerTest extends Manager {
 	 * @param func Test function.
 	 */
 	public $testExclusiveSync(func: (self: this) => unknown) {
-		// eslint-disable-next-line no-sync, @typescript-eslint/no-unsafe-assignment
+		// eslint-disable-next-line no-sync
 		const err = this._exclusiveSync(() => {
 			try {
 				func.call(this, this);
 			} catch (err) {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-				return err;
+				return err as unknown;
 			}
 			throw new Error('Failed to get error');
 		});
 		ok(err);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		strictEqual(err.message, 'Already running exclusive method');
+		strictEqual((err as Error).message, 'Already running exclusive method');
 	}
 }
 
@@ -228,8 +223,7 @@ async function promiseError(p: Promise<unknown>) {
 	try {
 		await p;
 	} catch (err) {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-		return err;
+		return err as unknown;
 	}
 	throw new Error('Failed to get error');
 }
@@ -466,7 +460,7 @@ function managerTest(
  */
 function managerTestOne(
 	packages: string | null,
-	func: (manager: ManagerTest) => Promise<unknown>
+	func: (manager: ManagerTest) => unknown
 ) {
 	return managerTest(packages, async (ManagerTest, path) => {
 		await func(new ManagerTest(path));
@@ -482,7 +476,7 @@ function managerTestOne(
  */
 function managerTestOneWith(
 	packages: string | null,
-	func: (manager: ManagerTest) => Promise<unknown>
+	func: (manager: ManagerTest) => unknown
 ) {
 	return managerTestOne(packages, async manager => {
 		await manager.with(async manager => {
@@ -501,11 +495,9 @@ function managerTestNotActiveAsync(
 	func: (manager: ManagerTest) => Promise<unknown>
 ) {
 	return managerTestOne(null, async manager => {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const err = await promiseError(func(manager));
 		ok(err);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		strictEqual(err.message, 'Instance uninitialized');
+		strictEqual((err as Error).message, 'Instance uninitialized');
 	});
 }
 
@@ -516,17 +508,14 @@ function managerTestNotActiveAsync(
  * @returns Spec handler.
  */
 function managerTestNotActiveSync(func: (manager: ManagerTest) => unknown) {
-	// eslint-disable-next-line @typescript-eslint/require-await
-	return managerTestOne(null, async manager => {
+	return managerTestOne(null, manager => {
 		let err: Error | null = null;
 		try {
 			func(manager);
 		} catch (ex) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			err = ex;
+			err = ex as Error;
 		}
 		ok(err);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		strictEqual(err.message, 'Instance uninitialized');
 	});
 }
@@ -541,11 +530,9 @@ function managerTestNotLoadedAsync(
 	func: (manager: ManagerTest) => Promise<unknown>
 ) {
 	return managerTestOneWith(null, async manager => {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const err = await promiseError(func(manager));
 		ok(err);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-		strictEqual(err.message, 'Packages list not loaded');
+		strictEqual((err as Error).message, 'Packages list not loaded');
 	});
 }
 
@@ -556,17 +543,14 @@ function managerTestNotLoadedAsync(
  * @returns Spec handler.
  */
 function managerTestNotLoadedSync(func: (manager: ManagerTest) => unknown) {
-	// eslint-disable-next-line @typescript-eslint/require-await
-	return managerTestOneWith(null, async manager => {
+	return managerTestOneWith(null, manager => {
 		let err: Error | null = null;
 		try {
 			func(manager);
 		} catch (ex) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			err = ex;
+			err = ex as Error;
 		}
 		ok(err);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 		strictEqual(err.message, 'Packages list not loaded');
 	});
 }
@@ -592,8 +576,7 @@ function managerTestExclusiveAsync(
  * @returns Spec handler.
  */
 function managerTestExclusiveSync(func: (manager: ManagerTest) => unknown) {
-	// eslint-disable-next-line @typescript-eslint/require-await
-	return managerTestOneWith(null, async manager => {
+	return managerTestOneWith(null, manager => {
 		// eslint-disable-next-line no-sync
 		manager.$testExclusiveSync(func);
 	});
@@ -745,11 +728,9 @@ void describe('manager', () => {
 				'init once',
 				managerTestOne(null, async manager => {
 					await manager.init();
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const err = await promiseError(manager.init());
 					ok(err);
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					strictEqual(err.message, 'Instance initialized');
+					strictEqual((err as Error).message, 'Instance initialized');
 					await manager.destroy();
 				})
 			);
@@ -759,11 +740,12 @@ void describe('manager', () => {
 				managerTestOne(null, async manager => {
 					await manager.init();
 					await manager.destroy();
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const err = await promiseError(manager.destroy());
 					ok(err);
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					strictEqual(err.message, 'Instance uninitialized');
+					strictEqual(
+						(err as Error).message,
+						'Instance uninitialized'
+					);
 				})
 			);
 
@@ -843,7 +825,6 @@ void describe('manager', () => {
 				managerTestOne(null, async manager => {
 					strictEqual(manager.active, false);
 					const thrown = new Error('With throws');
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const err = await promiseError(
 						manager.with(manager => {
 							strictEqual(manager.active, true);
@@ -921,12 +902,9 @@ void describe('manager', () => {
 					'added',
 					managerTestOne(JSON.stringify(packages), async manager => {
 						const mod = packagesCopy();
-						mod.packages = mod.packages
-							// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-							.filter(
-								(p: {name: string}) =>
-									p.name !== packageMulti.name
-							);
+						mod.packages = mod.packages.filter(
+							(p: {name: string}) => p.name !== packageMulti.name
+						);
 
 						await writePackage(manager, mod);
 
@@ -2371,12 +2349,11 @@ void describe('manager', () => {
 				managerTestOneWith(JSON.stringify(packages), async manager => {
 					await manager.update();
 
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const error = await promiseError(
 						manager.packageInstallVerify(packageSingle.name)
 					);
 
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+					ok(error);
 					strictEqual(
 						(error as Error).message,
 						`Package is not installed: ${packageSingle.name}`
@@ -2398,13 +2375,14 @@ void describe('manager', () => {
 					const data = Buffer.alloc(size);
 					await writeFile(file, data);
 
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const error = await promiseError(
 						manager.packageInstallVerify(packageSingle.name)
 					);
 
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					strictEqual(error.message, `Invalid file size: ${size}`);
+					strictEqual(
+						(error as Error).message,
+						`Invalid file size: ${size}`
+					);
 				})
 			);
 
@@ -2423,13 +2401,15 @@ void describe('manager', () => {
 					const hash = sha256Buffer(data);
 					await writeFile(file, data);
 
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 					const error = await promiseError(
 						manager.packageInstallVerify(packageSingle.name)
 					);
 
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-					strictEqual(error.message, `Invalid sha256 hash: ${hash}`);
+					ok(error);
+					strictEqual(
+						(error as Error).message,
+						`Invalid sha256 hash: ${hash}`
+					);
 				})
 			);
 		});

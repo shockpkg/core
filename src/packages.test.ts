@@ -211,14 +211,13 @@ const dummyPackagesFormatMinorOver = {
  * @returns The error or undefined.
  */
 async function getPromiseError(p: Promise<unknown>) {
+	let r;
 	try {
 		await p;
 	} catch (err) {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-		return err;
+		r = err as unknown;
 	}
-	// eslint-disable-next-line no-undefined
-	return undefined;
+	return r;
 }
 
 void describe('packages', () => {

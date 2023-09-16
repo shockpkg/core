@@ -63,71 +63,61 @@ export class Manager {
 	 * A fetch-like interface requiring only a sebset of features.
 	 */
 	public fetch: IFetch | null =
-		// @ts-expect-error Missing declaraion
+		// @ts-expect-error Missing declaraion for fetch.
 		typeof fetch === 'undefined' ? null : (fetch as IFetch);
 
 	/**
 	 * Package install before events.
 	 */
 	public readonly eventPackageInstallBefore =
-		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageInstallBefore>(this);
 
 	/**
 	 * Package install after events.
 	 */
 	public readonly eventPackageInstallAfter =
-		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageInstallAfter>(this);
 
 	/**
 	 * Package install current events.
 	 */
 	public readonly eventPackageInstallCurrent =
-		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageInstallCurrent>(this);
 
 	/**
 	 * Package download before events.
 	 */
 	public readonly eventPackageDownloadBefore =
-		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageDownloadBefore>(this);
 
 	/**
 	 * Package download after events.
 	 */
 	public readonly eventPackageDownloadAfter =
-		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageDownloadAfter>(this);
 
 	/**
 	 * Package download progress events.
 	 */
 	public readonly eventPackageDownloadProgress =
-		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageDownloadProgress>(this);
 
 	/**
 	 * Package cleanup before events.
 	 */
 	public readonly eventPackageCleanupBefore =
-		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageCleanupBefore>(this);
 
 	/**
 	 * Package cleanup after events.
 	 */
 	public readonly eventPackageCleanupAfter =
-		// eslint-disable-next-line no-invalid-this
 		new Dispatcher<IPackageCleanupAfter>(this);
 
 	/**
 	 * Package list error events.
 	 */
-	public readonly eventPackageListError =
-		// eslint-disable-next-line no-invalid-this
-		new Dispatcher<Error>(this);
+	public readonly eventPackageListError = new Dispatcher<Error>(this);
 
 	/**
 	 * Packages URL.

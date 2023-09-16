@@ -167,7 +167,6 @@ export class Packages {
 	 * Read the file path.
 	 */
 	public async read() {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 		this._setPackagesList(
 			this._castData(
 				JSON.parse(await readFile(this.path, 'utf8')) as unknown
@@ -375,8 +374,7 @@ export class Packages {
 		const r = new Set<Package>();
 		const itter = [...packages];
 
-		// eslint-disable-next-line no-constant-condition
-		while (true) {
+		for (;;) {
 			const entry = itter.shift();
 			if (!entry) {
 				break;
@@ -508,7 +506,6 @@ export class Packages {
 	 * @returns Parsed and cast data.
 	 */
 	protected _parseData(data: string) {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 		return this._castData(JSON.parse(data));
 	}
 

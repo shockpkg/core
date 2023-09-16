@@ -18,7 +18,6 @@ export class Dispatcher<T> {
 	 * @param context Context object.
 	 */
 	constructor(context: unknown) {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		this._context = context;
 	}
 
@@ -47,7 +46,6 @@ export class Dispatcher<T> {
 	 * @returns Handler count.
 	 */
 	public trigger(event: T) {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const self = this._context;
 		let i = 0;
 		for (const cb of this._handlers) {
