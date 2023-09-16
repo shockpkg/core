@@ -21,6 +21,7 @@ import {
 	PACKAGES_FILE,
 	PACKAGES_URL,
 	PACKAGES_URL_ENV,
+	PART_EXT,
 	PATH_ENV,
 	TEMP_DIR
 } from './constants';
@@ -962,7 +963,7 @@ export class Manager {
 
 		const name = this._packageToName(pkg);
 		const pkgf = this._pathToPackageMeta(name, this.packageFile);
-		const pkgfTmp = `${pkgf}.part`;
+		const pkgfTmp = `${pkgf}${PART_EXT}`;
 
 		const receipt = await this._packageMetaReceiptFromPackage(pkg);
 		await writeFile(pkgfTmp, JSON.stringify(receipt, null, '\t'));
@@ -1294,7 +1295,7 @@ export class Manager {
 		});
 
 		const outFile = this._pathToPackage(pkg, pkg.file);
-		const tmpFile = this.pathToTemp(`${pkg.name}.part`);
+		const tmpFile = this.pathToTemp(`${pkg.name}${PART_EXT}`);
 
 		// Create temporary directory, cleanup on failure.
 		await this._tempDirEnsure(true);
