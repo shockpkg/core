@@ -2,7 +2,7 @@ import {access, readFile, rename, rm, writeFile} from 'node:fs/promises';
 
 import {Package} from './package';
 import {IPackagesList, IPackagesListPackage, IPackageUpdated} from './types';
-import {PART_EXT} from './constants';
+import {TEMP_EXT} from './constants';
 
 /**
  * Packages object.
@@ -182,7 +182,7 @@ export class Packages {
 			throw new Error('Cannot write unloaded list');
 		}
 		const out = this.path;
-		const prt = `${out}${PART_EXT}`;
+		const prt = `${out}${TEMP_EXT}`;
 		await rm(prt, {force: true});
 		await writeFile(prt, JSON.stringify(this._packagesList, null, '\t'), {
 			flag: 'wx'

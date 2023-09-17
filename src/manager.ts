@@ -23,7 +23,7 @@ import {
 	PACKAGES_FILE,
 	PACKAGES_URL,
 	PACKAGES_URL_ENV,
-	PART_EXT,
+	TEMP_EXT,
 	PATH_ENV,
 	TEMP_DIR
 } from './constants';
@@ -913,7 +913,7 @@ export class Manager {
 
 		const name = this._packageToName(pkg);
 		const pkgf = this._pathToPackageMeta(name, this.packageFile);
-		const pkgfTmp = `${pkgf}${PART_EXT}`;
+		const pkgfTmp = `${pkgf}${TEMP_EXT}`;
 
 		const receipt = await this._packageMetaReceiptFromPackage(pkg);
 		await rm(pkgfTmp, {force: true});
@@ -1245,7 +1245,7 @@ export class Manager {
 
 		const outFile = this._pathToPackage(pkg, pkg.file);
 		const tmpDir = this._pathToPackageMeta(pkg, TEMP_DIR);
-		const tmpFile = pathJoin(tmpDir, `${pkg.sha256}${PART_EXT}`);
+		const tmpFile = pathJoin(tmpDir, `${pkg.sha256}${TEMP_EXT}`);
 		const metaFile = this._pathToPackageMeta(pkg, this.packageFile);
 
 		// Create temporary directory, cleanup on failure.

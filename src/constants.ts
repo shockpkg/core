@@ -15,4 +15,4 @@ export const META_DIR = '.shockpkg';
 
 export const TEMP_DIR = 'tmp';
 
-export const PART_EXT = '.part';
+export const TEMP_EXT = '.tmp';
