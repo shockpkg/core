@@ -83,7 +83,7 @@ export async function tmpfile(
 	});
 	for (;;) {
 		getRandomValues((rb5 = rb5 || Buffer.alloc(5)));
-		const suff = (rb5.readUint32LE() + rb5.readUint8(1) * 0x100000000)
+		const suff = (rb5.readUint32LE() + rb5.readUint8(4) * 0x100000000)
 			.toString(32)
 			.padStart(8, '0');
 		fp = `${pre}.${suff}${TEMP_EXT}`;
