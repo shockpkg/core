@@ -56,12 +56,13 @@ let rb5: Buffer | null = null;
  */
 export async function tmpfile(
 	func: (fh: FileHandle, fp: string) => unknown,
-	prefix = '',
-	flags = 0,
+	prefix?: string,
+	flags?: number,
 	mode?: Mode
 ) {
 	// eslint-disable-next-line no-bitwise
-	const flg = flags | O_CREAT | O_EXCL;
+	const flg = (flags || 0) | O_CREAT | O_EXCL;
+	const pre = prefix || '';
 	let fp = '';
 	let fh: FileHandle;
 	const offexit = onexit(() => {
@@ -85,7 +86,7 @@ export async function tmpfile(
 		const suff = (rb5.readUint32LE() + rb5.readUint8(1) * 0x100000000)
 			.toString(32)
 			.padStart(8, '0');
-		fp = `${prefix}.${suff}${TEMP_EXT}`;
+		fp = `${pre}.${suff}${TEMP_EXT}`;
 		try {
 			// eslint-disable-next-line no-await-in-loop
 			fh = await open(fp, flg, mode);
