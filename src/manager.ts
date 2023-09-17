@@ -3,6 +3,7 @@ import {
 	access,
 	lstat,
 	mkdir,
+	open,
 	readdir,
 	readFile,
 	rename,
@@ -915,7 +916,10 @@ export class Manager {
 		const pkgfTmp = `${pkgf}${PART_EXT}`;
 
 		const receipt = await this._packageMetaReceiptFromPackage(pkg);
-		await writeFile(pkgfTmp, JSON.stringify(receipt, null, '\t'));
+		await rm(pkgfTmp, {force: true});
+		await writeFile(pkgfTmp, JSON.stringify(receipt, null, '\t'), {
+			flag: 'wx'
+		});
 		await rename(pkgfTmp, pkgf);
 	}
 
@@ -1247,9 +1251,12 @@ export class Manager {
 		// Create temporary directory, cleanup on failure.
 		await rm(tmpDir, {recursive: true, force: true});
 		await mkdir(tmpDir, {recursive: true});
+		const fd = await open(tmpFile, 'wx');
 		try {
-			// Read from installed file of from a URL.
-			let input: NodeJS.ReadableStream;
+			const output = new WriterStream(tmpFile, {
+				fd
+			});
+
 			this.eventPackageDownloadBefore.trigger({
 				package: pkgO
 			});
@@ -1260,6 +1267,16 @@ export class Manager {
 				amount: 0
 			});
 
+			// Create output file, monitoring write progress.
+			output.on('wrote', () => {
+				this.eventPackageDownloadProgress.trigger({
+					package: pkgO,
+					total: pkgO.size,
+					amount: output.bytesWritten
+				});
+			});
+
+			let input: NodeJS.ReadableStream;
 			const url = srcPkg.source;
 			if (slice) {
 				const [start, size] = slice;
@@ -1326,16 +1343,6 @@ export class Manager {
 				hash.update(data);
 			});
 
-			// Create output file, monitoring write progress.
-			const output = new WriterStream(tmpFile);
-			output.on('wrote', () => {
-				this.eventPackageDownloadProgress.trigger({
-					package: pkgO,
-					total: pkgO.size,
-					amount: output.bytesWritten
-				});
-			});
-
 			// Pipe all the streams through the pipeline.
 			// Work around types failing on variable args.
 			await (pipeline as (...args: unknown[]) => Promise<void>)(
@@ -1367,6 +1374,8 @@ export class Manager {
 			await rename(tmpFile, outFile);
 			await this._packageMetaReceiptWrite(pkg);
 		} finally {
+			// Should normally closed when stream ends.
+			await fd.close();
 			await rm(tmpDir, {recursive: true, force: true});
 		}
 

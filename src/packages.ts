@@ -1,4 +1,4 @@
-import {access, readFile, rename, writeFile} from 'node:fs/promises';
+import {access, readFile, rename, rm, writeFile} from 'node:fs/promises';
 
 import {Package} from './package';
 import {IPackagesList, IPackagesListPackage, IPackageUpdated} from './types';
@@ -183,7 +183,10 @@ export class Packages {
 		}
 		const out = this.path;
 		const prt = `${out}${PART_EXT}`;
-		await writeFile(prt, JSON.stringify(this._packagesList, null, '\t'));
+		await rm(prt, {force: true});
+		await writeFile(prt, JSON.stringify(this._packagesList, null, '\t'), {
+			flag: 'wx'
+		});
 		await rename(prt, out);
 	}
 
