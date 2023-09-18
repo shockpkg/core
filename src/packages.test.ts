@@ -396,13 +396,13 @@ void describe('packages', () => {
 			});
 		});
 
-		void describe('itter', () => {
+		void describe('iterator', () => {
 			void it('parent', async () => {
 				await withTemp(file => {
 					const packages = new Packages(file);
 					packages.update(JSON.stringify(dummyPackages));
 
-					for (const entry of packages.itter()) {
+					for (const entry of packages.packages()) {
 						const root = entry.name.split('-').length === 2;
 
 						if (root) {
@@ -428,7 +428,7 @@ void describe('packages', () => {
 					packages.update(JSON.stringify(dummyPackages));
 
 					const names = [];
-					for (const pkg of packages.itter()) {
+					for (const pkg of packages.packages()) {
 						names.push(pkg.name);
 					}
 

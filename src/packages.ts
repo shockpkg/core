@@ -124,7 +124,7 @@ export class Packages {
 	public update(data: string) {
 		// Map out current list if any.
 		const map = new Map<string, IPackageUpdated>();
-		for (const pkg of this.itter()) {
+		for (const pkg of this.packages()) {
 			const {name, file, size, sha256} = pkg;
 			map.set(name, {
 				name,
@@ -141,7 +141,7 @@ export class Packages {
 		const updated: IPackageUpdated[] = [];
 		const added: IPackageUpdated[] = [];
 		const removed: IPackageUpdated[] = [];
-		for (const pkg of this.itter()) {
+		for (const pkg of this.packages()) {
 			const {name, file, size, sha256} = pkg;
 			const obj: IPackageUpdated = {
 				name,
@@ -247,7 +247,7 @@ export class Packages {
 	 *
 	 * @yields Package object.
 	 */
-	public *itter() {
+	public *packages() {
 		const packages = this._packages;
 		for (const entry of packages) {
 			// If the set changes, break loop.

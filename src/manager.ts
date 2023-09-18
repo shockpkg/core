@@ -397,10 +397,9 @@ export class Manager {
 	 * Assert instance not inited.
 	 */
 	public assertNotInited() {
-		// eslint-disable-next-line no-sync
-		this._exclusiveSync(() => {
-			this._assertNotInited();
-		});
+		if (this._inited) {
+			throw new Error('Instance initialized');
+		}
 	}
 
 	/**
@@ -408,10 +407,9 @@ export class Manager {
 	 * Implies inited, not-destroyed, and lock-not-compromised assertions.
 	 */
 	public assertActive() {
-		// eslint-disable-next-line no-sync
-		this._exclusiveSync(() => {
-			this._assertActive();
-		});
+		// Check everything is active in order they should report failure.
+		this._assertInited();
+		this._assertNotDestroyed();
 	}
 
 	/**
@@ -419,24 +417,40 @@ export class Manager {
 	 * Implies all active assertions.
 	 */
 	public assertLoaded() {
-		// eslint-disable-next-line no-sync
-		this._exclusiveSync(() => {
-			this._assertLoaded();
-		});
+		this.assertActive();
+		if (!this.loaded) {
+			throw new Error('Packages list not loaded');
+		}
 	}
 
 	/**
 	 * Initialize instance.
 	 */
 	public async init() {
-		await this._exclusiveAsync(async () => this._init());
+		this.assertNotInited();
+
+		await this._ensureDirs();
+		try {
+			await this._packages.readIfExists();
+		} catch (err) {
+			this.eventPackageListError.trigger(err as Error);
+		}
+
+		this._inited = true;
+		this._destroyed = false;
 	}
 
 	/**
 	 * Destroy instance.
 	 */
+	// eslint-disable-next-line @typescript-eslint/require-await
 	public async destroy() {
-		await this._exclusiveAsync(async () => this._destroy());
+		// Destroy should always work only once if instance was inited.
+		this._assertInited();
+		this._assertNotDestroyed();
+
+		this._destroyed = true;
+		this._inited = false;
 	}
 
 	/**
@@ -457,343 +471,15 @@ export class Manager {
 	}
 
 	/**
-	 * Itterate over the packages.
-	 *
-	 * @returns Package itterator.
-	 */
-	public packages() {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() => this._packageItter());
-	}
-
-	/**
-	 * Get package by the unique name.
-	 *
-	 * @param name Package name.
-	 * @returns The package or null.
-	 */
-	public packageByName(name: string) {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() => this._packageByName(name));
-	}
-
-	/**
-	 * Get package by the sha256 hash.
-	 *
-	 * @param sha256 Package sha256.
-	 * @returns The package or null.
-	 */
-	public packageBySha256(sha256: string) {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() => this._packageBySha256(sha256));
-	}
-
-	/**
-	 * Get package by the sha1 hash.
-	 *
-	 * @param sha1 Package sha1.
-	 * @returns The package or null.
-	 */
-	public packageBySha1(sha1: string) {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() => this._packageBySha1(sha1));
-	}
-
-	/**
-	 * Get package by the md5 hash.
-	 *
-	 * @param md5 Package md5.
-	 * @returns The package or null.
-	 */
-	public packageByMd5(md5: string) {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() => this._packageByMd5(md5));
-	}
-
-	/**
-	 * Get package by the unique value.
-	 *
-	 * @param unique Package unique.
-	 * @returns The package or null.
-	 */
-	public packageByUnique(unique: string) {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() => this._packageByUnique(unique));
-	}
-
-	/**
-	 * Check if package is in packages collection.
-	 *
-	 * @param pkg Package instance.
-	 * @returns If the package instance is present.
-	 */
-	public packageIsMember(pkg: Package) {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() => this._packageIsMember(pkg));
-	}
-
-	/**
-	 * Read package install receipt.
-	 *
-	 * @param pkg The package.
-	 * @returns Install receipt.
-	 */
-	public async packageInstallReceipt(pkg: PackageLike) {
-		return this._exclusiveAsync(async () =>
-			this._packageMetaReceiptRead(pkg)
-		);
-	}
-
-	/**
-	 * Get package install file.
-	 *
-	 * @param pkg The package.
-	 * @returns Path to install file.
-	 */
-	public async packageInstallFile(pkg: PackageLike) {
-		return this._exclusiveAsync(async () => this._packageInstallFile(pkg));
-	}
-
-	/**
-	 * Verify package install file, using size and hash.
-	 *
-	 * @param pkg The package.
-	 */
-	public async packageInstallVerify(pkg: PackageLike) {
-		await this._exclusiveAsync(async () => this._packageInstallVerify(pkg));
-	}
-
-	/**
-	 * Update the package manager installed data.
-	 * Updates the packages list.
-	 *
-	 * @returns Update report.
-	 */
-	public async update() {
-		return this._exclusiveAsync(async () => this._update());
-	}
-
-	/**
-	 * Check if a package is installed.
-	 *
-	 * @param pkg The package.
-	 * @returns True if already installed, else false.
-	 */
-	public async isInstalled(pkg: PackageLike) {
-		return this._exclusiveAsync(async () => this._isInstalled(pkg));
-	}
-
-	/**
-	 * Check if a package is installed and up-to-date.
-	 *
-	 * @param pkg The package.
-	 * @returns True if already up-to-date, else false.
-	 */
-	public async isCurrent(pkg: PackageLike) {
-		return this._exclusiveAsync(async () => this._isCurrent(pkg));
-	}
-
-	/**
-	 * List all installed packages.
-	 *
-	 * @returns A list of installed package objects.
-	 */
-	public async installed() {
-		return this._exclusiveAsync(async () => this._installed());
-	}
-
-	/**
-	 * List all outdated packages.
-	 *
-	 * @returns The list of outdated package objects.
-	 */
-	public async outdated() {
-		return this._exclusiveAsync(async () => this._outdated());
-	}
-
-	/**
-	 * Upgrade any outdated packages.
-	 *
-	 * @returns List of packages upgraded.
-	 */
-	public async upgrade() {
-		return this._exclusiveAsync(async () => this._upgrade());
-	}
-
-	/**
-	 * Install package.
-	 * Returns the list of packages processed to install.
-	 * Returns empty array if current version is already installed.
-	 *
-	 * @param pkg The package.
-	 * @returns List of packages processed to complete the install.
-	 */
-	public async install(pkg: PackageLike) {
-		return this._exclusiveAsync(async () => this._install(pkg));
-	}
-
-	/**
-	 * Remove package.
-	 *
-	 * @param pkg The package.
-	 * @returns True if removed, false if nothing to remove.
-	 */
-	public async remove(pkg: PackageLike) {
-		return this._exclusiveAsync(async () => this._remove(pkg));
-	}
-
-	/**
-	 * Check if package name is obsolete.
-	 *
-	 * @param pkg The package.
-	 * @returns True if package obslete, else false.
-	 */
-	public async isObsolete(pkg: string) {
-		return this._exclusiveAsync(async () => this._isObsolete(pkg));
-	}
-
-	/**
-	 * List obsolete package names.
-	 *
-	 * @returns A list of obsolete package names.
-	 */
-	public async obsolete() {
-		return this._exclusiveAsync(async () => this._obsolete());
-	}
-
-	/**
-	 * Cleanup all obsolete and outdated packages.
-	 *
-	 * @returns Lists of removed packages.
-	 */
-	public async cleanup() {
-		return this._exclusiveAsync(async () => this._cleanup());
-	}
-
-	/**
-	 * Join path on the base path.
-	 *
-	 * @param parts Path parts.
-	 * @returns Joined path.
-	 */
-	public pathTo(...parts: string[]) {
-		return pathJoin(this.path, ...parts);
-	}
-
-	/**
-	 * Join path on the meta path.
-	 *
-	 * @param parts Path parts.
-	 * @returns Joined path.
-	 */
-	public pathToMeta(...parts: string[]) {
-		return this.pathTo(this.metaDir, ...parts);
-	}
-
-	/**
-	 * Join path on package base path.
-	 *
-	 * @param pkg The package.
-	 * @param parts Path parts.
-	 * @returns Joined path.
-	 */
-	public pathToPackage(pkg: PackageLike, ...parts: string[]) {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() => this._pathToPackage(pkg, ...parts));
-	}
-
-	/**
-	 * Join path on package meta path.
-	 *
-	 * @param pkg The package.
-	 * @param parts Path parts.
-	 * @returns Joined path.
-	 */
-	public pathToPackageMeta(pkg: PackageLike, ...parts: string[]) {
-		// eslint-disable-next-line no-sync
-		return this._exclusiveSync(() =>
-			this._pathToPackageMeta(pkg, ...parts)
-		);
-	}
-
-	/**
-	 * Join path on package base path.
-	 *
-	 * @param pkg The package.
-	 * @param parts Path parts.
-	 * @returns Joined path.
-	 */
-	protected _pathToPackage(pkg: PackageLike, ...parts: string[]) {
-		this._assertActive();
-
-		const name = this._packageToName(pkg, false);
-		return this.pathTo(name, ...parts);
-	}
-
-	/**
-	 * Join path on package meta path.
-	 *
-	 * @param pkg The package.
-	 * @param parts Path parts.
-	 * @returns Joined path.
-	 */
-	protected _pathToPackageMeta(pkg: PackageLike, ...parts: string[]) {
-		this._assertActive();
-
-		const name = this._packageToName(pkg, false);
-		return this.pathTo(name, this.metaDir, ...parts);
-	}
-
-	/**
-	 * Obtain exclusive access for the duration of a syncronous callback.
-	 *
-	 * @param func Syncronous function.
-	 * @returns Return value of the syncronous callback.
-	 */
-	protected _exclusiveSync<T>(func: (self: this) => T): T {
-		this._assertNotExclusive();
-
-		this._exclusive = true;
-		let r: T;
-		try {
-			r = func.call(this, this) as T;
-		} finally {
-			this._exclusive = false;
-		}
-		return r;
-	}
-
-	/**
-	 * Obtain exclusive access for the duration of a asyncronous callback.
-	 *
-	 * @param func Asyncronous function.
-	 * @returns Return value of the asyncronous callback.
-	 */
-	protected async _exclusiveAsync<T>(
-		func: (self: this) => Promise<T>
-	): Promise<T> {
-		this._assertNotExclusive();
-
-		this._exclusive = true;
-		let r: T;
-		try {
-			r = (await func.call(this, this)) as T;
-		} finally {
-			this._exclusive = false;
-		}
-		return r;
-	}
-
-	/**
-	 * Itterate over the packages.
+	 * Iterate over the packages.
 	 *
 	 * @yields Package object.
 	 */
-	protected *_packageItter() {
-		this._assertActive();
+	public *packages() {
+		this.assertActive();
 
-		for (const entry of this._packages.itter()) {
-			this._assertActive();
+		for (const entry of this._packages.packages()) {
+			this.assertActive();
 			yield entry;
 		}
 	}
@@ -804,8 +490,8 @@ export class Manager {
 	 * @param name Package name.
 	 * @returns The package or null.
 	 */
-	protected _packageByName(name: string) {
-		this._assertLoaded();
+	public packageByName(name: string) {
+		this.assertLoaded();
 
 		return this._packages.byName(name);
 	}
@@ -816,8 +502,8 @@ export class Manager {
 	 * @param sha256 Package sha256.
 	 * @returns The package or null.
 	 */
-	protected _packageBySha256(sha256: string) {
-		this._assertLoaded();
+	public packageBySha256(sha256: string) {
+		this.assertLoaded();
 
 		return this._packages.bySha256(sha256);
 	}
@@ -828,8 +514,8 @@ export class Manager {
 	 * @param sha1 Package sha1.
 	 * @returns The package or null.
 	 */
-	protected _packageBySha1(sha1: string) {
-		this._assertLoaded();
+	public packageBySha1(sha1: string) {
+		this.assertLoaded();
 
 		return this._packages.bySha1(sha1);
 	}
@@ -840,8 +526,8 @@ export class Manager {
 	 * @param md5 Package md5.
 	 * @returns The package or null.
 	 */
-	protected _packageByMd5(md5: string) {
-		this._assertLoaded();
+	public packageByMd5(md5: string) {
+		this.assertLoaded();
 
 		return this._packages.byMd5(md5);
 	}
@@ -852,8 +538,8 @@ export class Manager {
 	 * @param unique Package unique.
 	 * @returns The package or null.
 	 */
-	protected _packageByUnique(unique: string) {
-		this._assertLoaded();
+	public packageByUnique(unique: string) {
+		this.assertLoaded();
 
 		return this._packages.byUnique(unique);
 	}
@@ -864,10 +550,31 @@ export class Manager {
 	 * @param pkg Package instance.
 	 * @returns If the package instance is present.
 	 */
-	protected _packageIsMember(pkg: Package) {
-		this._assertLoaded();
+	public packageIsMember(pkg: Package) {
+		this.assertLoaded();
 
 		return this._packages.has(pkg);
+	}
+
+	/**
+	 * Read package install receipt.
+	 *
+	 * @param pkg The package.
+	 * @returns Install receipt.
+	 */
+	public async packageInstallReceipt(pkg: PackageLike) {
+		this.assertLoaded();
+
+		const name = this._packageToName(pkg, false);
+		const pkgf = this.pathToPackageMeta(name, this.packageFile);
+
+		const r = await readFile(pkgf, 'utf8')
+			.then(s => JSON.parse(s) as IPackageReceipt)
+			.catch(() => null);
+		if (!r) {
+			throw new Error(`Package is not installed: ${name}`);
+		}
+		return r;
 	}
 
 	/**
@@ -876,12 +583,12 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns Path to install file.
 	 */
-	protected async _packageInstallFile(pkg: PackageLike) {
-		this._assertLoaded();
+	public async packageInstallFile(pkg: PackageLike) {
+		this.assertLoaded();
 		pkg = this._packageToPackage(pkg);
 
-		const data = await this._packageMetaReceiptRead(pkg);
-		return this._pathToPackage(pkg, data.file);
+		const data = await this.packageInstallReceipt(pkg);
+		return this.pathToPackage(pkg, data.file);
 	}
 
 	/**
@@ -889,13 +596,13 @@ export class Manager {
 	 *
 	 * @param pkg The package.
 	 */
-	protected async _packageInstallVerify(pkg: PackageLike) {
-		this._assertLoaded();
+	public async packageInstallVerify(pkg: PackageLike) {
+		this.assertLoaded();
 		pkg = this._packageToPackage(pkg);
 
-		const data = await this._packageMetaReceiptRead(pkg);
+		const data = await this.packageInstallReceipt(pkg);
 		const {sha256, file, size} = data;
-		const filePath = this._pathToPackage(pkg, file);
+		const filePath = this.pathToPackage(pkg, file);
 
 		const stat = await lstat(filePath);
 		const fSize = stat.size;
@@ -918,253 +625,13 @@ export class Manager {
 	}
 
 	/**
-	 * Get package object by object, name, or hash.
-	 * If package object is passed, check that object is known.
-	 * Throw error if package is unknown.
-	 *
-	 * @param pkg The package.
-	 * @returns Package object.
-	 */
-	protected _packageToPackage(pkg: PackageLike) {
-		this._assertLoaded();
-
-		let r: Package;
-		if (typeof pkg === 'string') {
-			const p = this._packageByUnique(pkg);
-			if (!p) {
-				throw new Error(`Unknown package: ${pkg}`);
-			}
-			r = p;
-		} else {
-			this._assertpackageIsMember(pkg);
-			r = pkg;
-		}
-		return r;
-	}
-
-	/**
-	 * Get package name by object, name, or hash.
-	 * If package object is passed, check that object is known.
-	 * If string is passed and unknown, returns string.
-	 *
-	 * @param pkg The package.
-	 * @param mustExist Must exist.
-	 * @returns Package object.
-	 */
-	protected _packageToName(pkg: PackageLike, mustExist = true) {
-		this._assertLoaded();
-
-		let r: string;
-		if (typeof pkg === 'string') {
-			const pkgObj = this._packageByUnique(pkg);
-			if (!pkgObj && mustExist) {
-				throw new Error(`Unknown package: ${pkg}`);
-			}
-			r = pkgObj ? pkgObj.name : pkg;
-		} else {
-			this._assertpackageIsMember(pkg);
-			r = pkg.name;
-		}
-		return r;
-	}
-
-	/**
-	 * Read package installed receipt.
-	 *
-	 * @param pkg The package.
-	 * @returns Package object.
-	 */
-	protected async _packageMetaReceiptRead(pkg: PackageLike) {
-		this._assertLoaded();
-
-		const name = this._packageToName(pkg, false);
-		const pkgf = this._pathToPackageMeta(name, this.packageFile);
-
-		const r = await readFile(pkgf, 'utf8')
-			.then(s => JSON.parse(s) as IPackageReceipt)
-			.catch(() => null);
-		if (!r) {
-			throw new Error(`Package is not installed: ${name}`);
-		}
-		return r;
-	}
-
-	/**
-	 * Write package installed receipt.
-	 *
-	 * @param pkg The package.
-	 */
-	protected async _packageMetaReceiptWrite(pkg: PackageLike) {
-		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
-
-		const name = this._packageToName(pkg);
-		const pkgf = this._pathToPackageMeta(name, this.packageFile);
-		const pkgfTmp = `${pkgf}${TEMP_EXT}`;
-
-		const receipt = await this._packageMetaReceiptFromPackage(pkg);
-		await rm(pkgfTmp, {force: true});
-		await writeFile(pkgfTmp, JSON.stringify(receipt, null, '\t'), {
-			flag: 'wx'
-		});
-		await rename(pkgfTmp, pkgf);
-	}
-
-	/**
-	 * Create package installed receipt object from a package.
-	 *
-	 * @param pkg The package.
-	 * @returns Receipt object.
-	 */
-	// eslint-disable-next-line @typescript-eslint/require-await
-	protected async _packageMetaReceiptFromPackage(pkg: PackageLike) {
-		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
-
-		const r: IPackageReceipt = {
-			name: pkg.name,
-			file: pkg.file,
-			size: pkg.size,
-			sha256: pkg.sha256,
-			source: pkg.source
-		};
-		return r;
-	}
-
-	/**
-	 * Ensure package directory exists.
-	 *
-	 * @param pkg The package.
-	 */
-	protected async _packageDirsEnsure(pkg: PackageLike) {
-		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
-
-		const dir = this._pathToPackage(pkg);
-		const dirMeta = this._pathToPackageMeta(pkg);
-		await mkdir(dir, {recursive: true});
-		await mkdir(dirMeta, {recursive: true});
-	}
-
-	/**
-	 * Assert instance not inited.
-	 */
-	protected _assertNotInited() {
-		if (this._inited) {
-			throw new Error('Instance initialized');
-		}
-	}
-
-	/**
-	 * Assert instance is inited.
-	 */
-	protected _assertInited() {
-		if (!this._inited) {
-			throw new Error('Instance uninitialized');
-		}
-	}
-
-	/**
-	 * Assert instance not destroyed.
-	 */
-	protected _assertNotDestroyed() {
-		if (this._destroyed) {
-			throw new Error('Instance destroyed');
-		}
-	}
-
-	/**
-	 * Assert instance is active.
-	 * Implies inited, not-destroyed, and lock-not-compromised assertions.
-	 */
-	protected _assertActive() {
-		// Check everything is active in order they should report failure.
-		this._assertInited();
-		this._assertNotDestroyed();
-	}
-
-	/**
-	 * Assert instance all loaded, including the packages list.
-	 * Implies all active assertions.
-	 */
-	protected _assertLoaded() {
-		this._assertActive();
-		if (!this.loaded) {
-			throw new Error('Packages list not loaded');
-		}
-	}
-
-	/**
-	 * Assert not current running exclusive method.
-	 */
-	protected _assertNotExclusive() {
-		if (this._exclusive) {
-			throw new Error('Already running exclusive method');
-		}
-	}
-
-	/**
-	 * Assert the package is in packages collection.
-	 *
-	 * @param pkg Package instance.
-	 */
-	protected _assertpackageIsMember(pkg: Package) {
-		this._assertLoaded();
-
-		this._packages.assertHas(pkg);
-	}
-
-	/**
-	 * Assert and get fetch-like function if set.
-	 *
-	 * @returns The fetch-like function.
-	 */
-	protected _assertFetch(): IFetch {
-		const {fetch} = this;
-		if (!fetch) {
-			throw new Error('Default fetch not available');
-		}
-		return fetch;
-	}
-
-	/**
-	 * Initialize instance.
-	 */
-	protected async _init() {
-		this._assertNotInited();
-
-		await this._ensureDirs();
-		try {
-			await this._packages.readIfExists();
-		} catch (err) {
-			this.eventPackageListError.trigger(err as Error);
-		}
-
-		this._inited = true;
-		this._destroyed = false;
-	}
-
-	/**
-	 * Destroy instance.
-	 */
-	// eslint-disable-next-line @typescript-eslint/require-await
-	protected async _destroy() {
-		// Destroy should always work only once if instance was inited.
-		this._assertInited();
-		this._assertNotDestroyed();
-
-		this._destroyed = true;
-		this._inited = false;
-	}
-
-	/**
-	 * Update the package manager.
+	 * Update the package manager installed data.
 	 * Updates the packages list.
 	 *
 	 * @returns Update report.
 	 */
-	protected async _update() {
-		this._assertActive();
+	public async update() {
+		this.assertActive();
 
 		return this._updatePackages();
 	}
@@ -1175,12 +642,12 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns True if already installed, else false.
 	 */
-	protected async _isInstalled(pkg: PackageLike) {
-		this._assertLoaded();
+	public async isInstalled(pkg: PackageLike) {
+		this.assertLoaded();
 		pkg = this._packageToPackage(pkg);
 
 		try {
-			await this._packageMetaReceiptRead(pkg);
+			await this.packageInstallReceipt(pkg);
 		} catch (err) {
 			return false;
 		}
@@ -1193,13 +660,13 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns True if already up-to-date, else false.
 	 */
-	protected async _isCurrent(pkg: PackageLike) {
-		this._assertLoaded();
+	public async isCurrent(pkg: PackageLike) {
+		this.assertLoaded();
 		pkg = this._packageToPackage(pkg);
 
 		let data: IPackageReceipt | null = null;
 		try {
-			data = await this._packageMetaReceiptRead(pkg);
+			data = await this.packageInstallReceipt(pkg);
 		} catch (err) {
 			return false;
 		}
@@ -1216,14 +683,14 @@ export class Manager {
 	 *
 	 * @returns A list of installed package objects.
 	 */
-	protected async _installed() {
-		this._assertLoaded();
+	public async installed() {
+		this.assertLoaded();
 
 		const list: Package[] = [];
 		for (const entry of await this._packageDirectories()) {
-			const pkg = this._packageByName(entry);
+			const pkg = this.packageByName(entry);
 			// eslint-disable-next-line no-await-in-loop
-			if (pkg && (await this._isInstalled(pkg))) {
+			if (pkg && (await this.isInstalled(pkg))) {
 				list.push(pkg);
 			}
 		}
@@ -1235,14 +702,14 @@ export class Manager {
 	 *
 	 * @returns The list of outdated package objects.
 	 */
-	protected async _outdated() {
-		this._assertLoaded();
+	public async outdated() {
+		this.assertLoaded();
 
 		const list: Package[] = [];
 		for (const entry of await this._packageDirectories()) {
-			const pkg = this._packageByName(entry);
+			const pkg = this.packageByName(entry);
 			// eslint-disable-next-line no-await-in-loop
-			if (pkg && !(await this._isCurrent(pkg))) {
+			if (pkg && !(await this.isCurrent(pkg))) {
 				list.push(pkg);
 			}
 		}
@@ -1254,16 +721,16 @@ export class Manager {
 	 *
 	 * @returns List of packages upgraded.
 	 */
-	protected async _upgrade() {
-		this._assertLoaded();
+	public async upgrade() {
+		this.assertLoaded();
 
-		const outdated = await this._outdated();
+		const outdated = await this.outdated();
 		const list: IPackageInstalled[] = [];
 		for (const pkg of outdated) {
 			list.push({
 				package: pkg,
 				// eslint-disable-next-line no-await-in-loop
-				install: await this._install(pkg)
+				install: await this.install(pkg)
 			});
 		}
 		return list;
@@ -1277,13 +744,13 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns List of packages processed to complete the install.
 	 */
-	protected async _install(pkg: PackageLike) {
-		this._assertLoaded();
+	public async install(pkg: PackageLike) {
+		this.assertLoaded();
 		const pkgO = (pkg = this._packageToPackage(pkg));
 		const fetch = this._assertFetch();
 
 		// If current version is installed, skip.
-		const installed = await this._isCurrent(pkg);
+		const installed = await this.isCurrent(pkg);
 		if (installed) {
 			this.eventPackageInstallCurrent.trigger({
 				package: pkg
@@ -1335,10 +802,10 @@ export class Manager {
 			package: pkg
 		});
 
-		const outFile = this._pathToPackage(pkg, pkg.file);
-		const tmpDir = this._pathToPackageMeta(pkg, TEMP_DIR);
+		const outFile = this.pathToPackage(pkg, pkg.file);
+		const tmpDir = this.pathToPackageMeta(pkg, TEMP_DIR);
 		const tmpFile = pathJoin(tmpDir, `${pkg.sha256}${TEMP_EXT}`);
-		const metaFile = this._pathToPackageMeta(pkg, this.packageFile);
+		const metaFile = this.pathToPackageMeta(pkg, this.packageFile);
 
 		// Create temporary directory, cleanup on failure.
 		await rm(tmpDir, {recursive: true, force: true});
@@ -1484,15 +951,15 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns True if removed, false if nothing to remove.
 	 */
-	protected async _remove(pkg: PackageLike) {
-		this._assertLoaded();
+	public async remove(pkg: PackageLike) {
+		this.assertLoaded();
 
-		const dir = this._pathToPackage(pkg);
+		const dir = this.pathToPackage(pkg);
 		const stat = await lstat(dir).catch(() => null);
 		if (!stat) {
 			return false;
 		}
-		const dirMeta = this._pathToPackageMeta(pkg);
+		const dirMeta = this.pathToPackageMeta(pkg);
 
 		// Remove meta directory first, avoid partial installed state.
 		await rm(dirMeta, {recursive: true, force: true});
@@ -1506,13 +973,13 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns True if package obslete, else false.
 	 */
-	protected async _isObsolete(pkg: string) {
-		this._assertLoaded();
+	public async isObsolete(pkg: string) {
+		this.assertLoaded();
 
 		return (
 			!pkg.startsWith('.') &&
-			!this._packageByName(pkg) &&
-			access(this._pathToPackageMeta(pkg)).then(
+			!this.packageByName(pkg) &&
+			access(this.pathToPackageMeta(pkg)).then(
 				() => true,
 				() => false
 			)
@@ -1524,13 +991,13 @@ export class Manager {
 	 *
 	 * @returns A list of obsolete package names.
 	 */
-	protected async _obsolete() {
-		this._assertLoaded();
+	public async obsolete() {
+		this.assertLoaded();
 
 		const list: string[] = [];
 		for (const entry of await this._packageDirectories()) {
 			// eslint-disable-next-line no-await-in-loop
-			if (await this._isObsolete(entry)) {
+			if (await this.isObsolete(entry)) {
 				list.push(entry);
 			}
 		}
@@ -1538,28 +1005,28 @@ export class Manager {
 	}
 
 	/**
-	 * Cleanup all obsolete packages and any incomplete downloads.
+	 * Cleanup all obsolete and outdated packages.
 	 *
 	 * @returns Lists of removed packages.
 	 */
-	protected async _cleanup() {
-		this._assertLoaded();
+	public async cleanup() {
+		this.assertLoaded();
 
 		const list: IPackageRemovedObsolete[] = [];
 		for (const pkg of await this._packageDirectories()) {
 			// Remove any temporary directory if present.
-			const tmpDir = this._pathToPackageMeta(pkg, TEMP_DIR);
+			const tmpDir = this.pathToPackageMeta(pkg, TEMP_DIR);
 			// eslint-disable-next-line no-await-in-loop
 			await rm(tmpDir, {recursive: true, force: true});
 
 			// eslint-disable-next-line no-await-in-loop
-			if (await this._isObsolete(pkg)) {
+			if (await this.isObsolete(pkg)) {
 				this.eventPackageCleanupBefore.trigger({
 					package: pkg
 				});
 
 				// eslint-disable-next-line no-await-in-loop
-				const removed = await this._remove(pkg);
+				const removed = await this.remove(pkg);
 
 				this.eventPackageCleanupAfter.trigger({
 					package: pkg,
@@ -1575,12 +1042,259 @@ export class Manager {
 	}
 
 	/**
+	 * Join path on the base path.
+	 *
+	 * @param parts Path parts.
+	 * @returns Joined path.
+	 */
+	public pathTo(...parts: string[]) {
+		return pathJoin(this.path, ...parts);
+	}
+
+	/**
+	 * Join path on the meta path.
+	 *
+	 * @param parts Path parts.
+	 * @returns Joined path.
+	 */
+	public pathToMeta(...parts: string[]) {
+		return this.pathTo(this.metaDir, ...parts);
+	}
+
+	/**
+	 * Join path on package base path.
+	 *
+	 * @param pkg The package.
+	 * @param parts Path parts.
+	 * @returns Joined path.
+	 */
+	public pathToPackage(pkg: PackageLike, ...parts: string[]) {
+		this.assertActive();
+
+		const name = this._packageToName(pkg, false);
+		return this.pathTo(name, ...parts);
+	}
+
+	/**
+	 * Join path on package meta path.
+	 *
+	 * @param pkg The package.
+	 * @param parts Path parts.
+	 * @returns Joined path.
+	 */
+	public pathToPackageMeta(pkg: PackageLike, ...parts: string[]) {
+		this.assertActive();
+
+		const name = this._packageToName(pkg, false);
+		return this.pathTo(name, this.metaDir, ...parts);
+	}
+
+	/**
+	 * Obtain exclusive access for the duration of a syncronous callback.
+	 *
+	 * @param func Syncronous function.
+	 * @returns Return value of the syncronous callback.
+	 */
+	protected _exclusiveSync<T>(func: (self: this) => T): T {
+		this._assertNotExclusive();
+
+		this._exclusive = true;
+		let r: T;
+		try {
+			r = func.call(this, this) as T;
+		} finally {
+			this._exclusive = false;
+		}
+		return r;
+	}
+
+	/**
+	 * Obtain exclusive access for the duration of a asyncronous callback.
+	 *
+	 * @param func Asyncronous function.
+	 * @returns Return value of the asyncronous callback.
+	 */
+	protected async _exclusiveAsync<T>(
+		func: (self: this) => Promise<T>
+	): Promise<T> {
+		this._assertNotExclusive();
+
+		this._exclusive = true;
+		let r: T;
+		try {
+			r = (await func.call(this, this)) as T;
+		} finally {
+			this._exclusive = false;
+		}
+		return r;
+	}
+
+	/**
+	 * Get package object by object, name, or hash.
+	 * If package object is passed, check that object is known.
+	 * Throw error if package is unknown.
+	 *
+	 * @param pkg The package.
+	 * @returns Package object.
+	 */
+	protected _packageToPackage(pkg: PackageLike) {
+		this.assertLoaded();
+
+		let r: Package;
+		if (typeof pkg === 'string') {
+			const p = this.packageByUnique(pkg);
+			if (!p) {
+				throw new Error(`Unknown package: ${pkg}`);
+			}
+			r = p;
+		} else {
+			this._assertpackageIsMember(pkg);
+			r = pkg;
+		}
+		return r;
+	}
+
+	/**
+	 * Get package name by object, name, or hash.
+	 * If package object is passed, check that object is known.
+	 * If string is passed and unknown, returns string.
+	 *
+	 * @param pkg The package.
+	 * @param mustExist Must exist.
+	 * @returns Package object.
+	 */
+	protected _packageToName(pkg: PackageLike, mustExist = true) {
+		this.assertLoaded();
+
+		let r: string;
+		if (typeof pkg === 'string') {
+			const pkgObj = this.packageByUnique(pkg);
+			if (!pkgObj && mustExist) {
+				throw new Error(`Unknown package: ${pkg}`);
+			}
+			r = pkgObj ? pkgObj.name : pkg;
+		} else {
+			this._assertpackageIsMember(pkg);
+			r = pkg.name;
+		}
+		return r;
+	}
+
+	/**
+	 * Write package installed receipt.
+	 *
+	 * @param pkg The package.
+	 */
+	protected async _packageMetaReceiptWrite(pkg: PackageLike) {
+		this.assertLoaded();
+		pkg = this._packageToPackage(pkg);
+
+		const name = this._packageToName(pkg);
+		const pkgf = this.pathToPackageMeta(name, this.packageFile);
+		const pkgfTmp = `${pkgf}${TEMP_EXT}`;
+
+		const receipt = await this._packageMetaReceiptFromPackage(pkg);
+		await rm(pkgfTmp, {force: true});
+		await writeFile(pkgfTmp, JSON.stringify(receipt, null, '\t'), {
+			flag: 'wx'
+		});
+		await rename(pkgfTmp, pkgf);
+	}
+
+	/**
+	 * Create package installed receipt object from a package.
+	 *
+	 * @param pkg The package.
+	 * @returns Receipt object.
+	 */
+	// eslint-disable-next-line @typescript-eslint/require-await
+	protected async _packageMetaReceiptFromPackage(pkg: PackageLike) {
+		this.assertLoaded();
+		pkg = this._packageToPackage(pkg);
+
+		const r: IPackageReceipt = {
+			name: pkg.name,
+			file: pkg.file,
+			size: pkg.size,
+			sha256: pkg.sha256,
+			source: pkg.source
+		};
+		return r;
+	}
+
+	/**
+	 * Ensure package directory exists.
+	 *
+	 * @param pkg The package.
+	 */
+	protected async _packageDirsEnsure(pkg: PackageLike) {
+		this.assertLoaded();
+		pkg = this._packageToPackage(pkg);
+
+		const dir = this.pathToPackage(pkg);
+		const dirMeta = this.pathToPackageMeta(pkg);
+		await mkdir(dir, {recursive: true});
+		await mkdir(dirMeta, {recursive: true});
+	}
+
+	/**
+	 * Assert instance is inited.
+	 */
+	protected _assertInited() {
+		if (!this._inited) {
+			throw new Error('Instance uninitialized');
+		}
+	}
+
+	/**
+	 * Assert instance not destroyed.
+	 */
+	protected _assertNotDestroyed() {
+		if (this._destroyed) {
+			throw new Error('Instance destroyed');
+		}
+	}
+
+	/**
+	 * Assert not current running exclusive method.
+	 */
+	protected _assertNotExclusive() {
+		if (this._exclusive) {
+			throw new Error('Already running exclusive method');
+		}
+	}
+
+	/**
+	 * Assert the package is in packages collection.
+	 *
+	 * @param pkg Package instance.
+	 */
+	protected _assertpackageIsMember(pkg: Package) {
+		this.assertLoaded();
+
+		this._packages.assertHas(pkg);
+	}
+
+	/**
+	 * Assert and get fetch-like function if set.
+	 *
+	 * @returns The fetch-like function.
+	 */
+	protected _assertFetch(): IFetch {
+		const {fetch} = this;
+		if (!fetch) {
+			throw new Error('Default fetch not available');
+		}
+		return fetch;
+	}
+
+	/**
 	 * List directories under package manger control.
 	 *
 	 * @returns The recognized package directories.
 	 */
 	protected async _packageDirectories() {
-		this._assertLoaded();
+		this.assertLoaded();
 
 		return (await readdir(this.path, {withFileTypes: true}))
 			.filter(e => !e.name.startsWith('.') && e.isDirectory())
@@ -1594,7 +1308,7 @@ export class Manager {
 	 * @returns File contents as string.
 	 */
 	protected async _requestPackages() {
-		this._assertActive();
+		this.assertActive();
 		const fetch = this._assertFetch();
 
 		const url = this.packagesUrl;
@@ -1619,7 +1333,7 @@ export class Manager {
 	 * @returns Update report.
 	 */
 	protected async _updatePackages() {
-		this._assertActive();
+		this.assertActive();
 
 		// Read data, update list, write list to file, return report.
 		const data = await this._requestPackages();

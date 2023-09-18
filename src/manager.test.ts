@@ -174,42 +174,7 @@ interface IPackageEventLog {
  * Manager subclass with some extra methods for testing.
  */
 class ManagerTest extends Manager {
-	/**
-	 * Test that code throws during _exclusiveAsync.
-	 *
-	 * @param func Test function.
-	 */
-	public async $testExclusiveAsync(func: (self: this) => Promise<unknown>) {
-		const err = await this._exclusiveAsync(async () => {
-			try {
-				await func.call(this, this);
-			} catch (err) {
-				return err as unknown;
-			}
-			throw new Error('Failed to get error');
-		});
-		ok(err);
-		strictEqual((err as Error).message, 'Already running exclusive method');
-	}
-
-	/**
-	 * Test that code throws during _exclusiveSync.
-	 *
-	 * @param func Test function.
-	 */
-	public $testExclusiveSync(func: (self: this) => unknown) {
-		// eslint-disable-next-line no-sync
-		const err = this._exclusiveSync(() => {
-			try {
-				func.call(this, this);
-			} catch (err) {
-				return err as unknown;
-			}
-			throw new Error('Failed to get error');
-		});
-		ok(err);
-		strictEqual((err as Error).message, 'Already running exclusive method');
-	}
+	// None currently.
 }
 
 /**
@@ -555,33 +520,6 @@ function managerTestNotLoadedSync(func: (manager: ManagerTest) => unknown) {
 }
 
 /**
- * Run exclusive async test.
- *
- * @param func Test function.
- * @returns Spec handler.
- */
-function managerTestExclusiveAsync(
-	func: (manager: ManagerTest) => Promise<unknown>
-) {
-	return managerTestOneWith(null, async manager => {
-		await manager.$testExclusiveAsync(func);
-	});
-}
-
-/**
- * Run exclusive sync test.
- *
- * @param func Test function.
- * @returns Spec handler.
- */
-function managerTestExclusiveSync(func: (manager: ManagerTest) => unknown) {
-	return managerTestOneWith(null, manager => {
-		// eslint-disable-next-line no-sync
-		manager.$testExclusiveSync(func);
-	});
-}
-
-/**
  * Tests for methods, async.
  *
  * @param func Function to test method.
@@ -591,8 +529,6 @@ function testMethodAsync(
 	func: (manager: ManagerTest) => Promise<unknown>,
 	loaded = true
 ) {
-	void it('exclusive', managerTestExclusiveAsync(func));
-
 	void it('not active', managerTestNotActiveAsync(func));
 
 	if (loaded) {
@@ -610,9 +546,6 @@ function testMethodSync(
 	func: (manager: ManagerTest) => unknown,
 	loaded = true
 ) {
-	// eslint-disable-next-line no-sync
-	void it('exclusive', managerTestExclusiveSync(func));
-
 	// eslint-disable-next-line no-sync
 	void it('not active', managerTestNotActiveSync(func));
 
@@ -745,26 +678,6 @@ void describe('manager', () => {
 						(err as Error).message,
 						'Instance uninitialized'
 					);
-				})
-			);
-
-			void it(
-				'init exclusive',
-				managerTestOne(JSON.stringify(packages), async manager => {
-					await manager.$testExclusiveAsync(async () => {
-						await manager.init();
-					});
-				})
-			);
-
-			void it(
-				'destroy exclusive',
-				managerTestOne(JSON.stringify(packages), async manager => {
-					await manager.init();
-					await manager.$testExclusiveAsync(async () => {
-						await manager.destroy();
-					});
-					await manager.destroy();
 				})
 			);
 
