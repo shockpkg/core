@@ -12,7 +12,6 @@ import {Server} from 'node:http';
 import express from 'express';
 
 import {IPackageDownloadProgress, Manager} from './manager';
-import {Package} from './package';
 
 const withTemp = (i => async (func: (path: string) => Promise<unknown>) => {
 	const path = `./spec/tmp/manager/${i++}`;
@@ -756,14 +755,14 @@ void describe('manager', () => {
 						const statTmpPath = await lstat(manager.path);
 						strictEqual(statTmpPath.isDirectory(), true);
 
-						const statMetaDir = await lstat(manager.pathMeta);
+						const statMetaDir = await lstat(manager.pathToMeta());
 						strictEqual(statMetaDir.isDirectory(), true);
 					});
 
 					const statTmpPath = await lstat(manager.path);
 					strictEqual(statTmpPath.isDirectory(), true);
 
-					const statMetaDir = await lstat(manager.pathMeta);
+					const statMetaDir = await lstat(manager.pathToMeta());
 					strictEqual(statMetaDir.isDirectory(), true);
 				})
 			);
@@ -1100,38 +1099,6 @@ void describe('manager', () => {
 					ok(manager.packageByUnique(packageSingle.sha256));
 					ok(manager.packageByUnique(packageSingle.sha1));
 					ok(manager.packageByUnique(packageSingle.md5));
-				})
-			);
-		});
-
-		void describe('packageIsMember', () => {
-			const packageSingleFake = new Package(packageSingle);
-
-			// eslint-disable-next-line no-sync
-			testMethodSync(manager =>
-				manager.packageIsMember(packageSingleFake)
-			);
-
-			void it(
-				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
-					await manager.update();
-
-					strictEqual(
-						manager.packageIsMember(packageSingleFake),
-						false
-					);
-
-					const packageSingleReal = manager.packageByName(
-						packageSingle.name
-					);
-					ok(packageSingleReal);
-					if (packageSingleReal) {
-						strictEqual(
-							manager.packageIsMember(packageSingleReal),
-							true
-						);
-					}
 				})
 			);
 		});

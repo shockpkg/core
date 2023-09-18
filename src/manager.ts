@@ -300,30 +300,12 @@ export class Manager {
 	}
 
 	/**
-	 * Packages file path.
-	 *
-	 * @returns The path.
-	 */
-	public get pathMetaPackages() {
-		return this.pathToMeta(this.packagesFile);
-	}
-
-	/**
 	 * Meta directory.
 	 *
 	 * @returns The directory.
 	 */
 	public get metaDir() {
 		return META_DIR;
-	}
-
-	/**
-	 * Meta directory path for root path.
-	 *
-	 * @returns The path.
-	 */
-	public get pathMeta() {
-		return this.pathToMeta();
 	}
 
 	/**
@@ -496,18 +478,6 @@ export class Manager {
 	}
 
 	/**
-	 * Check if package is in packages collection.
-	 *
-	 * @param pkg Package instance.
-	 * @returns If the package instance is present.
-	 */
-	public packageIsMember(pkg: Package) {
-		this.assertLoaded();
-
-		return this._packages.has(pkg);
-	}
-
-	/**
 	 * Read package install receipt.
 	 *
 	 * @param pkg The package.
@@ -584,7 +554,11 @@ export class Manager {
 	public async update() {
 		this.assertActive();
 
-		return this._updatePackages();
+		// Read data, update list, write list to file, return report.
+		const data = await this._requestPackages();
+		const report = this._packages.update(data);
+		await this._packages.write();
+		return report;
 	}
 
 	/**
@@ -698,7 +672,7 @@ export class Manager {
 	public async install(pkg: PackageLike) {
 		this.assertLoaded();
 		const pkgO = (pkg = this._asPackage(pkg));
-		const fetch = this._assertFetch();
+		const fetch = this._ensureFetch();
 
 		// If current version is installed, skip.
 		const installed = await this.isCurrent(pkg);
@@ -1149,22 +1123,11 @@ export class Manager {
 	}
 
 	/**
-	 * Assert the package is in packages collection.
-	 *
-	 * @param pkg Package instance.
-	 */
-	protected _assertpackageIsMember(pkg: Package) {
-		this.assertLoaded();
-
-		this._packages.assertHas(pkg);
-	}
-
-	/**
-	 * Assert and get fetch-like function if set.
+	 * Ensure fetch-like function is set.
 	 *
 	 * @returns The fetch-like function.
 	 */
-	protected _assertFetch(): IFetch {
+	protected _ensureFetch(): IFetch {
 		const {fetch} = this;
 		if (!fetch) {
 			throw new Error('Default fetch not available');
@@ -1193,7 +1156,7 @@ export class Manager {
 	 */
 	protected async _requestPackages() {
 		this.assertActive();
-		const fetch = this._assertFetch();
+		const fetch = this._ensureFetch();
 
 		const url = this.packagesUrl;
 		const response = await fetch(url, {
@@ -1212,26 +1175,11 @@ export class Manager {
 	}
 
 	/**
-	 * Update the packages list.
-	 *
-	 * @returns Update report.
-	 */
-	protected async _updatePackages() {
-		this.assertActive();
-
-		// Read data, update list, write list to file, return report.
-		const data = await this._requestPackages();
-		const report = this._packages.update(data);
-		await this._packages.write();
-		return report;
-	}
-
-	/**
 	 * Ensure base directories exists.
 	 */
 	protected async _ensureDirs() {
 		await mkdir(this.path, {recursive: true});
-		await mkdir(this.pathMeta, {recursive: true});
+		await mkdir(this.pathToMeta(), {recursive: true});
 	}
 
 	/**
@@ -1252,6 +1200,6 @@ export class Manager {
 	 * @returns Packages instance.
 	 */
 	protected _createPackages() {
-		return new Packages(this.pathMetaPackages);
+		return new Packages(this.pathToMeta(this.packagesFile));
 	}
 }
