@@ -11,9 +11,8 @@ import {Server} from 'node:http';
 
 import express from 'express';
 
-import {Manager} from './manager';
+import {IPackageDownloadProgress, Manager} from './manager';
 import {Package} from './package';
-import {IPackageDownloadProgress} from './types';
 
 const withTemp = (i => async (func: (path: string) => Promise<unknown>) => {
 	const path = `./spec/tmp/manager/${i++}`;

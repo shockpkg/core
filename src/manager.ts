@@ -31,22 +31,143 @@ import {Dispatcher} from './dispatcher';
 import {EmptyStream, SliceStream, WriterStream} from './stream';
 import {Package} from './package';
 import {Packages} from './packages';
-import {
-	IFetch,
-	IPackageCleanupAfter,
-	IPackageCleanupBefore,
-	IPackageDownloadAfter,
-	IPackageDownloadBefore,
-	IPackageDownloadProgress,
-	IPackageInstallAfter,
-	IPackageInstallBefore,
-	IPackageInstallCurrent,
-	IPackageInstalled,
-	IPackageReceipt,
-	IPackageRemovedObsolete,
-	PackageLike
-} from './types';
+import {IFetch} from './types';
 import {NAME, VERSION} from './meta';
+
+export type PackageLike = Package | string;
+
+export interface IPackageReceipt {
+	//
+	/**
+	 * Package name.
+	 */
+	name: string;
+
+	/**
+	 * File name.
+	 */
+	file: string;
+
+	/**
+	 * File size.
+	 */
+	size: number;
+
+	/**
+	 * SHA256 hash of the file contents.
+	 */
+	sha256: string;
+
+	/**
+	 * Source, URL for root or file path for children.
+	 */
+	source: string;
+}
+
+export interface IPackageInstallBefore {
+	//
+	/**
+	 * Package instance.
+	 */
+	package: Package;
+}
+
+export interface IPackageInstallAfter {
+	//
+	/**
+	 * Package instance.
+	 */
+	package: Package;
+}
+
+export interface IPackageInstallCurrent {
+	//
+	/**
+	 * Package instance.
+	 */
+	package: Package;
+}
+
+export interface IPackageDownloadBefore {
+	//
+	/**
+	 * Package instance.
+	 */
+	package: Package;
+}
+
+export interface IPackageDownloadAfter {
+	//
+	/**
+	 * Package instance.
+	 */
+	package: Package;
+}
+
+export interface IPackageDownloadProgress {
+	//
+	/**
+	 * Package instance.
+	 */
+	package: Package;
+
+	/**
+	 * Progress total.
+	 */
+	total: number;
+
+	/**
+	 * Progress amount.
+	 */
+	amount: number;
+}
+
+export interface IPackageCleanupBefore {
+	//
+	/**
+	 * Package name.
+	 */
+	package: string;
+}
+
+export interface IPackageCleanupAfter {
+	//
+	/**
+	 * Package name.
+	 */
+	package: string;
+
+	/**
+	 * Package removed.
+	 */
+	removed: boolean;
+}
+
+export interface IPackageInstalled {
+	//
+	/**
+	 * Package installed.
+	 */
+	package: Package;
+
+	/**
+	 * List of packages processed to complete the install.
+	 */
+	install: Package[];
+}
+
+export interface IPackageRemovedObsolete {
+	//
+	/**
+	 * Package removed.
+	 */
+	package: string;
+
+	/**
+	 * Removed or already removed.
+	 */
+	removed: boolean;
+}
 
 /**
  * Package manager.

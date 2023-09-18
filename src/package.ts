@@ -1,7 +1,53 @@
 import {Transform} from 'node:stream';
 import {createInflateRaw as zlibCreateInflateRaw} from 'node:zlib';
 
-import {IPackagesListPackage} from './types';
+export interface IPackagesListPackage {
+	//
+	/**
+	 * Package name.
+	 */
+	name: string;
+
+	/**
+	 * File name.
+	 */
+	file: string;
+
+	/**
+	 * File size.
+	 */
+	size: number;
+
+	/**
+	 * SHA256 hash of the file contents.
+	 */
+	sha256: string;
+
+	/**
+	 * SHA1 hash of the file contents.
+	 */
+	sha1: string;
+
+	/**
+	 * MD5 hash of the file contents.
+	 */
+	md5: string;
+
+	/**
+	 * Source, URL for root or file path for children.
+	 */
+	source: string;
+
+	/**
+	 * Optional child package list.
+	 */
+	packages?: IPackagesListPackage[];
+
+	/**
+	 * Zipped info if a child package or null if a root package.
+	 */
+	zipped?: string;
+}
 
 /**
  * Package object.

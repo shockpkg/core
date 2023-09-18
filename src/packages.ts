@@ -1,8 +1,43 @@
 import {access, readFile, rename, rm, writeFile} from 'node:fs/promises';
 
-import {Package} from './package';
-import {IPackagesList, IPackagesListPackage, IPackageUpdated} from './types';
+import {IPackagesListPackage, Package} from './package';
 import {TEMP_EXT} from './constants';
+
+export interface IPackageUpdated {
+	//
+	/**
+	 * Package name.
+	 */
+	name: string;
+
+	/**
+	 * File name.
+	 */
+	file: string;
+
+	/**
+	 * File size.
+	 */
+	size: number;
+
+	/**
+	 * SHA256 hash of the file contents.
+	 */
+	sha256: string;
+}
+
+export interface IPackagesList {
+	//
+	/**
+	 * Format version.
+	 */
+	format: string;
+
+	/**
+	 * Package list.
+	 */
+	packages: IPackagesListPackage[];
+}
 
 /**
  * Packages object.
