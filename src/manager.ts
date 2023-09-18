@@ -287,11 +287,6 @@ export class Manager {
 	protected _destroyed = false;
 
 	/**
-	 * Exclusive access flag.
-	 */
-	protected _exclusive = false;
-
-	/**
 	 * Root path.
 	 */
 	protected readonly _path: string;
@@ -1090,46 +1085,6 @@ export class Manager {
 	}
 
 	/**
-	 * Obtain exclusive access for the duration of a syncronous callback.
-	 *
-	 * @param func Syncronous function.
-	 * @returns Return value of the syncronous callback.
-	 */
-	protected _exclusiveSync<T>(func: (self: this) => T): T {
-		this._assertNotExclusive();
-
-		this._exclusive = true;
-		let r: T;
-		try {
-			r = func.call(this, this) as T;
-		} finally {
-			this._exclusive = false;
-		}
-		return r;
-	}
-
-	/**
-	 * Obtain exclusive access for the duration of a asyncronous callback.
-	 *
-	 * @param func Asyncronous function.
-	 * @returns Return value of the asyncronous callback.
-	 */
-	protected async _exclusiveAsync<T>(
-		func: (self: this) => Promise<T>
-	): Promise<T> {
-		this._assertNotExclusive();
-
-		this._exclusive = true;
-		let r: T;
-		try {
-			r = (await func.call(this, this)) as T;
-		} finally {
-			this._exclusive = false;
-		}
-		return r;
-	}
-
-	/**
 	 * Get package object by object, name, or hash.
 	 * If package object is passed, check that object is known.
 	 * Throw error if package is unknown.
@@ -1252,15 +1207,6 @@ export class Manager {
 	protected _assertNotDestroyed() {
 		if (this._destroyed) {
 			throw new Error('Instance destroyed');
-		}
-	}
-
-	/**
-	 * Assert not current running exclusive method.
-	 */
-	protected _assertNotExclusive() {
-		if (this._exclusive) {
-			throw new Error('Already running exclusive method');
 		}
 	}
 
