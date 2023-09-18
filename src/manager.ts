@@ -560,7 +560,7 @@ export class Manager {
 	public async packageInstallReceipt(pkg: PackageLike) {
 		this.assertLoaded();
 
-		const name = this._packageToName(pkg, false);
+		const name = this._asName(pkg);
 		const pkgf = this.pathToPackageMeta(name, this.packageFile);
 
 		const r = await readFile(pkgf, 'utf8')
@@ -580,7 +580,7 @@ export class Manager {
 	 */
 	public async packageInstallFile(pkg: PackageLike) {
 		this.assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		pkg = this._asPackage(pkg);
 
 		const data = await this.packageInstallReceipt(pkg);
 		return this.pathToPackage(pkg, data.file);
@@ -593,7 +593,7 @@ export class Manager {
 	 */
 	public async packageInstallVerify(pkg: PackageLike) {
 		this.assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		pkg = this._asPackage(pkg);
 
 		const data = await this.packageInstallReceipt(pkg);
 		const {sha256, file, size} = data;
@@ -639,7 +639,7 @@ export class Manager {
 	 */
 	public async isInstalled(pkg: PackageLike) {
 		this.assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		pkg = this._asPackage(pkg);
 
 		try {
 			await this.packageInstallReceipt(pkg);
@@ -657,7 +657,7 @@ export class Manager {
 	 */
 	public async isCurrent(pkg: PackageLike) {
 		this.assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		pkg = this._asPackage(pkg);
 
 		let data: IPackageReceipt | null = null;
 		try {
@@ -741,7 +741,7 @@ export class Manager {
 	 */
 	public async install(pkg: PackageLike) {
 		this.assertLoaded();
-		const pkgO = (pkg = this._packageToPackage(pkg));
+		const pkgO = (pkg = this._asPackage(pkg));
 		const fetch = this._assertFetch();
 
 		// If current version is installed, skip.
@@ -1066,8 +1066,7 @@ export class Manager {
 	public pathToPackage(pkg: PackageLike, ...parts: string[]) {
 		this.assertActive();
 
-		const name = this._packageToName(pkg, false);
-		return this.pathTo(name, ...parts);
+		return this.pathTo(this._asName(pkg), ...parts);
 	}
 
 	/**
@@ -1080,59 +1079,43 @@ export class Manager {
 	public pathToPackageMeta(pkg: PackageLike, ...parts: string[]) {
 		this.assertActive();
 
-		const name = this._packageToName(pkg, false);
-		return this.pathTo(name, this.metaDir, ...parts);
+		return this.pathTo(this._asName(pkg), this.metaDir, ...parts);
 	}
 
 	/**
 	 * Get package object by object, name, or hash.
-	 * If package object is passed, check that object is known.
 	 * Throw error if package is unknown.
 	 *
 	 * @param pkg The package.
 	 * @returns Package object.
 	 */
-	protected _packageToPackage(pkg: PackageLike) {
+	protected _asPackage(pkg: PackageLike) {
 		this.assertLoaded();
 
-		let r: Package;
 		if (typeof pkg === 'string') {
 			const p = this.packageByUnique(pkg);
 			if (!p) {
 				throw new Error(`Unknown package: ${pkg}`);
 			}
-			r = p;
-		} else {
-			this._assertpackageIsMember(pkg);
-			r = pkg;
+			return p;
 		}
-		return r;
+		return pkg;
 	}
 
 	/**
 	 * Get package name by object, name, or hash.
-	 * If package object is passed, check that object is known.
-	 * If string is passed and unknown, returns string.
+	 * If package object is passed, uses name from the object.
+	 * If string is passed and unknown, returns that same string.
 	 *
 	 * @param pkg The package.
-	 * @param mustExist Must exist.
 	 * @returns Package object.
 	 */
-	protected _packageToName(pkg: PackageLike, mustExist = true) {
+	protected _asName(pkg: PackageLike) {
 		this.assertLoaded();
 
-		let r: string;
-		if (typeof pkg === 'string') {
-			const pkgObj = this.packageByUnique(pkg);
-			if (!pkgObj && mustExist) {
-				throw new Error(`Unknown package: ${pkg}`);
-			}
-			r = pkgObj ? pkgObj.name : pkg;
-		} else {
-			this._assertpackageIsMember(pkg);
-			r = pkg.name;
-		}
-		return r;
+		return typeof pkg === 'string'
+			? this.packageByUnique(pkg)?.name ?? pkg
+			: pkg.name;
 	}
 
 	/**
@@ -1142,7 +1125,7 @@ export class Manager {
 	 */
 	protected async _packageMetaReceiptWrite(pkg: PackageLike) {
 		this.assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		pkg = this._asPackage(pkg);
 
 		const pkgf = this.pathToPackageMeta(pkg, this.packageFile);
 		const pkgfTmp = `${pkgf}${TEMP_EXT}`;
@@ -1164,7 +1147,7 @@ export class Manager {
 	// eslint-disable-next-line @typescript-eslint/require-await
 	protected async _packageMetaReceiptFromPackage(pkg: PackageLike) {
 		this.assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		pkg = this._asPackage(pkg);
 
 		const r: IPackageReceipt = {
 			name: pkg.name,
@@ -1183,7 +1166,7 @@ export class Manager {
 	 */
 	protected async _packageDirsEnsure(pkg: PackageLike) {
 		this.assertLoaded();
-		pkg = this._packageToPackage(pkg);
+		pkg = this._asPackage(pkg);
 
 		const dir = this.pathToPackage(pkg);
 		const dirMeta = this.pathToPackageMeta(pkg);
