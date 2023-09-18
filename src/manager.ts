@@ -671,7 +671,7 @@ export class Manager {
 	 */
 	public async install(pkg: PackageLike) {
 		this.assertLoaded();
-		const pkgO = (pkg = this._asPackage(pkg));
+		pkg = this._asPackage(pkg);
 		const fetch = this._ensureFetch();
 
 		// If current version is installed, skip.
@@ -742,20 +742,20 @@ export class Manager {
 			});
 
 			this.eventPackageDownloadBefore.trigger({
-				package: pkgO
+				package: pkg
 			});
 
 			this.eventPackageDownloadProgress.trigger({
-				package: pkgO,
-				total: pkgO.size,
+				package: pkg,
+				total: pkg.size,
 				amount: 0
 			});
 
 			// Create output file, monitoring write progress.
 			output.on('wrote', () => {
 				this.eventPackageDownloadProgress.trigger({
-					package: pkgO,
-					total: pkgO.size,
+					package: pkg as Package,
+					total: (pkg as Package).size,
 					amount: output.bytesWritten
 				});
 			});
@@ -847,7 +847,7 @@ export class Manager {
 			}
 
 			this.eventPackageDownloadAfter.trigger({
-				package: pkgO
+				package: pkg
 			});
 
 			// Move the final file into place and write package file.
