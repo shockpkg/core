@@ -1144,8 +1144,7 @@ export class Manager {
 		this.assertLoaded();
 		pkg = this._packageToPackage(pkg);
 
-		const name = this._packageToName(pkg);
-		const pkgf = this.pathToPackageMeta(name, this.packageFile);
+		const pkgf = this.pathToPackageMeta(pkg, this.packageFile);
 		const pkgfTmp = `${pkgf}${TEMP_EXT}`;
 
 		const receipt = await this._packageMetaReceiptFromPackage(pkg);
