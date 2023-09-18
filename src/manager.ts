@@ -174,6 +174,11 @@ export interface IPackageRemovedObsolete {
  */
 export class Manager {
 	/**
+	 * Root path.
+	 */
+	public readonly path: string;
+
+	/**
 	 * The default headers for HTTP requests.
 	 */
 	public headers: {[header: string]: string} = {
@@ -242,39 +247,9 @@ export class Manager {
 	public readonly eventPackageListError = new Dispatcher<Error>(this);
 
 	/**
-	 * Packages URL.
+	 * Packages instance.
 	 */
-	protected readonly _packagesUrl: string = PACKAGES_URL;
-
-	/**
-	 * Packages file.
-	 */
-	protected readonly _packagesFile: string = PACKAGES_FILE;
-
-	/**
-	 * Package file.
-	 */
-	protected readonly _packageFile: string = PACKAGE_FILE;
-
-	/**
-	 * Main directory.
-	 */
-	protected readonly _mainDir: string = MAIN_DIR;
-
-	/**
-	 * Meta directory.
-	 */
-	protected readonly _metaDir: string = META_DIR;
-
-	/**
-	 * Path environment variable name.
-	 */
-	protected readonly _pathEnv: string = PATH_ENV;
-
-	/**
-	 * Packages URL environment variable name.
-	 */
-	protected readonly _packagesUrlEnv: string = PACKAGES_URL_ENV;
+	protected readonly _packages: Packages;
 
 	/**
 	 * Inited flag.
@@ -287,33 +262,13 @@ export class Manager {
 	protected _destroyed = false;
 
 	/**
-	 * Root path.
-	 */
-	protected readonly _path: string;
-
-	/**
-	 * Packages instance.
-	 */
-	protected readonly _packages: Packages;
-
-	/**
 	 * Manager constructor.
 	 *
 	 * @param path The path, defaults to environment variable or relative.
 	 */
 	constructor(path: string | null = null) {
-		this._path = this._createPath(path);
-		this._packagesUrl = this._createPackagesUrl(this._packagesUrl);
+		this.path = this._createPath(path);
 		this._packages = this._createPackages();
-	}
-
-	/**
-	 * Root path.
-	 *
-	 * @returns The path.
-	 */
-	public get path() {
-		return this._path;
 	}
 
 	/**
@@ -322,7 +277,8 @@ export class Manager {
 	 * @returns The URL.
 	 */
 	public get packagesUrl() {
-		return this._packagesUrl;
+		// eslint-disable-next-line no-process-env
+		return process.env[PACKAGES_URL_ENV] || PACKAGES_URL;
 	}
 
 	/**
@@ -331,7 +287,7 @@ export class Manager {
 	 * @returns The file.
 	 */
 	public get packagesFile() {
-		return this._packagesFile;
+		return PACKAGES_FILE;
 	}
 
 	/**
@@ -340,7 +296,7 @@ export class Manager {
 	 * @returns The path.
 	 */
 	public get packageFile() {
-		return this._packageFile;
+		return PACKAGE_FILE;
 	}
 
 	/**
@@ -358,7 +314,7 @@ export class Manager {
 	 * @returns The directory.
 	 */
 	public get metaDir() {
-		return this._metaDir;
+		return META_DIR;
 	}
 
 	/**
@@ -1287,18 +1243,7 @@ export class Manager {
 	protected _createPath(path: string | null) {
 		// Use specified, or environment variable, or relative default.
 		// eslint-disable-next-line no-process-env
-		return path || process.env[this._pathEnv] || this._mainDir;
-	}
-
-	/**
-	 * Create the packages URL.
-	 *
-	 * @param defaultUrl The default URL if the environment variable not set.
-	 * @returns Packages URL.
-	 */
-	protected _createPackagesUrl(defaultUrl: string) {
-		// eslint-disable-next-line no-process-env
-		return process.env[this._packagesUrlEnv] || defaultUrl;
+		return path || process.env[PATH_ENV] || MAIN_DIR;
 	}
 
 	/**

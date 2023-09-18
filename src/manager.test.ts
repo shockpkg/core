@@ -397,10 +397,9 @@ function managerTest(
 		 * Manager subclass for testing against local test server.
 		 */
 		class ManagerTestLocal extends ManagerTest {
-			/**
-			 * Overridden package URL for local server.
-			 */
-			protected _packagesUrl = packagesUrl;
+			public get packagesUrl() {
+				return packagesUrl;
+			}
 		}
 
 		try {
