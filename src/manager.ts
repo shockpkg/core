@@ -848,23 +848,6 @@ export class Manager {
 	}
 
 	/**
-	 * List package parent packages.
-	 *
-	 * @param pkg The package.
-	 * @returns Packages list.
-	 */
-	protected _packageParents(pkg: PackageLike) {
-		this._assertLoaded();
-		pkg = this._packageToPackage(pkg);
-
-		const r: Package[] = [];
-		for (let p = pkg.parent; p; p = p.parent) {
-			r.push(p);
-		}
-		return r;
-	}
-
-	/**
 	 * Read package installed receipt.
 	 *
 	 * @param pkg The package.
