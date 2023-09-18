@@ -886,23 +886,6 @@ export class Manager {
 	}
 
 	/**
-	 * Check if package install receipt exists.
-	 *
-	 * @param pkg The package.
-	 * @returns True if the meta directory path, else false.
-	 */
-	protected async _packageMetaReceiptExists(pkg: PackageLike) {
-		this._assertLoaded();
-
-		const name = this._packageToName(pkg, false);
-		const pkgf = this._pathToPackageMeta(name, this.packageFile);
-		return access(pkgf).then(
-			() => true,
-			() => false
-		);
-	}
-
-	/**
 	 * Write package installed receipt.
 	 *
 	 * @param pkg The package.
@@ -1092,7 +1075,12 @@ export class Manager {
 		this._assertLoaded();
 		pkg = this._packageToPackage(pkg);
 
-		return this._packageMetaReceiptExists(pkg);
+		try {
+			await this._packageMetaReceiptRead(pkg);
+		} catch (err) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -1417,7 +1405,14 @@ export class Manager {
 	protected async _isObsolete(pkg: string) {
 		this._assertLoaded();
 
-		return !this._packageByName(pkg) && this._packageMetaReceiptExists(pkg);
+		return (
+			!pkg.startsWith('.') &&
+			!this._packageByName(pkg) &&
+			access(this._pathToPackageMeta(pkg)).then(
+				() => true,
+				() => false
+			)
+		);
 	}
 
 	/**
