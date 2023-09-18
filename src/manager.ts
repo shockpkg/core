@@ -151,7 +151,7 @@ export interface IPackageInstalled {
 	package: Package;
 
 	/**
-	 * List of packages processed to complete the install.
+	 * List of packages used in install, empty if already installed.
 	 */
 	install: Package[];
 }
