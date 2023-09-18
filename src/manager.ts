@@ -340,7 +340,7 @@ export class Manager {
 	 *
 	 * @returns Package itterator.
 	 */
-	public packageItter() {
+	public packages() {
 		// eslint-disable-next-line no-sync
 		return this._exclusiveSync(() => this._packageItter());
 	}

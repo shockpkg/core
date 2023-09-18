@@ -1068,7 +1068,7 @@ void describe('manager', () => {
 						packageNested
 					].map(p => p.name);
 
-					const listed = [...manager.packageItter()].map(p => p.name);
+					const listed = [...manager.packages()].map(p => p.name);
 
 					deepStrictEqual(listed, expected);
 				})
