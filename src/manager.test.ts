@@ -430,130 +430,6 @@ function managerTestOne(
 }
 
 /**
- * Run a test with manager instance under with, and specified packages list.
- *
- * @param packages Packages data or null.
- * @param func Test function.
- * @returns Spec handler.
- */
-function managerTestOneWith(
-	packages: string | null,
-	func: (manager: ManagerTest) => unknown
-) {
-	return managerTestOne(packages, async manager => {
-		await manager.with(async manager => {
-			await func(manager);
-		});
-	});
-}
-
-/**
- * Run not active test, async.
- *
- * @param func Test function.
- * @returns Spec handler.
- */
-function managerTestNotActiveAsync(
-	func: (manager: ManagerTest) => Promise<unknown>
-) {
-	return managerTestOne(null, async manager => {
-		const err = await promiseError(func(manager));
-		ok(err);
-		strictEqual((err as Error).message, 'Instance uninitialized');
-	});
-}
-
-/**
- * Run not active test, sync.
- *
- * @param func Test function.
- * @returns Spec handler.
- */
-function managerTestNotActiveSync(func: (manager: ManagerTest) => unknown) {
-	return managerTestOne(null, manager => {
-		let err: Error | null = null;
-		try {
-			func(manager);
-		} catch (ex) {
-			err = ex as Error;
-		}
-		ok(err);
-		strictEqual(err.message, 'Instance uninitialized');
-	});
-}
-
-/**
- * Run not loaded test, async.
- *
- * @param func Test function.
- * @returns Spec handler.
- */
-function managerTestNotLoadedAsync(
-	func: (manager: ManagerTest) => Promise<unknown>
-) {
-	return managerTestOneWith(null, async manager => {
-		const err = await promiseError(func(manager));
-		ok(err);
-		strictEqual((err as Error).message, 'Packages list not loaded');
-	});
-}
-
-/**
- * Run not loaded test, sync.
- *
- * @param func Test function.
- * @returns Spec handler.
- */
-function managerTestNotLoadedSync(func: (manager: ManagerTest) => unknown) {
-	return managerTestOneWith(null, manager => {
-		let err: Error | null = null;
-		try {
-			func(manager);
-		} catch (ex) {
-			err = ex as Error;
-		}
-		ok(err);
-		strictEqual(err.message, 'Packages list not loaded');
-	});
-}
-
-/**
- * Tests for methods, async.
- *
- * @param func Function to test method.
- * @param loaded Require loaded.
- */
-function testMethodAsync(
-	func: (manager: ManagerTest) => Promise<unknown>,
-	loaded = true
-) {
-	void it('not active', managerTestNotActiveAsync(func));
-
-	if (loaded) {
-		void it('not loaded', managerTestNotLoadedAsync(func));
-	}
-}
-
-/**
- * Tests for methods, sync.
- *
- * @param func Function to test method.
- * @param loaded Require loaded.
- */
-function testMethodSync(
-	func: (manager: ManagerTest) => unknown,
-	loaded = true
-) {
-	// eslint-disable-next-line no-sync
-	void it('not active', managerTestNotActiveSync(func));
-
-	if (loaded) {
-		// eslint-disable-next-line no-sync
-		void it('not loaded', managerTestNotLoadedSync(func));
-	}
-}
-
-/**
  * Events logger.
  *
  * @param manager Manager instance.
@@ -645,137 +521,10 @@ function eventsLogger(manager: ManagerTest, events: IPackageEventLog[] = []) {
 
 void describe('manager', () => {
 	void describe('Manager', () => {
-		void describe('init + destroy', () => {
-			void it(
-				'simple',
-				managerTestOne(null, async manager => {
-					await manager.init();
-					await manager.destroy();
-				})
-			);
-
-			void it(
-				'init once',
-				managerTestOne(null, async manager => {
-					await manager.init();
-					const err = await promiseError(manager.init());
-					ok(err);
-					strictEqual((err as Error).message, 'Instance initialized');
-					await manager.destroy();
-				})
-			);
-
-			void it(
-				'destroy once',
-				managerTestOne(null, async manager => {
-					await manager.init();
-					await manager.destroy();
-					const err = await promiseError(manager.destroy());
-					ok(err);
-					strictEqual(
-						(err as Error).message,
-						'Instance uninitialized'
-					);
-				})
-			);
-
-			void it(
-				'init destroy 2x',
-				managerTest(null, async (ManagerTest, path) => {
-					const manager1 = new ManagerTest(path);
-					await manager1.init();
-					await manager1.destroy();
-
-					const manager2 = new ManagerTest(path);
-					await manager2.init();
-					await manager2.destroy();
-				})
-			);
-
-			void it(
-				'init destroy 2x reuse',
-				managerTest(null, async (ManagerTest, path) => {
-					const manager = new ManagerTest(path);
-					await manager.init();
-					await manager.destroy();
-					await manager.init();
-					await manager.destroy();
-				})
-			);
-		});
-
-		void describe('with', () => {
-			void it(
-				'active',
-				managerTestOne(null, async manager => {
-					strictEqual(manager.active, false);
-					await manager.with(manager => {
-						strictEqual(manager.active, true);
-					});
-					strictEqual(manager.active, false);
-				})
-			);
-
-			void it(
-				'reuse',
-				managerTestOne(null, async manager => {
-					strictEqual(manager.active, false);
-					await manager.with(manager => {
-						strictEqual(manager.active, true);
-					});
-					await manager.with(manager => {
-						strictEqual(manager.active, true);
-					});
-					strictEqual(manager.active, false);
-				})
-			);
-
-			void it(
-				'throws',
-				managerTestOne(null, async manager => {
-					strictEqual(manager.active, false);
-					const thrown = new Error('With throws');
-					const err = await promiseError(
-						manager.with(manager => {
-							strictEqual(manager.active, true);
-							throw thrown;
-						})
-					);
-					strictEqual(err, thrown);
-					strictEqual(manager.active, false);
-				})
-			);
-
-			void it(
-				'directory',
-				managerTestOne(null, async manager => {
-					await manager.with(async manager => {
-						strictEqual(manager.active, true);
-
-						const statTmpPath = await lstat(manager.path);
-						strictEqual(statTmpPath.isDirectory(), true);
-
-						const statMetaDir = await lstat(manager.pathToMeta());
-						strictEqual(statMetaDir.isDirectory(), true);
-					});
-
-					const statTmpPath = await lstat(manager.path);
-					strictEqual(statTmpPath.isDirectory(), true);
-
-					const statMetaDir = await lstat(manager.pathToMeta());
-					strictEqual(statMetaDir.isDirectory(), true);
-				})
-			);
-		});
-
 		void describe('update', () => {
-			testMethodAsync(async manager => manager.update(), false);
-
 			void it(
 				'loaded',
 				managerTestOne(JSON.stringify(packages), async manager => {
-					await manager.init();
-					strictEqual(manager.loaded, false);
 					await manager.update();
 					strictEqual(manager.loaded, true);
 				})
@@ -787,16 +536,13 @@ void describe('manager', () => {
 					JSON.stringify(packages),
 					async (ManagerTest, path) => {
 						const manager1 = new ManagerTest(path);
-						await manager1.with(async manager => {
-							strictEqual(manager.loaded, false);
-							await manager.update();
-							strictEqual(manager.loaded, true);
-						});
+						strictEqual(manager1.loaded, false);
+						await manager1.update();
+						strictEqual(manager1.loaded, true);
 
 						const manager2 = new ManagerTest(path);
-						await manager2.with(manager => {
-							strictEqual(manager.loaded, true);
-						});
+						await manager2.load();
+						strictEqual(manager2.loaded, true);
 					}
 				)
 			);
@@ -818,9 +564,7 @@ void describe('manager', () => {
 
 						await writePackage(manager, mod);
 
-						const report = await manager.with(async manager =>
-							manager.update()
-						);
+						const report = await manager.update();
 
 						deepStrictEqual(report.updated, []);
 						deepStrictEqual(
@@ -843,9 +587,7 @@ void describe('manager', () => {
 
 						await writePackage(manager, mod);
 
-						const report = await manager.with(async manager =>
-							manager.update()
-						);
+						const report = await manager.update();
 
 						deepStrictEqual(report.updated, []);
 						deepStrictEqual(report.added, []);
@@ -864,9 +606,7 @@ void describe('manager', () => {
 						pkg.file += '.old';
 						await writePackage(manager, mod);
 
-						const report = await manager.with(async manager =>
-							manager.update()
-						);
+						const report = await manager.update();
 
 						deepStrictEqual(
 							report.updated.map(p => p.name),
@@ -885,9 +625,7 @@ void describe('manager', () => {
 						pkg.size++;
 						await writePackage(manager, mod);
 
-						const report = await manager.with(async manager =>
-							manager.update()
-						);
+						const report = await manager.update();
 
 						deepStrictEqual(
 							report.updated.map(p => p.name),
@@ -906,9 +644,7 @@ void describe('manager', () => {
 						pkg.sha256 = strReverse(pkg.sha256);
 						await writePackage(manager, mod);
 
-						const report = await manager.with(async manager =>
-							manager.update()
-						);
+						const report = await manager.update();
 
 						deepStrictEqual(
 							report.updated.map(p => p.name),
@@ -927,9 +663,7 @@ void describe('manager', () => {
 						pkg.source += '.old';
 						await writePackage(manager, mod);
 
-						const report = await manager.with(async manager =>
-							manager.update()
-						);
+						const report = await manager.update();
 
 						deepStrictEqual(report.updated, []);
 						deepStrictEqual(report.added, []);
@@ -943,18 +677,13 @@ void describe('manager', () => {
 						const mod = packagesCopy();
 						mod.format = '1.0';
 						await writePackage(manager, mod);
-						let errorMessage = '';
-						manager.eventPackageListError.on(err => {
-							errorMessage = err.message;
-						});
+						const error = (await promiseError(
+							manager.load()
+						)) as Error;
 
-						const loaded = await manager.with(
-							manager => manager.loaded
-						);
-
-						ok(!loaded);
+						ok(!manager.loaded);
 						strictEqual(
-							errorMessage,
+							error.message,
 							'Invalid format version minor: 1.0'
 						);
 					})
@@ -965,7 +694,7 @@ void describe('manager', () => {
 		void describe('packageItter', () => {
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					const expected = [
@@ -978,139 +707,120 @@ void describe('manager', () => {
 						packageNested
 					].map(p => p.name);
 
-					const listed = [...manager.packages()].map(p => p.name);
-
+					const listed = [];
+					for await (const {name} of manager.packages()) {
+						listed.push(name);
+					}
 					deepStrictEqual(listed, expected);
 				})
 			);
 		});
 
 		void describe('packageByName', () => {
-			// eslint-disable-next-line no-sync
-			testMethodSync(manager =>
-				manager.packageByName(packageSingle.name)
-			);
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					strictEqual(
-						manager.packageByName(packageObsoleteA.name),
+						await manager.packageByName(packageObsoleteA.name),
 						null
 					);
 
-					ok(manager.packageByName(packageSingle.name));
+					ok(await manager.packageByName(packageSingle.name));
 				})
 			);
 		});
 
 		void describe('packageBySha256', () => {
-			// eslint-disable-next-line no-sync
-			testMethodSync(manager =>
-				manager.packageBySha256(packageSingle.sha256)
-			);
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					strictEqual(
-						manager.packageBySha256(packageSingleMetaBad.sha256),
+						await manager.packageBySha256(
+							packageSingleMetaBad.sha256
+						),
 						null
 					);
 
-					ok(manager.packageBySha256(packageSingle.sha256));
+					ok(await manager.packageBySha256(packageSingle.sha256));
 				})
 			);
 		});
 
 		void describe('packageBySha1', () => {
-			// eslint-disable-next-line no-sync
-			testMethodSync(manager =>
-				manager.packageBySha1(packageSingle.sha1)
-			);
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					strictEqual(
-						manager.packageBySha1(packageSingleMetaBad.sha1),
+						await manager.packageBySha1(packageSingleMetaBad.sha1),
 						null
 					);
 
-					ok(manager.packageBySha1(packageSingle.sha1));
+					ok(await manager.packageBySha1(packageSingle.sha1));
 				})
 			);
 		});
 
 		void describe('packageByMd5', () => {
-			// eslint-disable-next-line no-sync
-			testMethodSync(manager => manager.packageByMd5(packageSingle.md5));
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					strictEqual(
-						manager.packageByMd5(packageSingleMetaBad.md5),
+						await manager.packageByMd5(packageSingleMetaBad.md5),
 						null
 					);
 
-					ok(manager.packageByMd5(packageSingle.md5));
+					ok(await manager.packageByMd5(packageSingle.md5));
 				})
 			);
 		});
 
 		void describe('packageByUnique', () => {
-			// eslint-disable-next-line no-sync
-			testMethodSync(manager =>
-				manager.packageByUnique(packageSingle.name)
-			);
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					strictEqual(
-						manager.packageByUnique(packageObsoleteA.name),
+						await manager.packageByUnique(packageObsoleteA.name),
 						null
 					);
 					strictEqual(
-						manager.packageByUnique(packageSingleMetaBad.sha256),
+						await manager.packageByUnique(
+							packageSingleMetaBad.sha256
+						),
 						null
 					);
 					strictEqual(
-						manager.packageByUnique(packageSingleMetaBad.sha1),
+						await manager.packageByUnique(
+							packageSingleMetaBad.sha1
+						),
 						null
 					);
 					strictEqual(
-						manager.packageByUnique(packageSingleMetaBad.md5),
+						await manager.packageByUnique(packageSingleMetaBad.md5),
 						null
 					);
 
-					ok(manager.packageByUnique(packageSingle.name));
-					ok(manager.packageByUnique(packageSingle.sha256));
-					ok(manager.packageByUnique(packageSingle.sha1));
-					ok(manager.packageByUnique(packageSingle.md5));
+					ok(await manager.packageByUnique(packageSingle.name));
+					ok(await manager.packageByUnique(packageSingle.sha256));
+					ok(await manager.packageByUnique(packageSingle.sha1));
+					ok(await manager.packageByUnique(packageSingle.md5));
 				})
 			);
 		});
 
 		void describe('isObsolete', () => {
-			testMethodAsync(async manager =>
-				manager.isObsolete(packageSingle.name)
-			);
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await managerEnsureDirs(manager, [
@@ -1149,13 +859,9 @@ void describe('manager', () => {
 		});
 
 		void describe('isInstalled', () => {
-			testMethodAsync(async manager =>
-				manager.isInstalled(packageSingle.name)
-			);
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await managerWritePackageMeta(
@@ -1182,13 +888,9 @@ void describe('manager', () => {
 		});
 
 		void describe('isCurrent', () => {
-			testMethodAsync(async manager =>
-				manager.isCurrent(packageSingle.name)
-			);
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await managerWritePackageMeta(
@@ -1215,11 +917,9 @@ void describe('manager', () => {
 		});
 
 		void describe('obsolete', () => {
-			testMethodAsync(async manager => manager.obsolete());
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await managerEnsureDirs(manager, [
@@ -1249,11 +949,9 @@ void describe('manager', () => {
 		});
 
 		void describe('cleanup', () => {
-			testMethodAsync(async manager => manager.cleanup());
-
 			void it(
 				'files',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await managerEnsureDirs(manager, [[unknownDirEmpty]]);
@@ -1300,7 +998,7 @@ void describe('manager', () => {
 
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await managerEnsureDirs(manager, [[unknownDirEmpty]]);
@@ -1339,7 +1037,7 @@ void describe('manager', () => {
 
 			void it(
 				'events',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await managerEnsureDirs(manager, [[unknownDirEmpty]]);
@@ -1390,13 +1088,9 @@ void describe('manager', () => {
 		});
 
 		void describe('remove', () => {
-			testMethodAsync(async manager =>
-				manager.remove(packageSingle.name)
-			);
-
 			void it(
 				'files',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await managerEnsureDirs(manager, [
@@ -1436,7 +1130,7 @@ void describe('manager', () => {
 
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await managerEnsureDirs(manager, [
@@ -1463,511 +1157,465 @@ void describe('manager', () => {
 		});
 
 		void describe('install', () => {
-			testMethodAsync(async manager =>
-				manager.install(packageSingle.name)
-			);
-
 			void describe('nested level: 0', () => {
 				void it(
 					'files',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							await manager.install(packageSingle.name);
+						await manager.install(packageSingle.name);
 
-							strictEqual(
-								await managerFileSha256(manager, [
-									packageSingle.name,
-									packageSingle.file
-								]),
-								packageSingle.sha256
-							);
-							strictEqual(
-								await managerFileExists(manager, [
-									packageSingle.name,
-									manager.metaDir,
-									manager.packageFile
-								]),
-								true
-							);
-						}
-					)
+						strictEqual(
+							await managerFileSha256(manager, [
+								packageSingle.name,
+								packageSingle.file
+							]),
+							packageSingle.sha256
+						);
+						strictEqual(
+							await managerFileExists(manager, [
+								packageSingle.name,
+								manager.metaDir,
+								manager.packageFile
+							]),
+							true
+						);
+					})
 				);
 
 				void it(
 					'return',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							const a = await manager.install(packageSingle.name);
-							const b = await manager.install(packageSingle.name);
+						const a = await manager.install(packageSingle.name);
+						const b = await manager.install(packageSingle.name);
 
-							const aValues = a.map(p => p.name);
-							deepStrictEqual(aValues, [packageSingle.name]);
-							deepStrictEqual(b, []);
-						}
-					)
+						const aValues = a.map(p => p.name);
+						deepStrictEqual(aValues, [packageSingle.name]);
+						deepStrictEqual(b, []);
+					})
 				);
 
 				void it(
 					'events',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							const events: IPackageEventLog[] = [];
-							const reset = eventsLogger(manager, events);
+						const events: IPackageEventLog[] = [];
+						const reset = eventsLogger(manager, events);
 
-							await manager.install(packageSingle.name);
-							deepStrictEqual(events, [
-								{
-									which: 'install-before',
-									package: 'package-single'
-								},
-								{
-									which: 'download-before',
-									package: 'package-single'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-single'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-single'
-								},
-								{
-									which: 'download-after',
-									package: 'package-single'
-								},
-								{
-									which: 'install-after',
-									package: 'package-single'
-								}
-							]);
+						await manager.install(packageSingle.name);
+						deepStrictEqual(events, [
+							{
+								which: 'install-before',
+								package: 'package-single'
+							},
+							{
+								which: 'download-before',
+								package: 'package-single'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-single'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-single'
+							},
+							{
+								which: 'download-after',
+								package: 'package-single'
+							},
+							{
+								which: 'install-after',
+								package: 'package-single'
+							}
+						]);
 
-							reset();
-							await manager.install(packageSingle.name);
-							deepStrictEqual(events, [
-								{
-									which: 'install-current',
-									package: 'package-single'
-								}
-							]);
-						}
-					)
+						reset();
+						await manager.install(packageSingle.name);
+						deepStrictEqual(events, [
+							{
+								which: 'install-current',
+								package: 'package-single'
+							}
+						]);
+					})
 				);
 			});
 
 			void describe('nested level: 1', () => {
 				void it(
 					'files',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							await manager.install(packageNested1.name);
+						await manager.install(packageNested1.name);
 
-							strictEqual(
-								await managerFileSha256(manager, [
-									packageNested1.name,
-									packageNested1.file
-								]),
-								packageNested1.sha256
-							);
-							strictEqual(
-								await managerFileExists(manager, [
-									packageNested1.name,
-									manager.metaDir,
-									manager.packageFile
-								]),
-								true
-							);
+						strictEqual(
+							await managerFileSha256(manager, [
+								packageNested1.name,
+								packageNested1.file
+							]),
+							packageNested1.sha256
+						);
+						strictEqual(
+							await managerFileExists(manager, [
+								packageNested1.name,
+								manager.metaDir,
+								manager.packageFile
+							]),
+							true
+						);
 
-							strictEqual(
-								await managerDirExists(manager, [
-									packageNested2.name
-								]),
-								false
-							);
-						}
-					)
+						strictEqual(
+							await managerDirExists(manager, [
+								packageNested2.name
+							]),
+							false
+						);
+					})
 				);
 
 				void it(
 					'return',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							const a = await manager.install(
-								packageNested1.name
-							);
-							const b = await manager.install(
-								packageNested1.name
-							);
+						const a = await manager.install(packageNested1.name);
+						const b = await manager.install(packageNested1.name);
 
-							const aValues = a.map(p => p.name);
-							deepStrictEqual(aValues, [
-								packageNested2.name,
-								packageNested1.name
-							]);
-							deepStrictEqual(b, []);
-						}
-					)
+						const aValues = a.map(p => p.name);
+						deepStrictEqual(aValues, [
+							packageNested2.name,
+							packageNested1.name
+						]);
+						deepStrictEqual(b, []);
+					})
 				);
 
 				void it(
 					'events',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							const events: IPackageEventLog[] = [];
-							const reset = eventsLogger(manager, events);
+						const events: IPackageEventLog[] = [];
+						const reset = eventsLogger(manager, events);
 
-							await manager.install(packageNested1.name);
-							deepStrictEqual(events, [
-								{
-									which: 'install-before',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'download-before',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'download-after',
-									package: 'package-nested-1'
-								},
-								{
-									which: 'install-after',
-									package: 'package-nested-1'
-								}
-							]);
+						await manager.install(packageNested1.name);
+						deepStrictEqual(events, [
+							{
+								which: 'install-before',
+								package: 'package-nested-1'
+							},
+							{
+								which: 'download-before',
+								package: 'package-nested-1'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested-1'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested-1'
+							},
+							{
+								which: 'download-after',
+								package: 'package-nested-1'
+							},
+							{
+								which: 'install-after',
+								package: 'package-nested-1'
+							}
+						]);
 
-							reset();
-							await manager.install(packageNested1.name);
-							deepStrictEqual(events, [
-								{
-									which: 'install-current',
-									package: 'package-nested-1'
-								}
-							]);
-						}
-					)
+						reset();
+						await manager.install(packageNested1.name);
+						deepStrictEqual(events, [
+							{
+								which: 'install-current',
+								package: 'package-nested-1'
+							}
+						]);
+					})
 				);
 			});
 
 			void describe('nested level: 2', () => {
 				void it(
 					'files',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							await manager.install(packageNested.name);
+						await manager.install(packageNested.name);
 
-							strictEqual(
-								await managerFileSha256(manager, [
-									packageNested.name,
-									packageNested.file
-								]),
-								packageNested.sha256
-							);
-							strictEqual(
-								await managerFileExists(manager, [
-									packageNested.name,
-									manager.metaDir,
-									manager.packageFile
-								]),
-								true
-							);
+						strictEqual(
+							await managerFileSha256(manager, [
+								packageNested.name,
+								packageNested.file
+							]),
+							packageNested.sha256
+						);
+						strictEqual(
+							await managerFileExists(manager, [
+								packageNested.name,
+								manager.metaDir,
+								manager.packageFile
+							]),
+							true
+						);
 
-							strictEqual(
-								await managerDirExists(manager, [
-									packageNested1.name
-								]),
-								false
-							);
+						strictEqual(
+							await managerDirExists(manager, [
+								packageNested1.name
+							]),
+							false
+						);
 
-							strictEqual(
-								await managerDirExists(manager, [
-									packageNested2.name
-								]),
-								false
-							);
-						}
-					)
+						strictEqual(
+							await managerDirExists(manager, [
+								packageNested2.name
+							]),
+							false
+						);
+					})
 				);
 
 				void it(
 					'return',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							const a = await manager.install(packageNested.name);
-							const b = await manager.install(packageNested.name);
+						const a = await manager.install(packageNested.name);
+						const b = await manager.install(packageNested.name);
 
-							const aValues = a.map(p => p.name);
-							deepStrictEqual(aValues, [
-								packageNested2.name,
-								packageNested1.name,
-								packageNested.name
-							]);
-							deepStrictEqual(b, []);
-						}
-					)
+						const aValues = a.map(p => p.name);
+						deepStrictEqual(aValues, [
+							packageNested2.name,
+							packageNested1.name,
+							packageNested.name
+						]);
+						deepStrictEqual(b, []);
+					})
 				);
 
 				void it(
 					'events',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							const events: IPackageEventLog[] = [];
-							const reset = eventsLogger(manager, events);
+						const events: IPackageEventLog[] = [];
+						const reset = eventsLogger(manager, events);
 
-							await manager.install(packageNested.name);
-							deepStrictEqual(events, [
-								{
-									which: 'install-before',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-before',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-after',
-									package: 'package-nested'
-								},
-								{
-									which: 'install-after',
-									package: 'package-nested'
-								}
-							]);
+						await manager.install(packageNested.name);
+						deepStrictEqual(events, [
+							{
+								which: 'install-before',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-before',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-after',
+								package: 'package-nested'
+							},
+							{
+								which: 'install-after',
+								package: 'package-nested'
+							}
+						]);
 
-							reset();
-							await manager.install(packageNested.name);
-							deepStrictEqual(events, [
-								{
-									which: 'install-current',
-									package: 'package-nested'
-								}
-							]);
-						}
-					)
+						reset();
+						await manager.install(packageNested.name);
+						deepStrictEqual(events, [
+							{
+								which: 'install-current',
+								package: 'package-nested'
+							}
+						]);
+					})
 				);
 			});
 
 			void describe('reuse closest: 1', () => {
 				void it(
 					'events',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							await manager.install(packageNested1.name);
-							strictEqual(
-								await managerFileSha256(manager, [
-									packageNested1.name,
-									packageNested1.file
-								]),
-								packageNested1.sha256
-							);
+						await manager.install(packageNested1.name);
+						strictEqual(
+							await managerFileSha256(manager, [
+								packageNested1.name,
+								packageNested1.file
+							]),
+							packageNested1.sha256
+						);
 
-							const events: IPackageEventLog[] = [];
-							const reset = eventsLogger(manager, events);
-							await manager.install(packageNested.name);
-							deepStrictEqual(events, [
-								{
-									which: 'install-before',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-before',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-after',
-									package: 'package-nested'
-								},
-								{
-									which: 'install-after',
-									package: 'package-nested'
-								}
-							]);
-							reset();
-						}
-					)
+						const events: IPackageEventLog[] = [];
+						const reset = eventsLogger(manager, events);
+						await manager.install(packageNested.name);
+						deepStrictEqual(events, [
+							{
+								which: 'install-before',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-before',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-after',
+								package: 'package-nested'
+							},
+							{
+								which: 'install-after',
+								package: 'package-nested'
+							}
+						]);
+						reset();
+					})
 				);
 			});
 
 			void describe('reuse closest: 2', () => {
 				void it(
 					'events',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							await manager.install(packageNested2.name);
-							strictEqual(
-								await managerFileSha256(manager, [
-									packageNested2.name,
-									packageNested2.file
-								]),
-								packageNested2.sha256
-							);
+						await manager.install(packageNested2.name);
+						strictEqual(
+							await managerFileSha256(manager, [
+								packageNested2.name,
+								packageNested2.file
+							]),
+							packageNested2.sha256
+						);
 
-							const events: IPackageEventLog[] = [];
-							const reset = eventsLogger(manager, events);
-							await manager.install(packageNested.name);
-							deepStrictEqual(events, [
-								{
-									which: 'install-before',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-before',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-after',
-									package: 'package-nested'
-								},
-								{
-									which: 'install-after',
-									package: 'package-nested'
-								}
-							]);
-							reset();
-						}
-					)
+						const events: IPackageEventLog[] = [];
+						const reset = eventsLogger(manager, events);
+						await manager.install(packageNested.name);
+						deepStrictEqual(events, [
+							{
+								which: 'install-before',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-before',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-after',
+								package: 'package-nested'
+							},
+							{
+								which: 'install-after',
+								package: 'package-nested'
+							}
+						]);
+						reset();
+					})
 				);
 			});
 
 			void describe('reuse closest: 2, outdated 1', () => {
 				void it(
 					'events',
-					managerTestOneWith(
-						JSON.stringify(packages),
-						async manager => {
-							await manager.update();
+					managerTestOne(JSON.stringify(packages), async manager => {
+						await manager.update();
 
-							await manager.install(packageNested2.name);
-							strictEqual(
-								await managerFileSha256(manager, [
-									packageNested2.name,
-									packageNested2.file
-								]),
-								packageNested2.sha256
-							);
+						await manager.install(packageNested2.name);
+						strictEqual(
+							await managerFileSha256(manager, [
+								packageNested2.name,
+								packageNested2.file
+							]),
+							packageNested2.sha256
+						);
 
-							await managerWritePackageMeta(
-								manager,
-								packageNested1MetaBad.name,
-								packageNested1MetaBad
-							);
-							deepStrictEqual(
-								(await manager.outdated()).map(p => p.name),
-								['package-nested-1']
-							);
+						await managerWritePackageMeta(
+							manager,
+							packageNested1MetaBad.name,
+							packageNested1MetaBad
+						);
+						deepStrictEqual(
+							(await manager.outdated()).map(p => p.name),
+							['package-nested-1']
+						);
 
-							const events: IPackageEventLog[] = [];
-							const reset = eventsLogger(manager, events);
-							await manager.install(packageNested.name);
-							deepStrictEqual(events, [
-								{
-									which: 'install-before',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-before',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-progress',
-									package: 'package-nested'
-								},
-								{
-									which: 'download-after',
-									package: 'package-nested'
-								},
-								{
-									which: 'install-after',
-									package: 'package-nested'
-								}
-							]);
-							reset();
+						const events: IPackageEventLog[] = [];
+						const reset = eventsLogger(manager, events);
+						await manager.install(packageNested.name);
+						deepStrictEqual(events, [
+							{
+								which: 'install-before',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-before',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-progress',
+								package: 'package-nested'
+							},
+							{
+								which: 'download-after',
+								package: 'package-nested'
+							},
+							{
+								which: 'install-after',
+								package: 'package-nested'
+							}
+						]);
+						reset();
 
-							deepStrictEqual(
-								(await manager.outdated()).map(p => p.name),
-								['package-nested-1']
-							);
-						}
-					)
+						deepStrictEqual(
+							(await manager.outdated()).map(p => p.name),
+							['package-nested-1']
+						);
+					})
 				);
 			});
 		});
 
 		void describe('outdated', () => {
-			testMethodAsync(async manager => manager.outdated());
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);
@@ -1987,11 +1635,9 @@ void describe('manager', () => {
 		});
 
 		void describe('upgrade', () => {
-			testMethodAsync(async manager => manager.upgrade());
-
 			void it(
 				'files',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);
@@ -2017,7 +1663,7 @@ void describe('manager', () => {
 
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);
@@ -2047,7 +1693,7 @@ void describe('manager', () => {
 
 			void it(
 				'events',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);
@@ -2097,11 +1743,9 @@ void describe('manager', () => {
 		});
 
 		void describe('installed', () => {
-			testMethodAsync(async manager => manager.installed());
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);
@@ -2122,13 +1766,9 @@ void describe('manager', () => {
 		});
 
 		void describe('packageInstallReceipt', () => {
-			testMethodAsync(async manager =>
-				manager.packageInstallReceipt(packageSingle.name)
-			);
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);
@@ -2164,13 +1804,9 @@ void describe('manager', () => {
 		});
 
 		void describe('packageInstallFile', () => {
-			testMethodAsync(async manager =>
-				manager.packageInstallFile(packageSingle.name)
-			);
-
 			void it(
 				'return',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);
@@ -2184,7 +1820,7 @@ void describe('manager', () => {
 					const filePath = await manager.packageInstallFile(
 						packageSingle.name
 					);
-					const filePathExpected = manager.pathToPackage(
+					const filePathExpected = await manager.pathToPackage(
 						packageSingle.name,
 						packageSingle.file
 					);
@@ -2192,7 +1828,7 @@ void describe('manager', () => {
 					const filePathBad = await manager.packageInstallFile(
 						packageNested1MetaBad.name
 					);
-					const filePathBadExpected = manager.pathToPackage(
+					const filePathBadExpected = await manager.pathToPackage(
 						packageNested1MetaBad.name,
 						packageNested1MetaBad.file
 					);
@@ -2205,13 +1841,9 @@ void describe('manager', () => {
 		});
 
 		void describe('packageInstallFile', () => {
-			testMethodAsync(async manager =>
-				manager.packageInstallVerify(packageSingle.name)
-			);
-
 			void it(
 				'installed',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);
@@ -2224,7 +1856,7 @@ void describe('manager', () => {
 
 			void it(
 				'not installed',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					const error = await promiseError(
@@ -2241,7 +1873,7 @@ void describe('manager', () => {
 
 			void it(
 				'bad size',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);
@@ -2266,7 +1898,7 @@ void describe('manager', () => {
 
 			void it(
 				'bad sha256',
-				managerTestOneWith(JSON.stringify(packages), async manager => {
+				managerTestOne(JSON.stringify(packages), async manager => {
 					await manager.update();
 
 					await manager.install(packageSingle.name);

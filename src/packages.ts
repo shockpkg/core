@@ -1,4 +1,5 @@
-import {access, readFile, rename, rm, writeFile} from 'node:fs/promises';
+import {access, mkdir, readFile, rename, rm, writeFile} from 'node:fs/promises';
+import {dirname} from 'node:path';
 
 import {IPackagesListPackage, Package} from './package';
 import {TEMP_EXT} from './constants';
@@ -218,6 +219,7 @@ export class Packages {
 		}
 		const out = this.path;
 		const prt = `${out}${TEMP_EXT}`;
+		await mkdir(dirname(prt), {recursive: true});
 		await rm(prt, {force: true});
 		await writeFile(prt, JSON.stringify(this._packagesList, null, '\t'), {
 			flag: 'wx'

@@ -242,24 +242,9 @@ export class Manager {
 		new Dispatcher<IPackageCleanupAfter>(this);
 
 	/**
-	 * Package list error events.
-	 */
-	public readonly eventPackageListError = new Dispatcher<Error>(this);
-
-	/**
 	 * Packages instance.
 	 */
 	protected readonly _packages: Packages;
-
-	/**
-	 * Inited flag.
-	 */
-	protected _inited = false;
-
-	/**
-	 * Destroyed flag.
-	 */
-	protected _destroyed = false;
 
 	/**
 	 * Manager constructor.
@@ -309,15 +294,6 @@ export class Manager {
 	}
 
 	/**
-	 * Instance inited and not yet destroyed.
-	 *
-	 * @returns Is active.
-	 */
-	public get active() {
-		return !this._destroyed && this._inited;
-	}
-
-	/**
 	 * Packages loaded.
 	 *
 	 * @returns Is loaded.
@@ -327,80 +303,37 @@ export class Manager {
 	}
 
 	/**
-	 * Assert instance not inited.
-	 */
-	public assertNotInited() {
-		if (this._inited) {
-			throw new Error('Instance initialized');
-		}
-	}
-
-	/**
-	 * Assert instance is active.
-	 * Implies inited, not-destroyed, and lock-not-compromised assertions.
-	 */
-	public assertActive() {
-		// Check everything is active in order they should report failure.
-		this._assertInited();
-		this._assertNotDestroyed();
-	}
-
-	/**
 	 * Assert instance all loaded, including the packages list.
 	 * Implies all active assertions.
 	 */
 	public assertLoaded() {
-		this.assertActive();
 		if (!this.loaded) {
 			throw new Error('Packages list not loaded');
 		}
 	}
 
 	/**
-	 * Initialize instance.
+	 * Ensure load if exists.
 	 */
-	public async init() {
-		this.assertNotInited();
-
-		await this._ensureDirs();
-		try {
-			await this._packages.readIfExists();
-		} catch (err) {
-			this.eventPackageListError.trigger(err as Error);
+	public async ensureLoad() {
+		if (!this.loaded) {
+			await this.load();
 		}
-
-		this._inited = true;
-		this._destroyed = false;
 	}
 
 	/**
-	 * Destroy instance.
+	 * Ensure loaded.
 	 */
-	// eslint-disable-next-line @typescript-eslint/require-await
-	public async destroy() {
-		// Destroy should always work only once if instance was inited.
-		this._assertInited();
-		this._assertNotDestroyed();
-
-		this._destroyed = true;
-		this._inited = false;
+	public async ensureLoaded() {
+		await this.ensureLoad();
+		this.assertLoaded();
 	}
 
 	/**
-	 * Run asyncronous function with automatic init and destroy.
-	 *
-	 * @param func Async function.
-	 * @returns Return value of the async function.
+	 * Load packages if exist.
 	 */
-	public async with<T>(func: (self: this) => T | Promise<T>): Promise<T> {
-		await this.init();
-		let r: T;
-		try {
-			r = (await func.call(this, this)) as T;
-		} finally {
-			await this.destroy();
-		}
-		return r;
+	public async load() {
+		await this._packages.readIfExists();
 	}
 
 	/**
@@ -408,11 +341,10 @@ export class Manager {
 	 *
 	 * @yields Package object.
 	 */
-	public *packages() {
-		this.assertActive();
+	public async *packages() {
+		await this.ensureLoaded();
 
 		for (const entry of this._packages.packages()) {
-			this.assertActive();
 			yield entry;
 		}
 	}
@@ -423,8 +355,8 @@ export class Manager {
 	 * @param name Package name.
 	 * @returns The package or null.
 	 */
-	public packageByName(name: string) {
-		this.assertLoaded();
+	public async packageByName(name: string) {
+		await this.ensureLoaded();
 
 		return this._packages.byName(name);
 	}
@@ -435,8 +367,8 @@ export class Manager {
 	 * @param sha256 Package sha256.
 	 * @returns The package or null.
 	 */
-	public packageBySha256(sha256: string) {
-		this.assertLoaded();
+	public async packageBySha256(sha256: string) {
+		await this.ensureLoaded();
 
 		return this._packages.bySha256(sha256);
 	}
@@ -447,8 +379,8 @@ export class Manager {
 	 * @param sha1 Package sha1.
 	 * @returns The package or null.
 	 */
-	public packageBySha1(sha1: string) {
-		this.assertLoaded();
+	public async packageBySha1(sha1: string) {
+		await this.ensureLoaded();
 
 		return this._packages.bySha1(sha1);
 	}
@@ -459,8 +391,8 @@ export class Manager {
 	 * @param md5 Package md5.
 	 * @returns The package or null.
 	 */
-	public packageByMd5(md5: string) {
-		this.assertLoaded();
+	public async packageByMd5(md5: string) {
+		await this.ensureLoaded();
 
 		return this._packages.byMd5(md5);
 	}
@@ -471,8 +403,8 @@ export class Manager {
 	 * @param unique Package unique.
 	 * @returns The package or null.
 	 */
-	public packageByUnique(unique: string) {
-		this.assertLoaded();
+	public async packageByUnique(unique: string) {
+		await this.ensureLoaded();
 
 		return this._packages.byUnique(unique);
 	}
@@ -484,10 +416,10 @@ export class Manager {
 	 * @returns Install receipt.
 	 */
 	public async packageInstallReceipt(pkg: PackageLike) {
-		this.assertLoaded();
+		await this.ensureLoaded();
 
-		const name = this._asName(pkg);
-		const pkgf = this.pathToPackageMeta(name, this.packageFile);
+		const name = await this._asName(pkg);
+		const pkgf = await this.pathToPackageMeta(name, this.packageFile);
 
 		const r = await readFile(pkgf, 'utf8')
 			.then(s => JSON.parse(s) as IPackageReceipt)
@@ -505,8 +437,8 @@ export class Manager {
 	 * @returns Path to install file.
 	 */
 	public async packageInstallFile(pkg: PackageLike) {
-		this.assertLoaded();
-		pkg = this._asPackage(pkg);
+		await this.ensureLoaded();
+		pkg = await this._asPackage(pkg);
 
 		const data = await this.packageInstallReceipt(pkg);
 		return this.pathToPackage(pkg, data.file);
@@ -518,12 +450,12 @@ export class Manager {
 	 * @param pkg The package.
 	 */
 	public async packageInstallVerify(pkg: PackageLike) {
-		this.assertLoaded();
-		pkg = this._asPackage(pkg);
+		await this.ensureLoaded();
+		pkg = await this._asPackage(pkg);
 
 		const data = await this.packageInstallReceipt(pkg);
 		const {sha256, file, size} = data;
-		const filePath = this.pathToPackage(pkg, file);
+		const filePath = await this.pathToPackage(pkg, file);
 
 		const stat = await lstat(filePath);
 		const fSize = stat.size;
@@ -552,10 +484,14 @@ export class Manager {
 	 * @returns Update report.
 	 */
 	public async update() {
-		this.assertActive();
-
 		// Read data, update list, write list to file, return report.
 		const data = await this._requestPackages();
+		// Try to determined what gets updated.
+		try {
+			await this.ensureLoad();
+		} catch (err) {
+			// Ignore errors like outdated format version.
+		}
 		const report = this._packages.update(data);
 		await this._packages.write();
 		return report;
@@ -568,8 +504,8 @@ export class Manager {
 	 * @returns True if already installed, else false.
 	 */
 	public async isInstalled(pkg: PackageLike) {
-		this.assertLoaded();
-		pkg = this._asPackage(pkg);
+		await this.ensureLoaded();
+		pkg = await this._asPackage(pkg);
 
 		try {
 			await this.packageInstallReceipt(pkg);
@@ -586,8 +522,8 @@ export class Manager {
 	 * @returns True if already up-to-date, else false.
 	 */
 	public async isCurrent(pkg: PackageLike) {
-		this.assertLoaded();
-		pkg = this._asPackage(pkg);
+		await this.ensureLoaded();
+		pkg = await this._asPackage(pkg);
 
 		let data: IPackageReceipt | null = null;
 		try {
@@ -609,11 +545,12 @@ export class Manager {
 	 * @returns A list of installed package objects.
 	 */
 	public async installed() {
-		this.assertLoaded();
+		await this.ensureLoaded();
 
 		const list: Package[] = [];
 		for (const entry of await this._packageDirectories()) {
-			const pkg = this.packageByName(entry);
+			// eslint-disable-next-line no-await-in-loop
+			const pkg = await this.packageByName(entry);
 			// eslint-disable-next-line no-await-in-loop
 			if (pkg && (await this.isInstalled(pkg))) {
 				list.push(pkg);
@@ -628,11 +565,12 @@ export class Manager {
 	 * @returns The list of outdated package objects.
 	 */
 	public async outdated() {
-		this.assertLoaded();
+		await this.ensureLoaded();
 
 		const list: Package[] = [];
 		for (const entry of await this._packageDirectories()) {
-			const pkg = this.packageByName(entry);
+			// eslint-disable-next-line no-await-in-loop
+			const pkg = await this.packageByName(entry);
 			// eslint-disable-next-line no-await-in-loop
 			if (pkg && !(await this.isCurrent(pkg))) {
 				list.push(pkg);
@@ -647,7 +585,7 @@ export class Manager {
 	 * @returns List of packages upgraded.
 	 */
 	public async upgrade() {
-		this.assertLoaded();
+		await this.ensureLoaded();
 
 		const outdated = await this.outdated();
 		const list: IPackageInstalled[] = [];
@@ -670,8 +608,8 @@ export class Manager {
 	 * @returns List of packages processed to complete the install.
 	 */
 	public async install(pkg: PackageLike) {
-		this.assertLoaded();
-		pkg = this._asPackage(pkg);
+		await this.ensureLoaded();
+		pkg = await this._asPackage(pkg);
 		const fetch = this._ensureFetch();
 
 		// If current version is installed, skip.
@@ -727,10 +665,10 @@ export class Manager {
 			package: pkg
 		});
 
-		const outFile = this.pathToPackage(pkg, pkg.file);
-		const tmpDir = this.pathToPackageMeta(pkg, TEMP_DIR);
+		const outFile = await this.pathToPackage(pkg, pkg.file);
+		const tmpDir = await this.pathToPackageMeta(pkg, TEMP_DIR);
 		const tmpFile = pathJoin(tmpDir, `${pkg.sha256}${TEMP_EXT}`);
-		const metaFile = this.pathToPackageMeta(pkg, this.packageFile);
+		const metaFile = await this.pathToPackageMeta(pkg, this.packageFile);
 
 		// Create temporary directory, cleanup on failure.
 		await rm(tmpDir, {recursive: true, force: true});
@@ -877,14 +815,14 @@ export class Manager {
 	 * @returns True if removed, false if nothing to remove.
 	 */
 	public async remove(pkg: PackageLike) {
-		this.assertLoaded();
+		await this.ensureLoaded();
 
-		const dir = this.pathToPackage(pkg);
+		const dir = await this.pathToPackage(pkg);
 		const stat = await lstat(dir).catch(() => null);
 		if (!stat) {
 			return false;
 		}
-		const dirMeta = this.pathToPackageMeta(pkg);
+		const dirMeta = await this.pathToPackageMeta(pkg);
 
 		// Remove meta directory first, avoid partial installed state.
 		await rm(dirMeta, {recursive: true, force: true});
@@ -899,12 +837,12 @@ export class Manager {
 	 * @returns True if package obslete, else false.
 	 */
 	public async isObsolete(pkg: string) {
-		this.assertLoaded();
+		await this.ensureLoaded();
 
 		return (
 			!pkg.startsWith('.') &&
-			!this.packageByName(pkg) &&
-			access(this.pathToPackageMeta(pkg)).then(
+			!(await this.packageByName(pkg)) &&
+			access(await this.pathToPackageMeta(pkg)).then(
 				() => true,
 				() => false
 			)
@@ -917,7 +855,7 @@ export class Manager {
 	 * @returns A list of obsolete package names.
 	 */
 	public async obsolete() {
-		this.assertLoaded();
+		await this.ensureLoaded();
 
 		const list: string[] = [];
 		for (const entry of await this._packageDirectories()) {
@@ -935,12 +873,13 @@ export class Manager {
 	 * @returns Lists of removed packages.
 	 */
 	public async cleanup() {
-		this.assertLoaded();
+		await this.ensureLoaded();
 
 		const list: IPackageRemovedObsolete[] = [];
 		for (const pkg of await this._packageDirectories()) {
 			// Remove any temporary directory if present.
-			const tmpDir = this.pathToPackageMeta(pkg, TEMP_DIR);
+			// eslint-disable-next-line no-await-in-loop
+			const tmpDir = await this.pathToPackageMeta(pkg, TEMP_DIR);
 			// eslint-disable-next-line no-await-in-loop
 			await rm(tmpDir, {recursive: true, force: true});
 
@@ -993,10 +932,10 @@ export class Manager {
 	 * @param parts Path parts.
 	 * @returns Joined path.
 	 */
-	public pathToPackage(pkg: PackageLike, ...parts: string[]) {
-		this.assertActive();
+	public async pathToPackage(pkg: PackageLike, ...parts: string[]) {
+		await this.ensureLoaded();
 
-		return this.pathTo(this._asName(pkg), ...parts);
+		return this.pathTo(await this._asName(pkg), ...parts);
 	}
 
 	/**
@@ -1006,10 +945,10 @@ export class Manager {
 	 * @param parts Path parts.
 	 * @returns Joined path.
 	 */
-	public pathToPackageMeta(pkg: PackageLike, ...parts: string[]) {
-		this.assertActive();
+	public async pathToPackageMeta(pkg: PackageLike, ...parts: string[]) {
+		await this.ensureLoaded();
 
-		return this.pathTo(this._asName(pkg), this.metaDir, ...parts);
+		return this.pathTo(await this._asName(pkg), this.metaDir, ...parts);
 	}
 
 	/**
@@ -1019,11 +958,11 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns Package object.
 	 */
-	protected _asPackage(pkg: PackageLike) {
-		this.assertLoaded();
+	protected async _asPackage(pkg: PackageLike) {
+		await this.ensureLoaded();
 
 		if (typeof pkg === 'string') {
-			const p = this.packageByUnique(pkg);
+			const p = await this.packageByUnique(pkg);
 			if (!p) {
 				throw new Error(`Unknown package: ${pkg}`);
 			}
@@ -1040,11 +979,11 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns Package object.
 	 */
-	protected _asName(pkg: PackageLike) {
-		this.assertLoaded();
+	protected async _asName(pkg: PackageLike) {
+		await this.ensureLoaded();
 
 		return typeof pkg === 'string'
-			? this.packageByUnique(pkg)?.name ?? pkg
+			? (await this.packageByUnique(pkg))?.name ?? pkg
 			: pkg.name;
 	}
 
@@ -1054,10 +993,10 @@ export class Manager {
 	 * @param pkg The package.
 	 */
 	protected async _packageMetaReceiptWrite(pkg: PackageLike) {
-		this.assertLoaded();
-		pkg = this._asPackage(pkg);
+		await this.ensureLoaded();
+		pkg = await this._asPackage(pkg);
 
-		const pkgf = this.pathToPackageMeta(pkg, this.packageFile);
+		const pkgf = await this.pathToPackageMeta(pkg, this.packageFile);
 		const pkgfTmp = `${pkgf}${TEMP_EXT}`;
 
 		const receipt = await this._packageMetaReceiptFromPackage(pkg);
@@ -1076,8 +1015,8 @@ export class Manager {
 	 */
 	// eslint-disable-next-line @typescript-eslint/require-await
 	protected async _packageMetaReceiptFromPackage(pkg: PackageLike) {
-		this.assertLoaded();
-		pkg = this._asPackage(pkg);
+		await this.ensureLoaded();
+		pkg = await this._asPackage(pkg);
 
 		const r: IPackageReceipt = {
 			name: pkg.name,
@@ -1095,31 +1034,13 @@ export class Manager {
 	 * @param pkg The package.
 	 */
 	protected async _packageDirsEnsure(pkg: PackageLike) {
-		this.assertLoaded();
-		pkg = this._asPackage(pkg);
+		await this.ensureLoaded();
+		pkg = await this._asPackage(pkg);
 
-		const dir = this.pathToPackage(pkg);
-		const dirMeta = this.pathToPackageMeta(pkg);
+		const dir = await this.pathToPackage(pkg);
+		const dirMeta = await this.pathToPackageMeta(pkg);
 		await mkdir(dir, {recursive: true});
 		await mkdir(dirMeta, {recursive: true});
-	}
-
-	/**
-	 * Assert instance is inited.
-	 */
-	protected _assertInited() {
-		if (!this._inited) {
-			throw new Error('Instance uninitialized');
-		}
-	}
-
-	/**
-	 * Assert instance not destroyed.
-	 */
-	protected _assertNotDestroyed() {
-		if (this._destroyed) {
-			throw new Error('Instance destroyed');
-		}
 	}
 
 	/**
@@ -1141,8 +1062,6 @@ export class Manager {
 	 * @returns The recognized package directories.
 	 */
 	protected async _packageDirectories() {
-		this.assertLoaded();
-
 		return (await readdir(this.path, {withFileTypes: true}))
 			.filter(e => !e.name.startsWith('.') && e.isDirectory())
 			.map(e => e.name)
@@ -1155,7 +1074,6 @@ export class Manager {
 	 * @returns File contents as string.
 	 */
 	protected async _requestPackages() {
-		this.assertActive();
 		const fetch = this._ensureFetch();
 
 		const url = this.packagesUrl;
