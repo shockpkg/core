@@ -486,12 +486,14 @@ export class Manager {
 	public async update() {
 		// Read data, update list, write list to file, return report.
 		const data = await this._requestPackages();
+
 		// Try to determined what gets updated.
 		try {
 			await this.ensureLoad();
 		} catch (err) {
 			// Ignore errors like outdated format version.
 		}
+
 		const report = this._packages.update(data);
 		await this._packages.write();
 		return report;
