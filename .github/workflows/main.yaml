@@ -11,11 +11,11 @@ jobs:
             node-version: '18.12.0' # LTS
 
           - runs-on: ubuntu-latest
-            node-version: '18.17.1' # LTS (current)
+            node-version: '18.18.0' # LTS (current)
             CODE_CHECK: 1
 
           - runs-on: windows-latest
-            node-version: '18.17.1' # LTS (current)
+            node-version: '18.18.0' # LTS (current)
 
           - runs-on: ubuntu-latest
             node-version: '20.5.1'
@@ -64,7 +64,7 @@ jobs:
       - name: Node
         uses: actions/setup-node@v3
         with:
-          node-version: '18.17.1'
+          node-version: '18.18.0'
           registry-url: https://registry.npmjs.org/
 
       - name: Dependencies
