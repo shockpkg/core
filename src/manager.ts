@@ -415,7 +415,7 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns Install receipt.
 	 */
-	public async packageInstallReceipt(pkg: PackageLike) {
+	public async receipt(pkg: PackageLike) {
 		await this.ensureLoaded();
 
 		const name = await this._asName(pkg);
@@ -436,11 +436,11 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns Path to install file.
 	 */
-	public async packageInstallFile(pkg: PackageLike) {
+	public async file(pkg: PackageLike) {
 		await this.ensureLoaded();
 		pkg = await this._asPackage(pkg);
 
-		const data = await this.packageInstallReceipt(pkg);
+		const data = await this.receipt(pkg);
 		return this.pathToPackage(pkg, data.file);
 	}
 
@@ -453,7 +453,7 @@ export class Manager {
 		await this.ensureLoaded();
 		pkg = await this._asPackage(pkg);
 
-		const data = await this.packageInstallReceipt(pkg);
+		const data = await this.receipt(pkg);
 		const {sha256, file, size} = data;
 		const filePath = await this.pathToPackage(pkg, file);
 
@@ -510,7 +510,7 @@ export class Manager {
 		pkg = await this._asPackage(pkg);
 
 		try {
-			await this.packageInstallReceipt(pkg);
+			await this.receipt(pkg);
 		} catch (err) {
 			return false;
 		}
@@ -529,7 +529,7 @@ export class Manager {
 
 		let data: IPackageReceipt | null = null;
 		try {
-			data = await this.packageInstallReceipt(pkg);
+			data = await this.receipt(pkg);
 		} catch (err) {
 			return false;
 		}

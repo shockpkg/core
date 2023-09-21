@@ -1779,11 +1779,9 @@ void describe('manager', () => {
 						packageNested1MetaBad
 					);
 
-					const receipt = await manager.packageInstallReceipt(
-						packageSingle.name
-					);
+					const receipt = await manager.receipt(packageSingle.name);
 
-					const receiptBad = await manager.packageInstallReceipt(
+					const receiptBad = await manager.receipt(
 						packageNested1MetaBad.name
 					);
 
@@ -1803,7 +1801,7 @@ void describe('manager', () => {
 			);
 		});
 
-		void describe('packageInstallFile', () => {
+		void describe('file', () => {
 			void it(
 				'return',
 				managerTestOne(JSON.stringify(packages), async manager => {
@@ -1817,15 +1815,13 @@ void describe('manager', () => {
 						packageNested1MetaBad
 					);
 
-					const filePath = await manager.packageInstallFile(
-						packageSingle.name
-					);
+					const filePath = await manager.file(packageSingle.name);
 					const filePathExpected = await manager.pathToPackage(
 						packageSingle.name,
 						packageSingle.file
 					);
 
-					const filePathBad = await manager.packageInstallFile(
+					const filePathBad = await manager.file(
 						packageNested1MetaBad.name
 					);
 					const filePathBadExpected = await manager.pathToPackage(
@@ -1838,9 +1834,7 @@ void describe('manager', () => {
 					strictEqual(filePathBad, filePathBadExpected);
 				})
 			);
-		});
 
-		void describe('packageInstallFile', () => {
 			void it(
 				'installed',
 				managerTestOne(JSON.stringify(packages), async manager => {
@@ -1878,9 +1872,7 @@ void describe('manager', () => {
 
 					await manager.install(packageSingle.name);
 
-					const file = await manager.packageInstallFile(
-						packageSingle.name
-					);
+					const file = await manager.file(packageSingle.name);
 					const size = packageSingle.size + 1;
 					const data = Buffer.alloc(size);
 					await writeFile(file, data);
@@ -1903,9 +1895,7 @@ void describe('manager', () => {
 
 					await manager.install(packageSingle.name);
 
-					const file = await manager.packageInstallFile(
-						packageSingle.name
-					);
+					const file = await manager.file(packageSingle.name);
 					const {size} = packageSingle;
 					const data = Buffer.alloc(size);
 					const hash = sha256Buffer(data);
