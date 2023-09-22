@@ -455,11 +455,7 @@ overrides:
       - '*.ts'
       - '*.tsx'
     rules:
-      no-void: off
       jsdoc/no-types: warn
-      '@typescript-eslint/no-floating-promises':
-        - error
-        - ignoreVoid: true
   - files:
       - '*.test.js'
       - '*.test.jsx'
@@ -474,7 +470,11 @@ overrides:
       - '*.spec.ts'
       - '*.spec.tsx'
     rules:
+      no-void: off
       jsdoc/require-jsdoc: off
+      '@typescript-eslint/no-floating-promises':
+        - error
+        - ignoreVoid: true
   - files:
       - 'babel.config.js'
     rules:
