@@ -5,7 +5,6 @@ export interface IFetchRequestHeaders {
 }
 
 export interface IFetchRequestInit {
-	//
 	/**
 	 * Request headers.
 	 */
@@ -13,7 +12,6 @@ export interface IFetchRequestInit {
 }
 
 export interface IFetchResponseHeaders {
-	//
 	/**
 	 * Get header case-insensitive.
 	 */
@@ -21,7 +19,6 @@ export interface IFetchResponseHeaders {
 }
 
 export interface IFetchResponse {
-	//
 	/**
 	 * Response status code.
 	 */

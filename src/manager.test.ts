@@ -157,7 +157,6 @@ function packagesCopy() {
 }
 
 interface IPackageEventLog {
-	//
 	/**
 	 * Which event.
 	 */

@@ -5,7 +5,6 @@ import {IPackagesListPackage, Package} from './package';
 import {TEMP_EXT} from './constants';
 
 export interface IPackageUpdated {
-	//
 	/**
 	 * Package name.
 	 */
@@ -28,7 +27,6 @@ export interface IPackageUpdated {
 }
 
 export interface IPackagesList {
-	//
 	/**
 	 * Format version.
 	 */

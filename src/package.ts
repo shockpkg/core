@@ -2,7 +2,6 @@ import {Transform} from 'node:stream';
 import {createInflateRaw as zlibCreateInflateRaw} from 'node:zlib';
 
 export interface IPackagesListPackage {
-	//
 	/**
 	 * Package name.
 	 */

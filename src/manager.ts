@@ -37,7 +37,6 @@ import {NAME, VERSION} from './meta';
 export type PackageLike = Package | string;
 
 export interface IPackageReceipt {
-	//
 	/**
 	 * Package name.
 	 */
@@ -65,7 +64,6 @@ export interface IPackageReceipt {
 }
 
 export interface IPackageInstallBefore {
-	//
 	/**
 	 * Package instance.
 	 */
@@ -73,7 +71,6 @@ export interface IPackageInstallBefore {
 }
 
 export interface IPackageInstallAfter {
-	//
 	/**
 	 * Package instance.
 	 */
@@ -81,7 +78,6 @@ export interface IPackageInstallAfter {
 }
 
 export interface IPackageInstallCurrent {
-	//
 	/**
 	 * Package instance.
 	 */
@@ -89,7 +85,6 @@ export interface IPackageInstallCurrent {
 }
 
 export interface IPackageDownloadBefore {
-	//
 	/**
 	 * Package instance.
 	 */
@@ -97,7 +92,6 @@ export interface IPackageDownloadBefore {
 }
 
 export interface IPackageDownloadAfter {
-	//
 	/**
 	 * Package instance.
 	 */
@@ -105,7 +99,6 @@ export interface IPackageDownloadAfter {
 }
 
 export interface IPackageDownloadProgress {
-	//
 	/**
 	 * Package instance.
 	 */
@@ -123,7 +116,6 @@ export interface IPackageDownloadProgress {
 }
 
 export interface IPackageCleanupBefore {
-	//
 	/**
 	 * Package name.
 	 */
@@ -131,7 +123,6 @@ export interface IPackageCleanupBefore {
 }
 
 export interface IPackageCleanupAfter {
-	//
 	/**
 	 * Package name.
 	 */
@@ -144,7 +135,6 @@ export interface IPackageCleanupAfter {
 }
 
 export interface IPackageInstalled {
-	//
 	/**
 	 * Package installed.
 	 */
@@ -157,7 +147,6 @@ export interface IPackageInstalled {
 }
 
 export interface IPackageRemovedObsolete {
-	//
 	/**
 	 * Package removed.
 	 */
