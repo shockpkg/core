@@ -5,7 +5,7 @@
 		"module": "commonjs",
 		"moduleResolution": "Node",
 		"allowSyntheticDefaultImports": true,
-		"lib": ["ESNext"],
+		"lib": ["ESNext", "dom"],
 		"newLine": "lf",
 
 		"alwaysStrict": true,
