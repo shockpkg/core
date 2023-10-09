@@ -41,12 +41,7 @@ import {NAME, VERSION} from './meta';
  * @returns The result.
  */
 async function retry<T>(f: () => Promise<T>) {
-	try {
-		return await f();
-	} catch (err) {
-		// Ignore the first failure.
-	}
-	return f();
+	return f().catch(async () => f());
 }
 
 export type PackageLike = Package | string;
