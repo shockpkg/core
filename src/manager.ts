@@ -694,12 +694,22 @@ export class Manager {
 			if (slice) {
 				const [start, size] = slice;
 				if (size > 0) {
-					const response = await fetch(url, {
-						headers: {
-							...this.headers,
-							Range: `bytes=${start}-${start + size - 1}`
+					let response;
+					try {
+						response = await fetch(url, {
+							headers: {
+								...this.headers,
+								Range: `bytes=${start}-${start + size - 1}`
+							}
+						});
+					} catch (err) {
+						if (err) {
+							throw new Error(
+								this._fetchErrorMessage(err as Error)
+							);
 						}
-					});
+						throw err;
+					}
 					const {status} = response;
 					if (status !== 206) {
 						throw new Error(
@@ -724,9 +734,17 @@ export class Manager {
 					throw new Error(`Cannot download negative size: ${size}`);
 				}
 			} else {
-				const response = await fetch(url, {
-					headers: this.headers
-				});
+				let response;
+				try {
+					response = await fetch(url, {
+						headers: this.headers
+					});
+				} catch (err) {
+					if (err) {
+						throw new Error(this._fetchErrorMessage(err as Error));
+					}
+					throw err;
+				}
 				const {status} = response;
 				if (status !== 200) {
 					throw new Error(
@@ -1048,6 +1066,23 @@ export class Manager {
 	}
 
 	/**
+	 * Get fetch error messsage.
+	 *
+	 * @param error Error object.
+	 * @returns Error message.
+	 */
+	protected _fetchErrorMessage(error: Error) {
+		let {message, cause} = error;
+		if (cause) {
+			if (typeof cause === 'object') {
+				cause = JSON.stringify(cause);
+			}
+			message += ` (${String(cause)})`;
+		}
+		return message;
+	}
+
+	/**
 	 * List directories under package manger control.
 	 *
 	 * @returns The recognized package directories.
@@ -1068,14 +1103,22 @@ export class Manager {
 		const fetch = this._ensureFetch();
 
 		const url = this.packagesUrl;
-		const response = await fetch(url, {
-			headers: {
-				...this.headers,
-				// eslint-disable-next-line @typescript-eslint/naming-convention
-				'Cache-Control': 'max-age=0',
-				Pragma: 'no-cache'
+		let response;
+		try {
+			response = await fetch(url, {
+				headers: {
+					...this.headers,
+					// eslint-disable-next-line @typescript-eslint/naming-convention
+					'Cache-Control': 'max-age=0',
+					Pragma: 'no-cache'
+				}
+			});
+		} catch (err) {
+			if (err) {
+				throw new Error(this._fetchErrorMessage(err as Error));
 			}
-		});
+			throw err;
+		}
 		const {status} = response;
 		if (status !== 200) {
 			throw new Error(`Invalid response status: ${status}: ${url}`);
