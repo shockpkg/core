@@ -34,6 +34,21 @@ import {Packages} from './packages';
 import {IFetch} from './types';
 import {NAME, VERSION} from './meta';
 
+/**
+ * Retry once on error.
+ *
+ * @param f The function to try.
+ * @returns The result.
+ */
+async function retry<T>(f: () => Promise<T>) {
+	try {
+		return await f();
+	} catch (err) {
+		// Ignore the first failure.
+	}
+	return f();
+}
+
 export type PackageLike = Package | string;
 
 export interface IPackageReceipt {
@@ -693,35 +708,35 @@ export class Manager {
 			if (slice) {
 				const [start, size] = slice;
 				if (size > 0) {
-					let response;
-					try {
-						response = await fetch(url, {
-							headers: {
-								...this.headers,
-								Range: `bytes=${start}-${start + size - 1}`
-							}
-						});
-					} catch (err) {
-						if (err) {
-							throw new Error(
-								this._fetchErrorMessage(err as Error)
-							);
+					const init = {
+						headers: {
+							...this.headers,
+							Range: `bytes=${start}-${start + size - 1}`
 						}
-						throw err;
-					}
-					const {status} = response;
+					};
+					const res = await retry(async () => fetch(url, init)).catch(
+						err => {
+							if (err) {
+								throw new Error(
+									this._fetchErrorMessage(err as Error)
+								);
+							}
+							throw err;
+						}
+					);
+					const {status} = res;
 					if (status !== 206) {
 						throw new Error(
 							`Invalid resume status: ${status}: ${url}`
 						);
 					}
-					const cl = response.headers.get('content-length');
+					const cl = res.headers.get('content-length');
 					if (cl && +cl !== size) {
 						throw new Error(
 							`Invalid resume content-length: ${cl}: ${url}`
 						);
 					}
-					const {body} = response;
+					const {body} = res;
 					try {
 						input = Readable.fromWeb(body as ReadableStream);
 					} catch (err) {
@@ -733,30 +748,32 @@ export class Manager {
 					throw new Error(`Cannot download negative size: ${size}`);
 				}
 			} else {
-				let response;
-				try {
-					response = await fetch(url, {
-						headers: this.headers
-					});
-				} catch (err) {
-					if (err) {
-						throw new Error(this._fetchErrorMessage(err as Error));
+				const init = {
+					headers: this.headers
+				};
+				const res = await retry(async () => fetch(url, init)).catch(
+					err => {
+						if (err) {
+							throw new Error(
+								this._fetchErrorMessage(err as Error)
+							);
+						}
+						throw err;
 					}
-					throw err;
-				}
-				const {status} = response;
+				);
+				const {status} = res;
 				if (status !== 200) {
 					throw new Error(
 						`Invalid download status: ${status}: ${url}`
 					);
 				}
-				const cl = response.headers.get('content-length');
+				const cl = res.headers.get('content-length');
 				if (cl && +cl !== srcPkg.size) {
 					throw new Error(
 						`Invalid download content-length: ${cl}: ${url}`
 					);
 				}
-				const {body} = response;
+				const {body} = res;
 				try {
 					input = Readable.fromWeb(body as ReadableStream);
 				} catch (err) {
@@ -1104,27 +1121,25 @@ export class Manager {
 		const fetch = this._ensureFetch();
 
 		const url = this.packagesUrl;
-		let response;
-		try {
-			response = await fetch(url, {
-				headers: {
-					...this.headers,
-					// eslint-disable-next-line @typescript-eslint/naming-convention
-					'Cache-Control': 'max-age=0',
-					Pragma: 'no-cache'
-				}
-			});
-		} catch (err) {
+		const init = {
+			headers: {
+				...this.headers,
+				// eslint-disable-next-line @typescript-eslint/naming-convention
+				'Cache-Control': 'max-age=0',
+				Pragma: 'no-cache'
+			}
+		};
+		const res = await retry(async () => fetch(url, init)).catch(err => {
 			if (err) {
 				throw new Error(this._fetchErrorMessage(err as Error));
 			}
 			throw err;
-		}
-		const {status} = response;
+		});
+		const {status} = res;
 		if (status !== 200) {
 			throw new Error(`Invalid response status: ${status}: ${url}`);
 		}
-		return response.text();
+		return res.text();
 	}
 
 	/**
