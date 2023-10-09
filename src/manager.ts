@@ -179,8 +179,7 @@ export class Manager {
 	 * A fetch-like interface requiring only a sebset of features.
 	 */
 	public fetch: IFetch | null =
-		// @ts-expect-error Missing declaraion for fetch.
-		typeof fetch === 'undefined' ? null : (fetch as IFetch);
+		typeof fetch === 'undefined' ? null : (fetch as unknown as IFetch);
 
 	/**
 	 * Package install before events.
