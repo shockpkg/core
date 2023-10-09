@@ -1072,14 +1072,16 @@ export class Manager {
 	 * @returns Error message.
 	 */
 	protected _fetchErrorMessage(error: Error) {
-		let {message, cause} = error;
+		const {message, cause} = error;
+		let msg = message;
 		if (cause) {
-			if (typeof cause === 'object') {
-				cause = JSON.stringify(cause);
+			const {name, code} = cause as {name: unknown; code: unknown};
+			const info = [name, code].filter(v => v).join(' ');
+			if (info) {
+				msg += ` (${info})`;
 			}
-			message += ` (${String(cause)})`;
 		}
-		return message;
+		return msg;
 	}
 
 	/**
