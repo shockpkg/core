@@ -27,8 +27,8 @@ jobs:
             CODE_TEST: 'test-legacy'
 
           - runs-on: ubuntu-latest
-            CODE_TEST: 'test'
             node-version: '21.1.0'
+            CODE_TEST: 'test'
 
     runs-on: ${{ matrix.config.runs-on }}
 
