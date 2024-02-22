@@ -18,6 +18,10 @@ jobs:
             CODE_TEST: 'test-legacy'
 
           - runs-on: ubuntu-latest
+            node-version: '20.9.0' # LTS
+            CODE_TEST: 'test-legacy'
+
+          - runs-on: ubuntu-latest
             node-version: '20.11.1' # LTS (current)
             CODE_TEST: 'test-legacy'
             CODE_CHECK: 1
