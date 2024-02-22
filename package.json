@@ -56,7 +56,7 @@
 	"repository": "https://github.com/shockpkg/core.git",
 	"bugs": "https://github.com/shockpkg/core/issues",
 	"author": "JrMasterModelBuilder",
-	"copyright": "Copyright (c) 2018-2023 JrMasterModelBuilder",
+	"copyright": "Copyright (c) 2018-2024 JrMasterModelBuilder",
 	"license": "MPL-2.0",
 	"devDependencies": {
 		"@babel/cli": "^7.23.0",
