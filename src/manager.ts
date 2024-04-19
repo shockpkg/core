@@ -692,8 +692,8 @@ export class Manager {
 			// Create output file, monitoring write progress.
 			output.on('wrote', () => {
 				this.eventPackageDownloadProgress.trigger({
-					package: pkg as Package,
-					total: (pkg as Package).size,
+					package: pkg,
+					total: pkg.size,
 					amount: output.bytesWritten
 				});
 			});
