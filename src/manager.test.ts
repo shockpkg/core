@@ -23,7 +23,7 @@ const withTemp = (i => async (func: (path: string) => Promise<unknown>) => {
 	}
 })(0);
 
-const strReverse = (s: string) => s.split('').reverse().join('');
+const strReverse = (s: string) => [...s].reverse().join('');
 
 const unknownDirEmpty = 'unknown-dir-empty';
 
@@ -153,7 +153,7 @@ const packageNested1MetaBad = {
 };
 
 function packagesCopy() {
-	return JSON.parse(JSON.stringify(packages)) as typeof packages;
+	return structuredClone(packages) as typeof packages;
 }
 
 interface IPackageEventLog {
@@ -329,7 +329,7 @@ async function managerFileExists(manager: ManagerTest, path: string[]) {
 	try {
 		const stat = await lstat(file);
 		return stat.isFile();
-	} catch (err) {
+	} catch {
 		return false;
 	}
 }
@@ -346,7 +346,7 @@ async function managerDirExists(manager: ManagerTest, path: string[]) {
 	try {
 		const stat = await lstat(dir);
 		return stat.isDirectory();
-	} catch (err) {
+	} catch {
 		return false;
 	}
 }

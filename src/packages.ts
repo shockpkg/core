@@ -397,7 +397,7 @@ export class Packages {
 	 * @returns Parsed list.
 	 */
 	protected _parsePackages(
-		packages: Readonly<Readonly<IPackagesListPackage>[]>
+		packages: readonly Readonly<IPackagesListPackage>[]
 	) {
 		return packages.map(info => this._createPackage(info));
 	}
@@ -408,7 +408,7 @@ export class Packages {
 	 * @param packages A list of packages.
 	 * @returns A set of all packages and their children.
 	 */
-	protected _listPackages(packages: Readonly<Package[]>) {
+	protected _listPackages(packages: readonly Package[]) {
 		const r = new Set<Package>();
 		const itter = [...packages];
 

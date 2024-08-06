@@ -186,7 +186,7 @@ export class Package {
 	 * @returns Package instance.
 	 */
 	protected _createPackages(
-		infos: Readonly<Readonly<IPackagesListPackage>[]> = []
+		infos: readonly Readonly<IPackagesListPackage>[] = []
 	) {
 		return infos.map(info => this._createPackage(info));
 	}

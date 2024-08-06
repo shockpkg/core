@@ -26,7 +26,7 @@ const withTemp = (i => async (func: (file: string, dir: string) => unknown) => {
  * @returns Repeated string.
  */
 function stringRepeat(s: string, n: number) {
-	return new Array(n + 1).join(s);
+	return Array.from({length: n + 1}).join(s);
 }
 
 /**

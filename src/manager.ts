@@ -488,7 +488,7 @@ export class Manager {
 		// Try to determined what gets updated.
 		try {
 			await this.ensureLoad();
-		} catch (err) {
+		} catch {
 			// Ignore errors like outdated format version.
 		}
 
@@ -509,7 +509,7 @@ export class Manager {
 
 		try {
 			await this.receipt(pkg);
-		} catch (err) {
+		} catch {
 			return false;
 		}
 		return true;
@@ -528,7 +528,7 @@ export class Manager {
 		let data: IPackageReceipt | null = null;
 		try {
 			data = await this.receipt(pkg);
-		} catch (err) {
+		} catch {
 			return false;
 		}
 		return !!(
@@ -734,7 +734,7 @@ export class Manager {
 					const {body} = res;
 					try {
 						input = Readable.fromWeb(body as ReadableStream);
-					} catch (err) {
+					} catch {
 						input = body as NodeJS.ReadableStream;
 					}
 				} else if (size === 0) {
@@ -771,16 +771,15 @@ export class Manager {
 				const {body} = res;
 				try {
 					input = Readable.fromWeb(body as ReadableStream);
-				} catch (err) {
+				} catch {
 					input = body as NodeJS.ReadableStream;
 				}
 			}
 
 			// Hash the last readable stream to verify package.
 			const hash = createHash('sha256');
-			const lastData = transforms.length
-				? transforms[transforms.length - 1]
-				: input;
+			const {length} = transforms;
+			const lastData = length ? transforms[length - 1] : input;
 			lastData.on('data', (data: Buffer) => {
 				hash.update(data);
 			});
@@ -1033,7 +1032,6 @@ export class Manager {
 	 * @param pkg The package.
 	 * @returns Receipt object.
 	 */
-	// eslint-disable-next-line @typescript-eslint/require-await
 	protected async _packageMetaReceiptFromPackage(pkg: PackageLike) {
 		await this.ensureLoaded();
 		pkg = await this._asPackage(pkg);
@@ -1087,7 +1085,7 @@ export class Manager {
 		let msg = message;
 		if (cause) {
 			const {name, code} = cause as {name: unknown; code: unknown};
-			const info = [name, code].filter(v => v).join(' ');
+			const info = [name, code].filter(Boolean).join(' ');
 			if (info) {
 				msg += ` (${info})`;
 			}
