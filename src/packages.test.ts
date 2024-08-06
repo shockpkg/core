@@ -4,7 +4,7 @@ import {describe, it} from 'node:test';
 import {deepStrictEqual, ok, strictEqual, throws} from 'node:assert';
 import {access, mkdir, rm, writeFile} from 'node:fs/promises';
 
-import {Packages} from './packages';
+import {Packages} from './packages.ts';
 
 const withTemp = (i => async (func: (file: string, dir: string) => unknown) => {
 	const dir = `./spec/tmp/packages/${i++}`;

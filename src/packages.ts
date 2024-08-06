@@ -1,8 +1,8 @@
 import {access, mkdir, readFile, rename, rm, writeFile} from 'node:fs/promises';
 import {dirname} from 'node:path';
 
-import {IPackagesListPackage, Package} from './package';
-import {TEMP_EXT} from './constants';
+import {IPackagesListPackage, Package} from './package.ts';
+import {TEMP_EXT} from './constants.ts';
 
 export interface IPackageUpdated {
 	/**

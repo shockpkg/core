@@ -7,7 +7,7 @@ import {pipeline} from 'node:stream/promises';
 import {join as pathJoin} from 'node:path';
 import {rm, mkdir, lstat} from 'node:fs/promises';
 
-import {EmptyStream, SliceStream, WriterStream} from './stream';
+import {EmptyStream, SliceStream, WriterStream} from './stream.ts';
 
 const withTemp = (i => async (func: (dir: string) => unknown) => {
 	const dir = `./spec/tmp/stream/${i++}`;

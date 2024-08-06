@@ -26,13 +26,13 @@ import {
 	TEMP_EXT,
 	PATH_ENV,
 	TEMP_DIR
-} from './constants';
-import {Dispatcher} from './dispatcher';
-import {EmptyStream, SliceStream, WriterStream} from './stream';
-import {Package} from './package';
-import {Packages} from './packages';
-import {IFetch} from './types';
-import {NAME, VERSION} from './meta';
+} from './constants.ts';
+import {Dispatcher} from './dispatcher.ts';
+import {EmptyStream, SliceStream, WriterStream} from './stream.ts';
+import {Package} from './package.ts';
+import {Packages} from './packages.ts';
+import {IFetch} from './types.ts';
+import {NAME, VERSION} from './meta.ts';
 
 /**
  * Retry once on error.
