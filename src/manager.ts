@@ -1003,7 +1003,7 @@ export class Manager {
 		await this.ensureLoaded();
 
 		return typeof pkg === 'string'
-			? (await this.packageByUnique(pkg))?.name ?? pkg
+			? ((await this.packageByUnique(pkg))?.name ?? pkg)
 			: pkg.name;
 	}
 
